@@ -5,10 +5,10 @@
   "description": "Offline-first task board + focus timer (static site).",
   "license": "UNLICENSED",
   "scripts": {
-    "dev": "http-server web -p 5173 -c-1"
+    "dev": "http-server web -p 5173 -c-1",
+    "test": "node --test policy/evaluator.test.js"
   },
   "devDependencies": {
     "http-server": "^14.1.1"
   }
 }
-
