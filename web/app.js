@@ -149,7 +149,7 @@
       map_gps_unsupported: "GPS: UNSUPPORTED",
       map_status_ready: "Map ready.",
       map_status_requesting_gps: "Requesting GPS…",
-      map_status_gps_blurred: "GPS ready. Your aura is blurred for privacy.",
+      map_status_gps_private: "GPS ready. Centered on you (private view).",
       map_status_zoom_to: "Zoom to {z}+ to see street activity.",
       map_status_fetching: "Fetching street activity…",
       map_status_running: "Street activity running.",
@@ -209,7 +209,7 @@
       map_gps_unsupported: "GPS：不支援",
       map_status_ready: "地圖已就緒。",
       map_status_requesting_gps: "正在請求定位…",
-      map_status_gps_blurred: "定位已就緒。為隱私已模糊化你的氣場位置。",
+      map_status_gps_private: "定位已就緒。已置中到你的位置（私人視角）。",
       map_status_zoom_to: "請縮放到 {z}+ 以查看街道活動。",
       map_status_fetching: "正在取得街道活動…",
       map_status_running: "街道活動進行中。",
@@ -269,7 +269,7 @@
       map_gps_unsupported: "GPS: 非対応",
       map_status_ready: "地図の準備ができました。",
       map_status_requesting_gps: "GPS を要求しています…",
-      map_status_gps_blurred: "GPS 準備完了。プライバシーのため位置はぼかしています。",
+      map_status_gps_private: "GPS 準備完了。あなたの位置に移動しました（プライベート表示）。",
       map_status_zoom_to: "{z}+ までズームすると街の動きが見えます。",
       map_status_fetching: "街の動きを取得中…",
       map_status_running: "街の動きは実行中です。",
@@ -999,7 +999,9 @@
     let userWatchId = null;
     let lastUserLatLng = null;
     let lastUserLatLngRaw = null;
+    let lastUserLatLngBlurred = null;
     let lastUserAccuracyM = null;
+    let selfPreciseMode = false;
     // Privacy: blur the true GPS coordinate so the aura doesn't pinpoint you.
     const userPrivacy = {
       // Quantize to ~250m grid.
@@ -1337,7 +1339,8 @@
 
     const setUserLatLng = (lat, lng, accuracyM, { ensureRing = false } = {}) => {
       lastUserLatLngRaw = L.latLng(clamp(lat, -85, 85), wrapLng(lng));
-      lastUserLatLng = blurUserLatLng(lastUserLatLngRaw);
+      lastUserLatLngBlurred = blurUserLatLng(lastUserLatLngRaw);
+      lastUserLatLng = selfPreciseMode ? lastUserLatLngRaw : lastUserLatLngBlurred;
       lastUserAccuracyM = Number.isFinite(Number(accuracyM)) ? Number(accuracyM) : lastUserAccuracyM;
 
       if (userAuraEnabled) {
@@ -1390,7 +1393,7 @@
           stopUserWatch();
         },
         {
-          enableHighAccuracy: false,
+          enableHighAccuracy: true,
           timeout: 10_000,
           maximumAge: 20_000
         }
@@ -1922,10 +1925,14 @@
           const lng = pos.coords.longitude;
           const accuracy = Number(pos.coords.accuracy) || 0;
 
+          selfPreciseMode = true;
           setUserLatLng(lat, lng, accuracy, { ensureRing: false });
+          map.flyTo([clamp(lat, -85, 85), wrapLng(lng)], Math.max(map.getZoom(), 16), {
+            duration: 0.8
+          });
 
           setGpsBadge(t("map_gps_on"), "ok");
-          setMapStatus(t("map_status_gps_blurred"));
+          setMapStatus(t("map_status_gps_private"));
           toast(t("gps_ready"));
 
           window.requestAnimationFrame(() => map.invalidateSize());
