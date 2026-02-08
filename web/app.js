@@ -3750,11 +3750,13 @@
     const applyUserAuraStyle = () => {
       if (!userAuraLayers.length) return;
       const GRAY_HEX = "#b8b1a5";
+      const BOUND_MIX_HEX = "#201812";
       const age = Math.max(0, Number(userAuraAgeMs) || 0);
       const decay = decayFactor(age);
       const strength = clamp(Number(userAuraStrength) || 0, 0, 1);
       const grayT = selfPreciseMode ? 0 : 1 - decay;
       const fill = mixHex(userAuraColor, GRAY_HEX, grayT);
+      const bound = mixHex(fill, BOUND_MIX_HEX, 0.28);
       const radiusScale = radiusScaleFromDecay(decay);
       const strengthScale = 0.84 + 0.58 * strength;
       const strengthOpacity = 0.65 + 0.95 * strength;
@@ -3770,7 +3772,7 @@
         const r = baseRadii[i] || 44;
         userAuraLayers[i].setStyle({
           stroke: showBound,
-          color: showBound ? "rgba(32, 24, 18, 0.62)" : undefined,
+          color: showBound ? bound : undefined,
           weight: showBound ? 1.7 : 0,
           opacity: showBound ? (selfPreciseMode ? 0.72 : clamp(0.65 * opacityAgeFactor, 0.22, 0.78)) : 0,
           fillColor: fill,
@@ -4075,6 +4077,7 @@
     const applyAgentStyle = (agent, now) => {
       const tNow = Number.isFinite(Number(now)) ? Number(now) : simNow();
       let fill = agent.auraHex || agent.persona.fill;
+      const BOUND_MIX_HEX = "#201812";
       let radiusBoost = 1;
       let opacityBoost = 1;
 
@@ -4099,6 +4102,7 @@
       const grayT = 1 - decay;
       const radiusScale = radiusScaleFromDecay(decay) * radiusBoost;
       fill = mixHex(fill, AURA_GRAY_HEX, grayT);
+      const bound = mixHex(fill, BOUND_MIX_HEX, 0.28);
       const opacityScale = decay * opacityBoost;
 
       const layers = Array.isArray(agent.layers) && agent.layers.length ? agent.layers : [agent.outer].filter(Boolean);
@@ -4118,7 +4122,7 @@
         const baseO = Number(baseOpacities[i] != null ? baseOpacities[i] : baseOpacities[0]) || 0.08;
         layer.setStyle({
           stroke: showBound,
-          color: showBound ? "rgba(32, 24, 18, 0.62)" : undefined,
+          color: showBound ? bound : undefined,
           weight: showBound ? 1.7 : 0,
           opacity: showBound ? clamp(0.65 * opacityScale, 0.18, 0.85) : 0,
           fillColor: fill,
