@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+
+    <title>AuraNet</title>
+    <meta
+      name="description"
+      content="A tiny offline-first task board and focus timer."
+    />
+
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Fraunces:opsz,wght@9..144,500;9..144,650&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="./styles.css" />
+    <script defer src="./app.js"></script>
+  </head>
+  <body>
+    <div class="bg" aria-hidden="true"></div>
+
+    <header class="shell">
+      <div class="topbar">
+        <div class="brand">
+          <div class="mark" aria-hidden="true"></div>
+          <div class="brand__text">
+            <div class="brand__name">AuraNet</div>
+            <div class="brand__tag">Offline-first focus, zero fuss.</div>
+          </div>
+        </div>
+        <div class="pill" id="storagePill" title="Saved locally in your browser">
+          Saved locally
+        </div>
+      </div>
+    </header>
+
+    <main class="shell">
+      <div class="grid">
+        <section class="card" aria-labelledby="tasksTitle">
+          <div class="card__head">
+            <h1 class="h1" id="tasksTitle">Task Board</h1>
+            <div class="stats" id="stats"></div>
+          </div>
+
+          <form class="add" id="addForm" autocomplete="off">
+            <label class="field">
+              <span class="field__label">Task</span>
+              <input
+                class="input"
+                id="taskText"
+                name="text"
+                placeholder="Write a clear, tiny next step…"
+                minlength="1"
+                maxlength="120"
+                required
+              />
+            </label>
+            <label class="field field--date">
+              <span class="field__label">Due</span>
+              <input class="input" id="taskDue" name="due" type="date" />
+            </label>
+            <button class="btn btn--primary" type="submit">Add</button>
+          </form>
+
+          <div class="toolbar">
+            <div class="seg" role="tablist" aria-label="Task filters">
+              <button class="seg__btn" type="button" data-filter="inbox">
+                Inbox
+              </button>
+              <button class="seg__btn" type="button" data-filter="today">
+                Today
+              </button>
+              <button class="seg__btn" type="button" data-filter="done">
+                Done
+              </button>
+              <button class="seg__btn" type="button" data-filter="all">
+                All
+              </button>
+            </div>
+            <label class="search">
+              <span class="sr-only">Search tasks</span>
+              <input
+                class="input input--search"
+                id="search"
+                placeholder="Search…"
+              />
+            </label>
+            <button class="btn btn--ghost" type="button" id="clearDone">
+              Clear done
+            </button>
+          </div>
+
+          <ul class="list" id="list" aria-label="Tasks"></ul>
+
+          <div class="empty" id="empty" hidden>
+            <div class="empty__title">You’re clear.</div>
+            <div class="empty__sub">Add one small task to get moving.</div>
+          </div>
+        </section>
+
+        <section class="card card--timer" aria-labelledby="timerTitle">
+          <div class="card__head">
+            <h2 class="h1" id="timerTitle">Focus Timer</h2>
+            <div class="pill pill--muted" id="modePill">Focus</div>
+          </div>
+
+          <div class="timer">
+            <div class="timer__time" id="time">25:00</div>
+            <div class="timer__hint" id="timerHint">
+              Start when you’re ready.
+            </div>
+          </div>
+
+          <div class="timerActions">
+            <button class="btn btn--primary" type="button" id="toggleTimer">
+              Start
+            </button>
+            <button class="btn btn--ghost" type="button" id="resetTimer">
+              Reset
+            </button>
+            <button class="btn btn--ghost" type="button" id="switchMode">
+              Switch
+            </button>
+          </div>
+
+          <div class="settings">
+            <div class="settings__row">
+              <label class="field">
+                <span class="field__label">Focus (min)</span>
+                <input
+                  class="input"
+                  id="focusMin"
+                  type="number"
+                  min="5"
+                  max="120"
+                  step="1"
+                  inputmode="numeric"
+                />
+              </label>
+              <label class="field">
+                <span class="field__label">Break (min)</span>
+                <input
+                  class="input"
+                  id="breakMin"
+                  type="number"
+                  min="1"
+                  max="60"
+                  step="1"
+                  inputmode="numeric"
+                />
+              </label>
+            </div>
+            <div class="note">
+              Changing minutes resets the current session.
+            </div>
+          </div>
+
+          <div class="toast" id="toast" role="status" aria-live="polite"></div>
+        </section>
+      </div>
+    </main>
+
+    <dialog class="dialog" id="editDialog">
+      <form class="dialog__panel" method="dialog" id="editForm">
+        <div class="dialog__head">
+          <div class="dialog__title">Edit task</div>
+          <button class="iconBtn" value="cancel" aria-label="Close">
+            ✕
+          </button>
+        </div>
+
+        <label class="field">
+          <span class="field__label">Task</span>
+          <input class="input" id="editText" minlength="1" maxlength="120" />
+        </label>
+
+        <label class="field">
+          <span class="field__label">Due</span>
+          <input class="input" id="editDue" type="date" />
+        </label>
+
+        <div class="dialog__actions">
+          <button class="btn btn--ghost" value="cancel" type="submit">
+            Cancel
+          </button>
+          <button class="btn btn--primary" value="save" type="submit">
+            Save
+          </button>
+        </div>
+      </form>
+    </dialog>
+  </body>
+</html>
+
