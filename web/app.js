@@ -187,7 +187,10 @@
       map_status_fetching: "Fetching street activity…",
       map_status_running: "Street activity running.",
       map_status_paused: "Street activity paused.",
-      map_status_sim_failed: "Street simulation failed to load routes."
+      map_status_sim_failed: "Street simulation failed to load routes.",
+      sim_doing_eating: "Eating",
+      sim_doing_transit: "Transit",
+      sim_doing_resting: "Resting"
     },
     "zh-Hant": {
       ui_language: "語言",
@@ -268,7 +271,10 @@
       map_status_fetching: "正在取得街道活動…",
       map_status_running: "街道活動進行中。",
       map_status_paused: "街道活動已暫停。",
-      map_status_sim_failed: "街道模擬載入路線失敗。"
+      map_status_sim_failed: "街道模擬載入路線失敗。",
+      sim_doing_eating: "用餐中",
+      sim_doing_transit: "移動中",
+      sim_doing_resting: "休息中"
     },
     ja: {
       ui_language: "言語",
@@ -349,7 +355,10 @@
       map_status_fetching: "街の動きを取得中…",
       map_status_running: "街の動きは実行中です。",
       map_status_paused: "街の動きは一時停止中です。",
-      map_status_sim_failed: "ルートの読み込みに失敗しました。"
+      map_status_sim_failed: "ルートの読み込みに失敗しました。",
+      sim_doing_eating: "食事中",
+      sim_doing_transit: "移動中",
+      sim_doing_resting: "休憩中"
     }
   };
 
@@ -918,6 +927,17 @@
     return until > now;
   };
 
+  const userAuraAgeMs = (now) => {
+    if (state.activity.active) return 0;
+    let lastEndedAt = 0;
+    for (const entry of state.activity.log) {
+      const t = Number(entry && entry.endedAt) || 0;
+      if (t > lastEndedAt) lastEndedAt = t;
+    }
+    if (!lastEndedAt) return 0;
+    return Math.max(0, now - lastEndedAt);
+  };
+
   const shouldShowUserAura = (now) => {
     const active = state.activity.active;
     if (active) return Boolean(active.showAuraOnMap);
@@ -930,7 +950,8 @@
     mapApi.setUserAura({
       enabled,
       color: auraHex,
-      visibilityMode: normalizeVisibilityMode(state.activity.prefs.visibilityMode)
+      visibilityMode: normalizeVisibilityMode(state.activity.prefs.visibilityMode),
+      ageMs: userAuraAgeMs(now)
     });
     if (!enabled && state.activity.prefs.lingerUntil) {
       state.activity.prefs.lingerUntil = 0;
@@ -955,7 +976,7 @@
       els.activityHint.textContent = t("activity_hint_idle");
       document.title = "AuraNet";
       syncUserAuraOnMap(now, auraHex);
-      if (!hasAuraLinger(now)) stopActivityTicker();
+      if (!hasAuraLinger(now) && !state.activity.prefs.idleShowAuraOnMap) stopActivityTicker();
       return auraHex;
     }
 
@@ -990,7 +1011,7 @@
     }
 
     const now = nowMs();
-    if (active || hasAuraLinger(now)) ensureActivityTicker();
+    if (active || hasAuraLinger(now) || state.activity.prefs.idleShowAuraOnMap) ensureActivityTicker();
     else stopActivityTicker();
   };
 
@@ -1480,6 +1501,7 @@
     let userAuraLayers = [];
     let userAuraEnabled = false;
     let userAuraColor = "#FF6A00";
+    let userAuraAgeMs = 0;
     let userWatchId = null;
     let lastUserLatLng = null;
     let lastUserLatLngRaw = null;
@@ -1549,6 +1571,9 @@
     };
 
     const STREET_MIN_ZOOM = 12;
+    const DIALOG_MIN_ZOOM = 14;
+    const AURA_GRAY_HEX = "#b8b1a5";
+    const SIM_GRAYOUT_MS = 10_000;
     const OSRM_BASE = "https://router.project-osrm.org";
     const ROUTE_POINT_LIMIT = 260;
     const ROUTE_CACHE_MAX = 80;
@@ -1692,6 +1717,61 @@
 
     const randBetween = (min, max) => min + Math.random() * (max - min);
     const pickOne = (arr) => arr[Math.floor(Math.random() * arr.length)];
+    // Broadcast cycle: fade to gray over ~10s, stay gray ~10s, then refresh (with slight jitter).
+    const nextBroadcastMs = () => SIM_GRAYOUT_MS + randBetween(9000, 11000);
+
+    const markBroadcast = (agent, now) => {
+      agent.lastBroadcastAt = now;
+      agent.nextBroadcastAt = now + nextBroadcastMs();
+    };
+
+    const agentDialogText = (agent) => {
+      if (!agent || agent.state !== "stopped") return "";
+      if (agent.stopType === "eat") return t("sim_doing_eating");
+      if (agent.stopType === "transit") return t("sim_doing_transit");
+      return t("sim_doing_resting");
+    };
+
+    const syncAgentDialog = (agent) => {
+      if (!agent || !agent.outer) return;
+      const want = map.getZoom() >= DIALOG_MIN_ZOOM && agent.state === "stopped";
+      const text = want ? agentDialogText(agent) : "";
+
+      if (!text) {
+        if (agent.dialogBound) {
+          try {
+            agent.outer.unbindTooltip();
+          } catch {
+            // ignore
+          }
+          agent.dialogBound = false;
+        }
+        return;
+      }
+
+      if (!agent.dialogBound) {
+        agent.outer.bindTooltip(text, {
+          permanent: true,
+          direction: "center",
+          className: "auraDialog",
+          opacity: 0.95
+        });
+        agent.outer.openTooltip();
+        agent.dialogBound = true;
+        return;
+      }
+
+      try {
+        const tt = typeof agent.outer.getTooltip === "function" ? agent.outer.getTooltip() : null;
+        if (tt) tt.setContent(text);
+      } catch {
+        // ignore
+      }
+    };
+
+    const refreshAgentDialogs = () => {
+      for (const agent of sim.agents) syncAgentDialog(agent);
+    };
 
     const personas = [
       {
@@ -1762,13 +1842,23 @@
 
     const applyUserAuraStyle = () => {
       if (!userAuraLayers.length) return;
+      const USER_GRAYOUT_MS = 2 * 60 * 1000;
+      const GRAY_HEX = "#b8b1a5";
+      const age = Math.max(0, Number(userAuraAgeMs) || 0);
+      const fadeT = clamp(age / USER_GRAYOUT_MS, 0, 1);
+      const fill = mixHex(userAuraColor, GRAY_HEX, fadeT);
+      const scale = 1 - 0.32 * fadeT;
       // No center dot: layered haze only.
-      const opacities = [0.06, 0.09, 0.12];
+      const baseOpacities = [0.06, 0.09, 0.12];
+      const baseRadii = [70, 52, 36];
       for (let i = 0; i < userAuraLayers.length; i++) {
+        const o = baseOpacities[i] || 0.08;
+        const r = baseRadii[i] || 44;
         userAuraLayers[i].setStyle({
-          fillColor: userAuraColor,
-          fillOpacity: opacities[i] || 0.08
+          fillColor: fill,
+          fillOpacity: clamp(o * (1 - 0.7 * fadeT), 0.012, 0.2)
         });
+        userAuraLayers[i].setRadius(Math.max(10, r * scale));
       }
     };
 
@@ -2036,7 +2126,8 @@
         .openOn(map);
     };
 
-    const applyAgentStyle = (agent) => {
+    const applyAgentStyle = (agent, now) => {
+      const tNow = Number.isFinite(Number(now)) ? Number(now) : simNow();
       let fill = agent.auraHex || agent.persona.fill;
       let outerRadius = agent.baseOuterRadius;
       let innerRadius = agent.baseInnerRadius;
@@ -2061,14 +2152,49 @@
         }
       }
 
+      // Time decay: shrink + fade + drift to gray.
+      const last = Number(agent.lastBroadcastAt) || tNow;
+      const ageMs = Math.max(0, tNow - last);
+      const fadeT = clamp(ageMs / SIM_GRAYOUT_MS, 0, 1);
+      const radiusScale = 1 - 0.38 * fadeT;
+      outerRadius *= radiusScale;
+      innerRadius *= radiusScale;
+      fill = mixHex(fill, AURA_GRAY_HEX, fadeT);
+      outerOpacity = clamp(outerOpacity * (1 - 0.78 * fadeT), 0.03, 0.4);
+      innerOpacity = clamp(innerOpacity * (1 - 0.82 * fadeT), 0.04, 0.45);
+
       agent.outer.setStyle({ fillColor: fill, fillOpacity: outerOpacity });
       agent.inner.setStyle({ fillColor: fill, fillOpacity: innerOpacity });
       agent.outer.setRadius(outerRadius);
       agent.inner.setRadius(innerRadius);
     };
 
+    const maybeUpdateAgentStyle = (agent, now) => {
+      if (!agent) return;
+      const tNow = Number.isFinite(Number(now)) ? Number(now) : simNow();
+      const last = Number(agent.lastBroadcastAt) || tNow;
+      const ageMs = Math.max(0, tNow - last);
+      const fadeT = clamp(ageMs / SIM_GRAYOUT_MS, 0, 1);
+
+      const lastFade = Number.isFinite(Number(agent.lastFadeT)) ? Number(agent.lastFadeT) : -1;
+      const lastStyleAt = Number(agent.lastStyleAt) || 0;
+      const needsFadeUpdate = lastFade < 0 || Math.abs(fadeT - lastFade) > 0.03;
+      const needsTimeUpdate = tNow - lastStyleAt > 700;
+      if (!agent.needsStyle && !needsFadeUpdate && !needsTimeUpdate) return;
+
+      agent.needsStyle = false;
+      agent.lastFadeT = fadeT;
+      agent.lastStyleAt = tNow;
+      applyAgentStyle(agent, tNow);
+    };
+
     const clearAgents = () => {
       for (const a of sim.agents) {
+        try {
+          a.outer.unbindTooltip();
+        } catch {
+          // ignore
+        }
         a.outer.remove();
         a.inner.remove();
       }
@@ -2133,6 +2259,7 @@
 
     const createAgent = (route, persona) => {
       // Aura-only: no central dot.
+      const now = simNow();
       const baseOuterRadius = randBetween(14, 22);
       const baseInnerRadius = baseOuterRadius * randBetween(0.48, 0.62);
       const outer = createAuraLayer(route.points[0], persona.fill, baseOuterRadius, 0.16);
@@ -2160,6 +2287,11 @@
         state: "moving",
         stopType: "",
         stopUntil: 0,
+        lastBroadcastAt: now,
+        nextBroadcastAt: now + nextBroadcastMs(),
+        lastStyleAt: 0,
+        lastFadeT: -1,
+        dialogBound: false,
         distM
       };
 
@@ -2169,7 +2301,7 @@
       agent.outer.setLatLng(ll);
       agent.inner.setLatLng(ll);
       agent.auraHex = mixWeightedHex(agent.mix);
-      applyAgentStyle(agent);
+      applyAgentStyle(agent, now);
 
       const onClick = (e) => {
         const llClick = e && e.latlng ? e.latlng : agent.outer.getLatLng();
@@ -2199,7 +2331,10 @@
       agent.state = "stopped";
       agent.stopType = agent.persona.kind === "TRANSIT" ? "transit" : "idle";
       agent.stopUntil = now + randBetween(650, agent.persona.kind === "WALK" ? 1900 : 1400);
-      applyAgentStyle(agent);
+      markBroadcast(agent, now);
+      agent.needsStyle = true;
+      applyAgentStyle(agent, now);
+      syncAgentDialog(agent);
       return true;
     };
 
@@ -2211,18 +2346,24 @@
       sim.lastTickAt = now;
 
       for (const agent of sim.agents) {
+        if (now >= (Number(agent.nextBroadcastAt) || 0)) {
+          markBroadcast(agent, now);
+          agent.needsStyle = true;
+        }
+
         updateAgentMix(agent, dtSec);
         if (agent.state === "stopped") {
           if (now < agent.stopUntil) {
-            if (agent.needsStyle) {
-              agent.needsStyle = false;
-              applyAgentStyle(agent);
-            }
+            maybeUpdateAgentStyle(agent, now);
+            syncAgentDialog(agent);
             continue;
           }
           agent.state = "moving";
           agent.stopType = "";
-          applyAgentStyle(agent);
+          markBroadcast(agent, now);
+          agent.needsStyle = true;
+          maybeUpdateAgentStyle(agent, now);
+          syncAgentDialog(agent);
         }
 
         if (maybeMicroStop(agent, dtSec, now)) continue;
@@ -2236,7 +2377,10 @@
           agent.stopType = stop.type;
           agent.stopUntil = now + stop.ms;
           agent.dir *= -1; // bounce back along the same streets
-          applyAgentStyle(agent);
+          markBroadcast(agent, now);
+          agent.needsStyle = true;
+          maybeUpdateAgentStyle(agent, now);
+          syncAgentDialog(agent);
         }
 
         const pos = routeAtDistance(agent.route, agent.distM, agent.hintIdx);
@@ -2245,10 +2389,7 @@
         agent.outer.setLatLng(ll);
         agent.inner.setLatLng(ll);
 
-        if (agent.needsStyle) {
-          agent.needsStyle = false;
-          applyAgentStyle(agent);
-        }
+        maybeUpdateAgentStyle(agent, now);
       }
 
       sim.rafId = window.requestAnimationFrame(tickAgents);
@@ -2294,6 +2435,11 @@
       while (sim.agents.length > nowTarget) {
         const agent = sim.agents.pop();
         if (!agent) break;
+        try {
+          agent.outer.unbindTooltip();
+        } catch {
+          // ignore
+        }
         agent.outer.remove();
         agent.inner.remove();
       }
@@ -2340,6 +2486,11 @@
         sim.routePool = pool;
         sim.agents = nextAgents;
         for (const a of prevAgents) {
+          try {
+            a.outer.unbindTooltip();
+          } catch {
+            // ignore
+          }
           a.outer.remove();
           a.inner.remove();
         }
@@ -2498,9 +2649,13 @@
     startSim();
 
     const api = {
-      setUserAura: ({ enabled, color, visibilityMode } = {}) => {
+      setUserAura: ({ enabled, color, visibilityMode, ageMs } = {}) => {
         if (typeof visibilityMode === "string" && visibilityMode.trim()) {
           setUserVisibilityMode(visibilityMode);
+        }
+        if (Number.isFinite(Number(ageMs))) {
+          userAuraAgeMs = Math.max(0, Number(ageMs));
+          applyUserAuraStyle();
         }
         if (typeof color === "string" && String(color).trim()) {
           userAuraColor = String(color).trim();
