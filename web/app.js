@@ -16,6 +16,11 @@
     clearDone: $("clearDone"),
     segButtons: Array.from(document.querySelectorAll("[data-filter]")),
 
+    paperMap: $("paperMap"),
+    mapStatus: $("mapStatus"),
+    mapReset: $("mapReset"),
+    mapCount: $("mapCount"),
+
     time: $("time"),
     modePill: $("modePill"),
     timerHint: $("timerHint"),
@@ -460,6 +465,138 @@
     syncTimerInputs();
   };
 
+  // --- Map ---
+
+  const setMapStatus = (message, isError = false) => {
+    if (!els.mapStatus) return;
+    els.mapStatus.textContent = message;
+    els.mapStatus.style.color = isError ? "rgba(180, 35, 58, 0.9)" : "";
+  };
+
+  const escapeHtml = (value) => {
+    return String(value).replace(/[&<>"']/g, (match) => {
+      const entities = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      };
+      return entities[match];
+    });
+  };
+
+  const initPaperMap = () => {
+    if (!els.paperMap) return;
+    if (typeof window.L === "undefined") {
+      setMapStatus("Map library failed to load.", true);
+      return;
+    }
+
+    const L = window.L;
+    const map = L.map(els.paperMap, {
+      zoomControl: false,
+      minZoom: 2,
+      maxZoom: 18,
+      worldCopyJump: true,
+      attributionControl: true
+    });
+
+    L.control
+      .zoom({
+        position: "topright"
+      })
+      .addTo(map);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    const defaultView = { center: [18, 10], zoom: 2 };
+    map.setView(defaultView.center, defaultView.zoom);
+
+    const markers = [];
+
+    const renderLocations = (locations) => {
+      const bounds = [];
+      for (const loc of locations) {
+        const marker = L.circleMarker([loc.lat, loc.lng], {
+          radius: 7,
+          color: "rgba(32, 24, 18, 0.92)",
+          weight: 1.4,
+          fillColor: "#ff6a00",
+          fillOpacity: 0.65
+        });
+
+        const popupTitle = escapeHtml(loc.name);
+        const popupNote = escapeHtml(loc.note || "");
+        marker.bindPopup(
+          `<strong>${popupTitle}</strong>${popupNote ? `<br>${popupNote}` : ""}`
+        );
+        marker.addTo(map);
+
+        markers.push(marker);
+        bounds.push([loc.lat, loc.lng]);
+      }
+
+      if (els.mapCount) {
+        els.mapCount.textContent = `MARKERS: ${markers.length}`;
+      }
+
+      if (bounds.length > 0) {
+        map.fitBounds(bounds, {
+          padding: [44, 44],
+          maxZoom: 6
+        });
+      }
+
+      // If the container’s layout shifted while loading (fonts), re-measure.
+      window.requestAnimationFrame(() => map.invalidateSize());
+    };
+
+    const clearMarkers = () => {
+      for (const m of markers) m.remove();
+      markers.length = 0;
+      if (els.mapCount) els.mapCount.textContent = "MARKERS: 0";
+    };
+
+    const loadLocations = async () => {
+      setMapStatus("Loading locations…");
+      try {
+        const response = await fetch("./data/locations.json", {
+          cache: "no-store"
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const payload = await response.json();
+        if (!payload || !Array.isArray(payload.locations)) {
+          throw new Error("Invalid payload");
+        }
+
+        clearMarkers();
+        renderLocations(payload.locations);
+        setMapStatus(`Loaded ${payload.locations.length} location(s).`);
+      } catch (err) {
+        console.error(err);
+        setMapStatus("Map loaded, but location data fetch failed.", true);
+      }
+    };
+
+    if (els.mapReset) {
+      els.mapReset.addEventListener("click", () => {
+        if (markers.length > 0) {
+          const group = L.featureGroup(markers);
+          map.fitBounds(group.getBounds(), { padding: [44, 44], maxZoom: 6 });
+        } else {
+          map.setView(defaultView.center, defaultView.zoom);
+        }
+      });
+    }
+
+    loadLocations();
+  };
+
   // --- Events ---
 
   els.addForm.addEventListener("submit", (e) => {
@@ -536,6 +673,7 @@
     }
   }
 
+  initPaperMap();
   renderClock();
   window.setInterval(renderClock, 10_000);
   render();

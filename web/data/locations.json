@@ -1,0 +1,35 @@
+{
+  "locations": [
+    {
+      "name": "San Francisco",
+      "note": "Pacific operations anchor.",
+      "lat": 37.7749,
+      "lng": -122.4194
+    },
+    {
+      "name": "New York City",
+      "note": "Northeast commercial corridor.",
+      "lat": 40.7128,
+      "lng": -74.006
+    },
+    {
+      "name": "London",
+      "note": "European coordination node.",
+      "lat": 51.5072,
+      "lng": -0.1276
+    },
+    {
+      "name": "Singapore",
+      "note": "Southeast Asia transit hub.",
+      "lat": 1.3521,
+      "lng": 103.8198
+    },
+    {
+      "name": "Sydney",
+      "note": "Australasian coastal gateway.",
+      "lat": -33.8688,
+      "lng": 151.2093
+    }
+  ]
+}
+

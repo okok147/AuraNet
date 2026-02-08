@@ -241,6 +241,10 @@ body {
   top: 18px;
 }
 
+.card--wide {
+  grid-column: 1 / -1;
+}
+
 @keyframes up {
   from {
     transform: translateY(10px);
@@ -647,6 +651,115 @@ body {
   text-transform: uppercase;
 }
 
+.card--map {
+  padding-bottom: 14px;
+}
+
+.mapWrap {
+  position: relative;
+  border-radius: var(--radius);
+  border: 1px solid var(--stroke2);
+  background: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 12px 22px rgba(24, 16, 10, 0.08);
+  overflow: hidden;
+}
+
+.mapCanvas {
+  width: 100%;
+  height: min(62vh, 540px);
+  min-height: 360px;
+}
+
+.mapPaper,
+.mapVignette {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+}
+
+.mapPaper {
+  opacity: 0.74;
+  mix-blend-mode: multiply;
+  background:
+    radial-gradient(circle at 20% 18%, rgba(255, 255, 255, 0.86) 0%, transparent 54%),
+    radial-gradient(circle at 78% 70%, rgba(32, 24, 18, 0.16) 0%, transparent 58%),
+    repeating-linear-gradient(
+      55deg,
+      rgba(32, 24, 18, 0.05) 0,
+      rgba(32, 24, 18, 0.05) 1px,
+      rgba(255, 255, 255, 0) 1px,
+      rgba(255, 255, 255, 0) 6px
+    ),
+    repeating-linear-gradient(
+      -22deg,
+      rgba(32, 24, 18, 0.025) 0,
+      rgba(32, 24, 18, 0.025) 1px,
+      rgba(255, 255, 255, 0) 1px,
+      rgba(255, 255, 255, 0) 10px
+    ),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)' opacity='0.28'/%3E%3C/svg%3E");
+  background-size: auto, auto, auto, auto, 240px 240px;
+  filter: saturate(112%) brightness(1.02);
+}
+
+.mapVignette {
+  box-shadow:
+    0 0 0 1px rgba(32, 24, 18, 0.22) inset,
+    0 0 0 9px rgba(255, 255, 255, 0.16) inset,
+    0 -18px 44px rgba(24, 16, 10, 0.22) inset;
+}
+
+.card--map .leaflet-tile {
+  filter: grayscale(0.88) sepia(0.25) saturate(0.72) contrast(1.12) brightness(1.1);
+}
+
+.card--map .leaflet-container {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.card--map .leaflet-control-zoom a {
+  border-radius: 8px;
+  border: 1px solid var(--stroke2);
+  background: rgba(255, 255, 255, 0.7);
+  color: rgba(32, 24, 18, 0.92);
+  box-shadow: var(--shadow2);
+}
+
+.card--map .leaflet-control-zoom a:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: var(--stroke);
+}
+
+.card--map .leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.72);
+  color: rgba(32, 24, 18, 0.72);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+}
+
+.card--map .leaflet-popup-content-wrapper,
+.card--map .leaflet-popup-tip {
+  background: rgba(255, 250, 242, 0.98);
+  color: rgba(32, 24, 18, 0.92);
+  border: 1px solid var(--stroke2);
+  box-shadow: var(--shadow2);
+}
+
+.mapBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.mapMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .dialog {
   border: 0;
   padding: 0;
@@ -725,4 +838,3 @@ body {
     transition: none;
   }
 }
-
