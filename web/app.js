@@ -31,6 +31,7 @@
     auraChart: $("auraChart"),
     auraLegend: $("auraLegend"),
     activityList: $("activityList"),
+    langSelect: $("langSelect"),
     toast: $("toast"),
   };
 
@@ -85,6 +86,237 @@
     return `${nowMs().toString(36)}_${Math.random().toString(36).slice(2, 9)}`;
   };
 
+  // --- i18n ---
+
+  const SUPPORTED_LANGS = ["en", "zh-Hant", "ja"];
+
+  const normalizeLang = (value) => {
+    const v = String(value || "").trim();
+    return SUPPORTED_LANGS.includes(v) ? v : "en";
+  };
+
+  const I18N = {
+    en: {
+      ui_language: "Language",
+      activity_title: "Activity Logger",
+      activity_hint_idle: "Log what you’re doing. Your aura blends over time.",
+      activity_tracking: "Tracking: {text}",
+      activity_label: "Activity",
+      activity_placeholder: "Work, commute, gym, coffee…",
+      activity_type_label: "Type",
+      activity_show_aura_toggle: "Show my aura on map while active",
+      activity_start: "Start",
+      activity_stop_log: "Stop & log",
+      activity_clear: "Clear log",
+      aura_long_term_title: "Long-term aura",
+      aura_chart_label: "Aura",
+      aura_legend_empty: "No history yet. Log a few activities to build your aura.",
+      aura_no_history_short: "No history yet",
+      activity_list_empty: "No activities logged yet.",
+      confirm_clear_log: "Clear all activity entries?",
+      toast_activity_started: "Activity started.",
+      toast_activity_logged: "Activity logged.",
+      toast_activity_too_short: "Activity too short (not saved).",
+      toast_activity_cleared: "Activity log cleared.",
+      toast_activity_empty: "Activity can’t be empty.",
+      aura_pill_idle: "IDLE",
+      aura_pill_active: "ACTIVE: {type}",
+      popup_aura_components: "Aura components",
+      popup_simulated_person: "Simulated person",
+      popup_you: "You",
+      gps_unsupported: "Geolocation not supported.",
+      gps_denied: "Location permission denied.",
+      gps_unavailable: "Location unavailable.",
+      gps_timeout: "Location request timed out.",
+      gps_error: "Unable to get your location.",
+      gps_ready: "GPS ready.",
+      map_lib_failed: "Map library failed to load.",
+      map_title: "Paper Sketch Map",
+      map_loading: "Loading map…",
+      map_locate: "My location",
+      map_reset: "Reset view",
+      map_sim_on: "Sim auras: ON",
+      map_sim_off: "Sim auras: OFF",
+      map_auras_prefix: "AURAS",
+      map_auras_off: "AURAS: OFF",
+      map_auras_loading: "AURAS: LOADING",
+      map_auras_zoom: "AURAS: ZOOM {z}+",
+      map_auras_count: "AURAS: {n}",
+      map_gps_off: "GPS: OFF",
+      map_gps_on: "GPS: ON",
+      map_gps_request: "GPS: REQUEST",
+      map_gps_error: "GPS: ERROR",
+      map_gps_unsupported: "GPS: UNSUPPORTED",
+      map_status_ready: "Map ready.",
+      map_status_requesting_gps: "Requesting GPS…",
+      map_status_gps_blurred: "GPS ready. Your aura is blurred for privacy.",
+      map_status_zoom_to: "Zoom to {z}+ to see street activity.",
+      map_status_fetching: "Fetching street activity…",
+      map_status_running: "Street activity running.",
+      map_status_paused: "Street activity paused.",
+      map_status_sim_failed: "Street simulation failed to load routes."
+    },
+    "zh-Hant": {
+      ui_language: "語言",
+      activity_title: "活動紀錄",
+      activity_hint_idle: "紀錄你正在做的事，你的氣場會隨時間混合。",
+      activity_tracking: "追蹤中：{text}",
+      activity_label: "活動",
+      activity_placeholder: "工作、通勤、健身、咖啡…",
+      activity_type_label: "類型",
+      activity_show_aura_toggle: "活動進行中在地圖顯示我的氣場",
+      activity_start: "開始",
+      activity_stop_log: "結束並紀錄",
+      activity_clear: "清除紀錄",
+      aura_long_term_title: "長期氣場",
+      aura_chart_label: "氣場",
+      aura_legend_empty: "尚無紀錄。先記錄一些活動來建立你的氣場。",
+      aura_no_history_short: "尚無紀錄",
+      activity_list_empty: "目前沒有活動紀錄。",
+      confirm_clear_log: "要清除所有活動紀錄嗎？",
+      toast_activity_started: "已開始活動。",
+      toast_activity_logged: "已紀錄活動。",
+      toast_activity_too_short: "活動時間太短（未儲存）。",
+      toast_activity_cleared: "已清除活動紀錄。",
+      toast_activity_empty: "活動內容不能為空。",
+      aura_pill_idle: "待機",
+      aura_pill_active: "進行中：{type}",
+      popup_aura_components: "氣場組成",
+      popup_simulated_person: "模擬人物",
+      popup_you: "你",
+      gps_unsupported: "此瀏覽器不支援定位。",
+      gps_denied: "定位權限被拒絕。",
+      gps_unavailable: "無法取得定位。",
+      gps_timeout: "定位請求逾時。",
+      gps_error: "無法取得你的定位。",
+      gps_ready: "定位已就緒。",
+      map_lib_failed: "地圖套件載入失敗。",
+      map_title: "紙感素描地圖",
+      map_loading: "載入地圖中…",
+      map_locate: "我的位置",
+      map_reset: "重置視角",
+      map_sim_on: "模擬氣場：開",
+      map_sim_off: "模擬氣場：關",
+      map_auras_prefix: "氣場",
+      map_auras_off: "氣場：關",
+      map_auras_loading: "氣場：載入中",
+      map_auras_zoom: "氣場：縮放到 {z}+",
+      map_auras_count: "氣場：{n}",
+      map_gps_off: "GPS：關",
+      map_gps_on: "GPS：開",
+      map_gps_request: "GPS：請求中",
+      map_gps_error: "GPS：錯誤",
+      map_gps_unsupported: "GPS：不支援",
+      map_status_ready: "地圖已就緒。",
+      map_status_requesting_gps: "正在請求定位…",
+      map_status_gps_blurred: "定位已就緒。為隱私已模糊化你的氣場位置。",
+      map_status_zoom_to: "請縮放到 {z}+ 以查看街道活動。",
+      map_status_fetching: "正在取得街道活動…",
+      map_status_running: "街道活動進行中。",
+      map_status_paused: "街道活動已暫停。",
+      map_status_sim_failed: "街道模擬載入路線失敗。"
+    },
+    ja: {
+      ui_language: "言語",
+      activity_title: "アクティビティ記録",
+      activity_hint_idle: "いまの行動を記録。オーラは時間で混ざります。",
+      activity_tracking: "追跡中: {text}",
+      activity_label: "アクティビティ",
+      activity_placeholder: "仕事、通勤、ジム、コーヒー…",
+      activity_type_label: "種類",
+      activity_show_aura_toggle: "アクティブ中に地図で自分のオーラを表示",
+      activity_start: "開始",
+      activity_stop_log: "停止して記録",
+      activity_clear: "ログを消去",
+      aura_long_term_title: "長期オーラ",
+      aura_chart_label: "オーラ",
+      aura_legend_empty: "履歴がありません。いくつか記録してオーラを作りましょう。",
+      aura_no_history_short: "履歴なし",
+      activity_list_empty: "アクティビティ履歴はまだありません。",
+      confirm_clear_log: "すべてのアクティビティ履歴を消去しますか？",
+      toast_activity_started: "開始しました。",
+      toast_activity_logged: "記録しました。",
+      toast_activity_too_short: "短すぎるため保存しませんでした。",
+      toast_activity_cleared: "履歴を消去しました。",
+      toast_activity_empty: "内容を入力してください。",
+      aura_pill_idle: "待機",
+      aura_pill_active: "進行中: {type}",
+      popup_aura_components: "オーラ構成",
+      popup_simulated_person: "シミュレーション人物",
+      popup_you: "あなた",
+      gps_unsupported: "位置情報に対応していません。",
+      gps_denied: "位置情報の許可が拒否されました。",
+      gps_unavailable: "位置情報を取得できません。",
+      gps_timeout: "位置情報の取得がタイムアウトしました。",
+      gps_error: "位置情報を取得できませんでした。",
+      gps_ready: "GPS 準備完了。",
+      map_lib_failed: "地図ライブラリの読み込みに失敗しました。",
+      map_title: "スケッチ風マップ",
+      map_loading: "地図を読み込み中…",
+      map_locate: "現在地",
+      map_reset: "表示を戻す",
+      map_sim_on: "オーラ模擬: ON",
+      map_sim_off: "オーラ模擬: OFF",
+      map_auras_prefix: "オーラ",
+      map_auras_off: "オーラ: OFF",
+      map_auras_loading: "オーラ: 読み込み中",
+      map_auras_zoom: "オーラ: {z}+ へズーム",
+      map_auras_count: "オーラ: {n}",
+      map_gps_off: "GPS: OFF",
+      map_gps_on: "GPS: ON",
+      map_gps_request: "GPS: 要求中",
+      map_gps_error: "GPS: エラー",
+      map_gps_unsupported: "GPS: 非対応",
+      map_status_ready: "地図の準備ができました。",
+      map_status_requesting_gps: "GPS を要求しています…",
+      map_status_gps_blurred: "GPS 準備完了。プライバシーのため位置はぼかしています。",
+      map_status_zoom_to: "{z}+ までズームすると街の動きが見えます。",
+      map_status_fetching: "街の動きを取得中…",
+      map_status_running: "街の動きは実行中です。",
+      map_status_paused: "街の動きは一時停止中です。",
+      map_status_sim_failed: "ルートの読み込みに失敗しました。"
+    }
+  };
+
+  const t = (key, vars) => {
+    const table = I18N[i18nLang] || I18N.en;
+    let s = table[key] || I18N.en[key] || key;
+    if (vars && typeof vars === "object") {
+      for (const [k, v] of Object.entries(vars)) {
+        s = s.replaceAll(`{${k}}`, String(v));
+      }
+    }
+    return s;
+  };
+
+  const applyI18n = () => {
+    // Text nodes.
+    for (const el of document.querySelectorAll("[data-i18n]")) {
+      const key = el.getAttribute("data-i18n");
+      if (!key) continue;
+      el.textContent = t(key);
+    }
+    // Placeholders.
+    for (const el of document.querySelectorAll("[data-i18n-placeholder]")) {
+      const key = el.getAttribute("data-i18n-placeholder");
+      if (!key) continue;
+      if ("placeholder" in el) el.placeholder = t(key);
+    }
+
+    if (els.activityType) {
+      for (const opt of Array.from(els.activityType.options || [])) {
+        const v = opt && opt.value;
+        if (!v) continue;
+        opt.textContent = typeLabel(v);
+      }
+    }
+
+    if (els.langSelect) {
+      els.langSelect.value = i18nLang;
+      els.langSelect.setAttribute("aria-label", t("ui_language"));
+    }
+  };
+
   const defaultState = () => ({
     version: 1,
     activity: {
@@ -92,7 +324,9 @@
       log: [],
       prefs: {
         showAuraOnMap: false,
-        lastType: "work"
+        lastType: "work",
+        lang: "en",
+        lingerUntil: 0
       }
     }
   });
@@ -137,6 +371,7 @@
 
   let state = loadState();
   let mapApi = null;
+  let i18nLang = normalizeLang(state.activity && state.activity.prefs && state.activity.prefs.lang);
 
   // --- Toast ---
 
@@ -158,18 +393,46 @@
   let activityTicker = null;
 
   const ACTIVITY_TYPES = {
-    work: { label: "Work", color: "#2a5b8a" },
-    study: { label: "Study", color: "#0a7a52" },
-    exercise: { label: "Exercise", color: "#b4233a" },
-    social: { label: "Social", color: "#f1b83a" },
-    travel: { label: "Travel", color: "#ff6a00" },
-    food: { label: "Food", color: "#7a5a2b" },
-    rest: { label: "Rest", color: "#5a6a7a" }
+    work: {
+      label: { en: "Work", "zh-Hant": "工作", ja: "仕事" },
+      color: "#2a5b8a"
+    },
+    study: {
+      label: { en: "Study", "zh-Hant": "學習", ja: "勉強" },
+      color: "#0a7a52"
+    },
+    exercise: {
+      label: { en: "Exercise", "zh-Hant": "運動", ja: "運動" },
+      color: "#b4233a"
+    },
+    social: {
+      label: { en: "Social", "zh-Hant": "社交", ja: "交流" },
+      color: "#f1b83a"
+    },
+    travel: {
+      label: { en: "Travel", "zh-Hant": "移動", ja: "移動" },
+      color: "#ff6a00"
+    },
+    food: {
+      label: { en: "Food", "zh-Hant": "飲食", ja: "食事" },
+      color: "#7a5a2b"
+    },
+    rest: {
+      label: { en: "Rest", "zh-Hant": "休息", ja: "休憩" },
+      color: "#5a6a7a"
+    }
   };
 
   const normalizeActivityType = (value) => {
     const key = String(value || "").trim().toLowerCase();
     return ACTIVITY_TYPES[key] ? key : "work";
+  };
+
+  const typeLabel = (type) => {
+    const key = normalizeActivityType(type);
+    const cfg = ACTIVITY_TYPES[key];
+    if (!cfg) return "—";
+    return (cfg.label && (cfg.label[i18nLang] || cfg.label.en)) || "—";
   };
 
   const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
@@ -321,7 +584,7 @@
     if (total <= 0) {
       const li = document.createElement("li");
       li.className = "auraLegend__empty";
-      li.textContent = "No history yet. Log a few activities to build your aura.";
+      li.textContent = t("aura_legend_empty");
       legend.appendChild(li);
       return;
     }
@@ -340,9 +603,9 @@
       return (ACTIVITY_TYPES[type] && ACTIVITY_TYPES[type].color) || "#FF6A00";
     };
 
-    const typeLabel = (type) => {
-      if (type === "other") return "Other";
-      return (ACTIVITY_TYPES[type] && ACTIVITY_TYPES[type].label) || "Other";
+    const typeLabelLocal = (type) => {
+      if (type === "other") return i18nLang === "zh-Hant" ? "其他" : i18nLang === "ja" ? "その他" : "Other";
+      return typeLabel(type);
     };
 
     // Donut segments using stroke-dasharray.
@@ -386,7 +649,7 @@
 
       const name = document.createElement("span");
       name.className = "auraLegend__name";
-      name.textContent = typeLabel(type);
+      name.textContent = typeLabelLocal(type);
 
       const val = document.createElement("span");
       val.className = "auraLegend__val";
@@ -418,8 +681,9 @@
     const { hex, longTerm } = computeCurrentAura(now);
 
     if (els.auraPill) {
-      const label = active ? `ACTIVE: ${ACTIVITY_TYPES[type].label}` : "IDLE";
-      els.auraPill.textContent = label;
+      els.auraPill.textContent = active
+        ? t("aura_pill_active", { type: typeLabel(type) })
+        : t("aura_pill_idle");
     }
 
     if (els.auraSwatch) {
@@ -431,10 +695,10 @@
     if (els.auraValue) {
       const top = longTerm.byType.slice(0, 2);
       if (top.length === 0) {
-        els.auraValue.textContent = `${hex} • No history yet`;
+        els.auraValue.textContent = `${hex} • ${t("aura_no_history_short")}`;
       } else {
         const sum = top.reduce((acc, [, w]) => acc + w, 0);
-        const parts = top.map(([k, w]) => `${ACTIVITY_TYPES[k].label} ${Math.round((w / sum) * 100)}%`);
+        const parts = top.map(([k, w]) => `${typeLabel(k)} ${Math.round((w / sum) * 100)}%`);
         els.auraValue.textContent = `${hex} • ${parts.join(" / ")}`;
       }
     }
@@ -452,6 +716,27 @@
     return Math.max(0, now - state.activity.active.startedAt);
   };
 
+  const hasAuraLinger = (now) => {
+    const until = Number(state.activity.prefs.lingerUntil) || 0;
+    return until > now;
+  };
+
+  const shouldShowUserAura = (now) => {
+    const active = state.activity.active;
+    if (active) return Boolean(active.showAuraOnMap);
+    return hasAuraLinger(now);
+  };
+
+  const syncUserAuraOnMap = (now, auraHex) => {
+    if (!mapApi) return;
+    const enabled = shouldShowUserAura(now);
+    mapApi.setUserAura({ enabled, color: auraHex });
+    if (!enabled && state.activity.prefs.lingerUntil) {
+      state.activity.prefs.lingerUntil = 0;
+      saveState();
+    }
+  };
+
   const stopActivityTicker = () => {
     if (!activityTicker) return;
     window.clearInterval(activityTicker);
@@ -466,16 +751,18 @@
 
     if (!active) {
       els.activityTime.textContent = "00:00:00";
-      els.activityHint.textContent = "Log what you’re doing. Your aura blends over time.";
+      els.activityHint.textContent = t("activity_hint_idle");
       document.title = "AuraNet";
-      stopActivityTicker();
+      syncUserAuraOnMap(now, auraHex);
+      if (!hasAuraLinger(now)) stopActivityTicker();
       return auraHex;
     }
 
     const elapsed = activityElapsedMs(now);
     els.activityTime.textContent = formatHhMmSs(elapsed);
-    els.activityHint.textContent = `Tracking: ${active.text}`;
-    document.title = `${formatHhMmSs(elapsed)} • ${ACTIVITY_TYPES[normalizeActivityType(active.type)].label} • AuraNet`;
+    els.activityHint.textContent = t("activity_tracking", { text: active.text });
+    document.title = `${formatHhMmSs(elapsed)} • ${typeLabel(active.type)} • AuraNet`;
+    syncUserAuraOnMap(now, auraHex);
     return auraHex;
   };
 
@@ -498,8 +785,9 @@
         : Boolean(state.activity.prefs.showAuraOnMap);
     }
 
-    if (!active) stopActivityTicker();
-    else ensureActivityTicker();
+    const now = nowMs();
+    if (active || hasAuraLinger(now)) ensureActivityTicker();
+    else stopActivityTicker();
   };
 
   const renderActivityList = () => {
@@ -514,7 +802,7 @@
     if (items.length === 0) {
       const li = document.createElement("li");
       li.className = "activityItem activityItem--empty";
-      li.textContent = "No activities logged yet.";
+      li.textContent = t("activity_list_empty");
       els.activityList.appendChild(li);
       return;
     }
@@ -547,7 +835,7 @@
 
       const badge = document.createElement("span");
       badge.className = "badge badge--ok";
-      badge.textContent = cfg.label.toUpperCase();
+      badge.textContent = typeLabel(type).toUpperCase();
       badge.style.borderColor = "rgba(32, 24, 18, 0.16)";
       badge.style.background = "rgba(255, 255, 255, 0.6)";
       badge.style.boxShadow = `0 0 0 2px ${mixHex(cfg.color, "#FFFFFF", 0.75)} inset`;
@@ -568,7 +856,7 @@
 
     const text = String(els.activityText.value || "").trim();
     if (!text) {
-      toast("Activity can’t be empty.");
+      toast(t("toast_activity_empty"));
       els.activityText.focus();
       return;
     }
@@ -589,7 +877,7 @@
 
     saveState();
     renderActivity(true);
-    toast("Activity started.");
+    toast(t("toast_activity_started"));
   };
 
   const stopAndLogActivity = () => {
@@ -609,18 +897,26 @@
       });
     }
 
+    // Privacy + UX: keep aura visible briefly after logging so the color change is noticeable.
+    if (active.showAuraOnMap) {
+      state.activity.prefs.lingerUntil = endedAt + 12_000;
+    } else {
+      state.activity.prefs.lingerUntil = 0;
+    }
+
     saveState();
     renderActivity(true);
-    toast(durationMs >= 30_000 ? "Activity logged." : "Activity too short (not saved).");
+    toast(durationMs >= 30_000 ? t("toast_activity_logged") : t("toast_activity_too_short"));
   };
 
   const clearActivityLog = () => {
-    if (!window.confirm("Clear all activity entries?")) return;
+    if (!window.confirm(t("confirm_clear_log"))) return;
     state.activity.active = null;
     state.activity.log = [];
+    state.activity.prefs.lingerUntil = 0;
     saveState();
     renderActivity(true);
-    toast("Activity log cleared.");
+    toast(t("toast_activity_cleared"));
   };
 
   const renderActivity = (full = false) => {
@@ -632,10 +928,7 @@
 
     syncActivityControls();
     const auraHex = renderActivityTimeOnly();
-    if (mapApi) {
-      const enabled = Boolean(active && active.showAuraOnMap);
-      mapApi.setUserAura({ enabled, color: auraHex });
-    }
+    syncUserAuraOnMap(nowMs(), auraHex);
 
     if (full) renderActivityList();
   };
@@ -670,7 +963,7 @@
   const initPaperMap = () => {
     if (!els.paperMap) return null;
     if (typeof window.L === "undefined") {
-      setMapStatus("Map library failed to load.", true);
+      setMapStatus(t("map_lib_failed"), true);
       return null;
     }
 
@@ -981,6 +1274,38 @@
           createAuraLayer(latLng, userAuraColor, 52, 0.09),
           createAuraLayer(latLng, userAuraColor, 36, 0.12)
         ];
+
+        const onClick = (e) => {
+          const llClick = e && e.latlng ? e.latlng : latLng;
+          const longTerm = computeLongTermAura(nowMs());
+          const parts = Array.isArray(longTerm.byType) ? longTerm.byType.slice(0, 6) : [];
+          const total = parts.reduce((acc, [, w]) => acc + (Number(w) || 0), 0) || 0;
+
+          const rows = total
+            ? parts
+                .map(([type, w]) => {
+                  const cfg = ACTIVITY_TYPES[type];
+                  const color = (cfg && cfg.color) || "#FF6A00";
+                  const name = escapeHtml(typeLabel(type));
+                  const pct = Math.round((Number(w) / total) * 100);
+                  return `<div class="auraPop__row"><span class="auraPop__dot" style="background:${color}"></span><span class="auraPop__name">${name}</span><span class="auraPop__val">${pct}%</span></div>`;
+                })
+                .join("")
+            : `<div class="auraPop__empty">${escapeHtml(t("aura_no_history_short"))}</div>`;
+
+          const html = `<div class="auraPop"><div class="auraPop__title">${escapeHtml(
+            t("popup_aura_components")
+          )}</div><div class="auraPop__sub">${escapeHtml(t("popup_you"))}</div><div class="auraPop__hex">${escapeHtml(
+            longTerm.hex
+          )}</div>${rows}</div>`;
+
+          L.popup({ closeButton: true, autoPan: true, offset: [0, -6] })
+            .setLatLng(llClick)
+            .setContent(html)
+            .openOn(map);
+        };
+
+        for (const l of userAuraLayers) l.on("click", onClick);
       }
       applyUserAuraStyle();
     };
@@ -1040,27 +1365,27 @@
     const startUserWatch = () => {
       if (userWatchId !== null) return;
       if (!navigator.geolocation) {
-        setGpsBadge("GPS: UNSUPPORTED", "warn");
-        toast("Geolocation not supported.");
+        setGpsBadge(t("map_gps_unsupported"), "warn");
+        toast(t("gps_unsupported"));
         return;
       }
 
-      setGpsBadge("GPS: REQUEST", "off");
+      setGpsBadge(t("map_gps_request"), "off");
       userWatchId = navigator.geolocation.watchPosition(
         (pos) => {
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
           const accuracy = Number(pos.coords.accuracy) || 0;
           setUserLatLng(lat, lng, accuracy, { ensureRing: false });
-          setGpsBadge("GPS: ON", "ok");
+          setGpsBadge(t("map_gps_on"), "ok");
         },
         (err) => {
           const code = err && typeof err.code === "number" ? err.code : 0;
-          let msg = "GPS error.";
-          if (code === 1) msg = "Location permission denied.";
-          if (code === 2) msg = "Location unavailable.";
-          if (code === 3) msg = "Location request timed out.";
-          setGpsBadge("GPS: OFF", "warn");
+          let msg = t("gps_error");
+          if (code === 1) msg = t("gps_denied");
+          if (code === 2) msg = t("gps_unavailable");
+          if (code === 3) msg = t("gps_timeout");
+          setGpsBadge(t("map_gps_off"), "warn");
           setMapStatus(msg, true);
           stopUserWatch();
         },
@@ -1072,8 +1397,119 @@
       );
     };
 
+    const mixWeightedHex = (mix) => {
+      let wSum = 0;
+      let lr = 0;
+      let lg = 0;
+      let lb = 0;
+      for (const [type, wRaw] of Object.entries(mix || {})) {
+        const w = Number(wRaw) || 0;
+        if (w <= 0) continue;
+        const cfg = ACTIVITY_TYPES[type];
+        if (!cfg) continue;
+        const rgb = hexToRgb(cfg.color);
+        if (!rgb) continue;
+        lr += srgbToLinear(rgb.r / 255) * w;
+        lg += srgbToLinear(rgb.g / 255) * w;
+        lb += srgbToLinear(rgb.b / 255) * w;
+        wSum += w;
+      }
+      if (wSum <= 0) return "#FF6A00";
+      return rgbToHex(
+        linearToSrgb(lr / wSum) * 255,
+        linearToSrgb(lg / wSum) * 255,
+        linearToSrgb(lb / wSum) * 255
+      );
+    };
+
+    const normalizeMixPct = (mix) => {
+      const entries = Object.entries(mix || {}).map(([k, v]) => [k, Number(v) || 0]);
+      const total = entries.reduce((acc, [, w]) => acc + w, 0);
+      if (total <= 0) return [];
+      return entries
+        .filter(([, w]) => w > 0)
+        .map(([k, w]) => [k, (w / total) * 100])
+        .sort((a, b) => b[1] - a[1]);
+    };
+
+    const agentInitMix = (persona) => {
+      const mix = {
+        work: randBetween(0.06, 0.24),
+        study: randBetween(0.02, 0.18),
+        exercise: randBetween(0.04, 0.22),
+        social: randBetween(0.03, 0.22),
+        travel: randBetween(0.06, 0.32),
+        food: randBetween(0.02, 0.18),
+        rest: randBetween(0.04, 0.22)
+      };
+
+      if (persona.profile === "walking") {
+        mix.exercise += randBetween(0.35, 0.85);
+        mix.travel += randBetween(0.05, 0.18);
+      } else {
+        mix.travel += randBetween(0.55, 1.2);
+        mix.work += randBetween(0.05, 0.16);
+      }
+
+      return mix;
+    };
+
+    const agentComponentKey = (agent) => {
+      if (agent.state === "moving") {
+        return agent.persona.profile === "walking" ? "exercise" : "travel";
+      }
+      if (agent.stopType === "eat") return "food";
+      if (agent.stopType === "transit") return "travel";
+      return "rest";
+    };
+
+    const updateAgentMix = (agent, dtSec) => {
+      // Short memory so components feel "recent".
+      const halfLifeSec = 15 * 60;
+      const decay = Math.pow(0.5, dtSec / halfLifeSec);
+      for (const k of Object.keys(ACTIVITY_TYPES)) {
+        agent.mix[k] = (agent.mix[k] || 0) * decay;
+      }
+      const key = agentComponentKey(agent);
+      agent.mix[key] = (agent.mix[key] || 0) + dtSec;
+
+      const hex = mixWeightedHex(agent.mix);
+      if (hex !== agent.auraHex) {
+        agent.auraHex = hex;
+        agent.needsStyle = true;
+      }
+    };
+
+    const agentPopupHtml = (agent) => {
+      const parts = normalizeMixPct(agent.mix).slice(0, 6);
+      const title = t("popup_aura_components");
+      const who = t("popup_simulated_person");
+      const rows = parts.length
+        ? parts
+            .map(([type, pct]) => {
+              const cfg = ACTIVITY_TYPES[type];
+              const color = (cfg && cfg.color) || "#FF6A00";
+              const name = escapeHtml(typeLabel(type));
+              const p = Math.round(pct);
+              return `<div class="auraPop__row"><span class="auraPop__dot" style="background:${color}"></span><span class="auraPop__name">${name}</span><span class="auraPop__val">${p}%</span></div>`;
+            })
+            .join("")
+        : "";
+      const empty = `<div class="auraPop__empty">${escapeHtml(t("aura_no_history_short"))}</div>`;
+
+      return `<div class="auraPop"><div class="auraPop__title">${escapeHtml(title)}</div><div class="auraPop__sub">${escapeHtml(who)}</div><div class="auraPop__hex">${escapeHtml(agent.auraHex || "#FF6A00")}</div>${rows || empty}</div>`;
+    };
+
+    const openAgentPopup = (agent, latLng) => {
+      const html = agentPopupHtml(agent);
+      L.popup({ closeButton: true, autoPan: true, offset: [0, -6] })
+        .setLatLng(latLng)
+        .setContent(html)
+        .openOn(map);
+    };
+
     const applyAgentStyle = (agent) => {
-      let fill = agent.persona.fill;
+      let fill = agent.auraHex || agent.persona.fill;
       let outerRadius = agent.baseOuterRadius;
       let innerRadius = agent.baseInnerRadius;
       let outerOpacity = 0.16;
@@ -1083,15 +1519,15 @@
         outerOpacity = 0.24;
         innerOpacity = 0.32;
         if (agent.stopType === "eat") {
-          fill = "#f1b83a";
+          fill = mixHex(fill, ACTIVITY_TYPES.food.color, 0.6);
           outerRadius = agent.baseOuterRadius + 5;
           innerRadius = agent.baseInnerRadius + 2.2;
         } else if (agent.stopType === "transit") {
-          fill = "#ff6a00";
+          fill = mixHex(fill, ACTIVITY_TYPES.travel.color, 0.55);
           outerRadius = agent.baseOuterRadius + 2.8;
           innerRadius = agent.baseInnerRadius + 1.4;
         } else {
-          fill = "#7a5a2b";
+          fill = mixHex(fill, ACTIVITY_TYPES.rest.color, 0.55);
           outerRadius = agent.baseOuterRadius + 1.8;
           innerRadius = agent.baseInnerRadius + 1;
         }
@@ -1184,6 +1620,9 @@
         inner,
         route,
         persona,
+        mix: agentInitMix(persona),
+        auraHex: "#FF6A00",
+        needsStyle: true,
         baseOuterRadius,
         baseInnerRadius,
         dir,
@@ -1201,7 +1640,15 @@
       const ll = jitterLatLng(pos.latLng, agent.jitterPx);
       agent.outer.setLatLng(ll);
       agent.inner.setLatLng(ll);
+      agent.auraHex = mixWeightedHex(agent.mix);
       applyAgentStyle(agent);
+
+      const onClick = (e) => {
+        const llClick = e && e.latlng ? e.latlng : agent.outer.getLatLng();
+        openAgentPopup(agent, llClick);
+      };
+      outer.on("click", onClick);
+      inner.on("click", onClick);
       return agent;
     };
 
@@ -1236,8 +1683,15 @@
       sim.lastTickAt = now;
 
       for (const agent of sim.agents) {
+        updateAgentMix(agent, dtSec);
         if (agent.state === "stopped") {
-          if (now < agent.stopUntil) continue;
+          if (now < agent.stopUntil) {
+            if (agent.needsStyle) {
+              agent.needsStyle = false;
+              applyAgentStyle(agent);
+            }
+            continue;
+          }
           agent.state = "moving";
           agent.stopType = "";
           applyAgentStyle(agent);
@@ -1262,6 +1716,11 @@
         const ll = jitterLatLng(pos.latLng, agent.jitterPx);
         agent.outer.setLatLng(ll);
         agent.inner.setLatLng(ll);
+
+        if (agent.needsStyle) {
+          agent.needsStyle = false;
+          applyAgentStyle(agent);
+        }
       }
 
       sim.rafId = window.requestAnimationFrame(tickAgents);
@@ -1269,25 +1728,25 @@
 
     const setSimUi = () => {
       if (els.mapSimToggle) {
-        els.mapSimToggle.textContent = sim.enabled ? "Sim auras: ON" : "Sim auras: OFF";
+        els.mapSimToggle.textContent = sim.enabled ? t("map_sim_on") : t("map_sim_off");
       }
 
       if (!sim.enabled) {
-        setAuraBadge("AURAS: OFF", "off");
+        setAuraBadge(t("map_auras_off"), "off");
         return;
       }
 
       if (map.getZoom() < STREET_MIN_ZOOM) {
-        setAuraBadge(`AURAS: ZOOM ${STREET_MIN_ZOOM}+`, "warn");
+        setAuraBadge(t("map_auras_zoom", { z: STREET_MIN_ZOOM }), "warn");
         return;
       }
 
       if (sim.loading) {
-        setAuraBadge("AURAS: LOADING", "off");
+        setAuraBadge(t("map_auras_loading"), "off");
         return;
       }
 
-      setAuraBadge(`AURAS: ${sim.agents.length}`, sim.agents.length ? "ok" : "off");
+      setAuraBadge(t("map_auras_count", { n: sim.agents.length }), sim.agents.length ? "ok" : "off");
     };
 
     const ensureAgentCount = (targetCount) => {
@@ -1324,7 +1783,7 @@
 
       sim.loading = true;
       setSimUi();
-      setMapStatus("Fetching street activity…");
+      setMapStatus(t("map_status_fetching"));
 
       if (sim.abort) sim.abort.abort();
       const ac = new AbortController();
@@ -1363,7 +1822,7 @@
 
         sim.loading = false;
         setSimUi();
-        setMapStatus("Street activity running.");
+        setMapStatus(t("map_status_running"));
 
         if (!sim.rafId) {
           sim.lastTickAt = simNow();
@@ -1373,7 +1832,7 @@
         if (buildId !== sim.buildId) return;
         if (err && err.name !== "AbortError") console.error(err);
         sim.loading = false;
-        setMapStatus("Street simulation failed to load routes.", true);
+        setMapStatus(t("map_status_sim_failed"), true);
         setSimUi();
       } finally {
         if (buildId === sim.buildId) sim.abort = null;
@@ -1399,7 +1858,7 @@
       if (!sim.enabled) return;
       if (map.getZoom() < STREET_MIN_ZOOM) {
         stopSimInternal();
-        setMapStatus(`Zoom to ${STREET_MIN_ZOOM}+ to see street activity.`);
+        setMapStatus(t("map_status_zoom_to", { z: STREET_MIN_ZOOM }));
         setSimUi();
         return;
       }
@@ -1424,7 +1883,7 @@
       sim.enabled = false;
       stopSimInternal();
       setSimUi();
-      setMapStatus("Street activity paused.");
+      setMapStatus(t("map_status_paused"));
     };
 
     const toggleSim = () => {
@@ -1447,15 +1906,15 @@
     const showMyLocation = () => {
       if (!els.mapLocate) return;
       if (!navigator.geolocation) {
-        setGpsBadge("GPS: UNSUPPORTED", "warn");
-        setMapStatus("Geolocation is not supported in this browser.", true);
-        toast("Geolocation not supported.");
+        setGpsBadge(t("map_gps_unsupported"), "warn");
+        setMapStatus(t("gps_unsupported"), true);
+        toast(t("gps_unsupported"));
         return;
       }
 
       els.mapLocate.disabled = true;
-      setGpsBadge("GPS: REQUEST", "off");
-      setMapStatus("Requesting GPS…");
+      setGpsBadge(t("map_gps_request"), "off");
+      setMapStatus(t("map_status_requesting_gps"));
 
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -1465,23 +1924,21 @@
 
           setUserLatLng(lat, lng, accuracy, { ensureRing: false });
 
-          setGpsBadge("GPS: ON", "ok");
-          setMapStatus(
-            "GPS ready. Your aura is blurred for privacy."
-          );
-          toast("GPS ready.");
+          setGpsBadge(t("map_gps_on"), "ok");
+          setMapStatus(t("map_status_gps_blurred"));
+          toast(t("gps_ready"));
 
           window.requestAnimationFrame(() => map.invalidateSize());
           els.mapLocate.disabled = false;
         },
         (err) => {
           const code = err && typeof err.code === "number" ? err.code : 0;
-          let msg = "Unable to get your location.";
-          if (code === 1) msg = "Location permission denied.";
-          if (code === 2) msg = "Location unavailable.";
-          if (code === 3) msg = "Location request timed out.";
+          let msg = t("gps_error");
+          if (code === 1) msg = t("gps_denied");
+          if (code === 2) msg = t("gps_unavailable");
+          if (code === 3) msg = t("gps_timeout");
 
-          setGpsBadge("GPS: OFF", "warn");
+          setGpsBadge(t("map_gps_off"), "warn");
           setMapStatus(msg, true);
           toast(msg);
           els.mapLocate.disabled = false;
@@ -1529,8 +1986,8 @@
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (!reduceMotion) startSim();
     else setSimUi();
-    setGpsBadge("GPS: OFF", "off");
-    setMapStatus("Map ready.");
+    setGpsBadge(t("map_gps_off"), "off");
+    setMapStatus(t("map_status_ready"));
 
     const api = {
       setUserAura: ({ enabled, color } = {}) => {
@@ -1544,17 +2001,26 @@
           userAuraEnabled = false;
           stopUserWatch();
           removeUserAuraLayers();
-          setGpsBadge("GPS: OFF", "off");
+          setGpsBadge(t("map_gps_off"), "off");
           return;
         }
 
         userAuraEnabled = true;
         if (lastUserLatLng) {
           ensureUserAuraLayers(lastUserLatLng);
-          userAuraOuter.setLatLng(lastUserLatLng);
-          userAuraInner.setLatLng(lastUserLatLng);
+          for (const l of userAuraLayers) l.setLatLng(lastUserLatLng);
         }
         startUserWatch();
+      },
+      refreshI18n: () => {
+        setSimUi();
+        if (!navigator.geolocation) {
+          setGpsBadge(t("map_gps_unsupported"), "warn");
+        } else if (userWatchId !== null) {
+          setGpsBadge(t("map_gps_on"), "ok");
+        } else {
+          setGpsBadge(t("map_gps_off"), "off");
+        }
       }
     };
 
@@ -1600,7 +2066,19 @@
     });
   }
 
+  if (els.langSelect) {
+    els.langSelect.addEventListener("change", () => {
+      i18nLang = normalizeLang(els.langSelect.value);
+      state.activity.prefs.lang = i18nLang;
+      saveState();
+      applyI18n();
+      renderActivity(true);
+      if (mapApi && typeof mapApi.refreshI18n === "function") mapApi.refreshI18n();
+    });
+  }
+
   mapApi = initPaperMap();
+  applyI18n();
   renderClock();
   window.setInterval(renderClock, 10_000);
   render();

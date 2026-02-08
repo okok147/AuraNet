@@ -51,6 +51,14 @@
         </div>
         <div class="hud">
           <div class="hud__clock" id="clock" aria-label="Local time"></div>
+          <label class="lang" aria-label="Language">
+            <span class="lang__label" data-i18n="ui_language">Language</span>
+            <select class="lang__select" id="langSelect">
+              <option value="en">English</option>
+              <option value="zh-Hant">繁體中文</option>
+              <option value="ja">日本語</option>
+            </select>
+          </label>
           <div
             class="pill pill--ok"
             id="storagePill"
@@ -66,13 +74,19 @@
       <div class="grid">
         <section class="card card--timer" aria-labelledby="activityTitle">
           <div class="card__head">
-            <h2 class="h1" id="activityTitle">Activity Logger</h2>
+            <h2 class="h1" id="activityTitle" data-i18n="activity_title">
+              Activity Logger
+            </h2>
             <div class="pill pill--muted" id="auraPill">Aura</div>
           </div>
 
           <div class="activity">
             <div class="activity__time" id="activityTime">00:00:00</div>
-            <div class="activity__hint" id="activityHint">
+            <div
+              class="activity__hint"
+              id="activityHint"
+              data-i18n="activity_hint_idle"
+            >
               Log what you’re doing. Your aura blends over time.
             </div>
           </div>
@@ -80,19 +94,24 @@
           <form class="activityForm" id="activityForm" autocomplete="off">
             <div class="activityForm__row">
               <label class="field">
-                <span class="field__label">Activity</span>
+                <span class="field__label" data-i18n="activity_label">
+                  Activity
+                </span>
                 <input
                   class="input"
                   id="activityText"
                   name="text"
                   placeholder="Work, commute, gym, coffee…"
+                  data-i18n-placeholder="activity_placeholder"
                   minlength="1"
                   maxlength="60"
                   required
                 />
               </label>
               <label class="field">
-                <span class="field__label">Type</span>
+                <span class="field__label" data-i18n="activity_type_label">
+                  Type
+                </span>
                 <select class="input" id="activityType" name="type">
                   <option value="work">Work</option>
                   <option value="study">Study</option>
@@ -107,18 +126,20 @@
 
             <label class="toggle">
               <input type="checkbox" id="activityShowAura" />
-              <span>Show my aura on map while active</span>
+              <span data-i18n="activity_show_aura_toggle">
+                Show my aura on map while active
+              </span>
             </label>
 
             <div class="activityForm__actions">
               <button class="btn btn--primary" type="button" id="activityStart">
-                Start
+                <span data-i18n="activity_start">Start</span>
               </button>
               <button class="btn btn--ghost" type="button" id="activityStop" disabled>
-                Stop & log
+                <span data-i18n="activity_stop_log">Stop & log</span>
               </button>
               <button class="btn btn--ghost" type="button" id="activityClear">
-                Clear log
+                <span data-i18n="activity_clear">Clear log</span>
               </button>
             </div>
           </form>
@@ -126,7 +147,9 @@
           <div class="auraRow" aria-label="Long-term aura color">
             <div class="auraSwatch" id="auraSwatch" aria-hidden="true"></div>
             <div class="auraMeta">
-              <div class="auraMeta__title">Long-term aura</div>
+              <div class="auraMeta__title" data-i18n="aura_long_term_title">
+                Long-term aura
+              </div>
               <div class="auraMeta__value" id="auraValue">—</div>
             </div>
           </div>
@@ -141,11 +164,17 @@
                 height="140"
               ></svg>
               <div class="auraChart__center">
-                <div class="auraChart__label">AURA</div>
+                <div class="auraChart__label" data-i18n="aura_chart_label">
+                  Aura
+                </div>
                 <div class="auraChart__value" id="auraHex">—</div>
               </div>
             </div>
-            <ul class="auraLegend" id="auraLegend" aria-label="Aura components"></ul>
+            <ul
+              class="auraLegend"
+              id="auraLegend"
+              aria-label="Aura components"
+            ></ul>
           </div>
 
           <ul class="activityList" id="activityList" aria-label="Recent activities"></ul>
@@ -155,8 +184,12 @@
 
         <section class="card card--map" aria-labelledby="mapTitle">
           <div class="card__head">
-            <h2 class="h1" id="mapTitle">Paper Sketch Map</h2>
-            <div class="stats" id="mapStatus">Loading map…</div>
+            <h2 class="h1" id="mapTitle" data-i18n="map_title">
+              Paper Sketch Map
+            </h2>
+            <div class="stats" id="mapStatus" data-i18n="map_loading">
+              Loading map…
+            </div>
           </div>
 
           <div class="mapWrap" aria-label="Map canvas with paper sketch effect">
@@ -173,10 +206,10 @@
           <div class="mapBar">
             <div class="mapActions">
               <button class="btn btn--primary" type="button" id="mapLocate">
-                My location
+                <span data-i18n="map_locate">My location</span>
               </button>
               <button class="btn btn--ghost" type="button" id="mapReset">
-                Reset view
+                <span data-i18n="map_reset">Reset view</span>
               </button>
               <button class="btn btn--ghost" type="button" id="mapSimToggle">
                 Sim auras: ON
