@@ -2,7 +2,7 @@
   "name": "auranet",
   "private": true,
   "version": "0.1.0",
-  "description": "Offline-first task board + focus timer (static site).",
+  "description": "Activity logger + aura blending + paper sketch map + tasks (static site).",
   "license": "UNLICENSED",
   "scripts": {
     "dev": "http-server web -p 5173 -c-1",

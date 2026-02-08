@@ -261,6 +261,96 @@
 
           <ul class="activityList" id="activityList" aria-label="Recent activities"></ul>
 
+          <div class="taskPanel" aria-labelledby="taskTitle">
+            <div class="taskPanel__head">
+              <h2 class="h1" id="taskTitle" data-i18n="tasks_title">Tasks</h2>
+              <div class="pill pill--muted" id="taskFeePill">FEE: 10%</div>
+            </div>
+
+            <form class="taskForm" id="taskForm" autocomplete="off">
+              <div class="taskForm__row">
+                <label class="field">
+                  <span class="field__label" data-i18n="task_label">Task</span>
+                  <input
+                    class="input"
+                    id="taskText"
+                    name="task"
+                    placeholder="Pick up coffee, deliver package…"
+                    data-i18n-placeholder="task_placeholder"
+                    minlength="2"
+                    maxlength="72"
+                    required
+                  />
+                </label>
+                <label class="field">
+                  <span class="field__label" data-i18n="task_reward_label">Reward (USD)</span>
+                  <input
+                    class="input"
+                    id="taskReward"
+                    name="reward"
+                    type="number"
+                    inputmode="decimal"
+                    min="1"
+                    max="9999"
+                    step="1"
+                    value="20"
+                    required
+                  />
+                </label>
+              </div>
+
+              <div class="taskForm__row taskForm__row--ranges">
+                <label class="field" for="taskTimeLimit">
+                  <span class="field__label" data-i18n="task_time_limit_label">
+                    Time limit
+                  </span>
+                  <input
+                    class="range"
+                    type="range"
+                    id="taskTimeLimit"
+                    min="15"
+                    max="240"
+                    step="15"
+                    value="60"
+                  />
+                  <div class="rangeMeta" aria-live="polite">
+                    <span class="rangeMeta__value" id="taskTimeLimitValue">60m</span>
+                    <span class="rangeMeta__min">15m</span>
+                    <span class="rangeMeta__max">240m</span>
+                  </div>
+                </label>
+
+                <label class="field" for="taskDistanceLimit">
+                  <span class="field__label" data-i18n="task_distance_limit_label">
+                    Distance limit
+                  </span>
+                  <input
+                    class="range"
+                    type="range"
+                    id="taskDistanceLimit"
+                    min="50"
+                    max="5000"
+                    step="50"
+                    value="800"
+                  />
+                  <div class="rangeMeta" aria-live="polite">
+                    <span class="rangeMeta__value" id="taskDistanceLimitValue">800m</span>
+                    <span class="rangeMeta__min">50m</span>
+                    <span class="rangeMeta__max">5000m</span>
+                  </div>
+                </label>
+              </div>
+
+              <div class="taskForm__actions">
+                <button class="btn btn--primary" type="submit" id="taskPost">
+                  <span data-i18n="task_post">Post task</span>
+                </button>
+              </div>
+            </form>
+
+            <ul class="taskList" id="taskList" aria-label="Tasks"></ul>
+          </div>
+
           <div class="toast" id="toast" role="status" aria-live="polite"></div>
         </section>
 

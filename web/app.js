@@ -49,6 +49,16 @@
     areaRadius: $("areaRadius"),
     areaRadiusValue: $("areaRadiusValue"),
     visAreaNote: $("visAreaNote"),
+
+    taskFeePill: $("taskFeePill"),
+    taskForm: $("taskForm"),
+    taskText: $("taskText"),
+    taskReward: $("taskReward"),
+    taskTimeLimit: $("taskTimeLimit"),
+    taskTimeLimitValue: $("taskTimeLimitValue"),
+    taskDistanceLimit: $("taskDistanceLimit"),
+    taskDistanceLimitValue: $("taskDistanceLimitValue"),
+    taskList: $("taskList"),
   };
 
   const nowMs = () => Date.now();
@@ -211,7 +221,35 @@
       map_status_sim_failed: "Street simulation failed to load routes.",
       sim_doing_eating: "Eating",
       sim_doing_transit: "Transit",
-      sim_doing_resting: "Resting"
+      sim_doing_resting: "Resting",
+
+      tasks_title: "Tasks",
+      task_label: "Task",
+      task_placeholder: "Pick up coffee, deliver package…",
+      task_reward_label: "Reward (USD)",
+      task_time_limit_label: "Time limit",
+      task_distance_limit_label: "Distance limit",
+      task_time_left: "{t} left",
+      task_post: "Post task",
+      task_list_empty: "No tasks yet.",
+      task_status_open: "Open",
+      task_status_accepted: "Accepted",
+      task_status_completed: "Completed",
+      task_status_expired: "Expired",
+      task_accept: "Accept",
+      task_finish: "Finish",
+      task_cancel: "Cancel",
+      task_verified: "Verified",
+      task_not_verified: "Not verified",
+      task_fee: "Fee",
+      task_payout: "Payout",
+      toast_task_posted: "Task posted.",
+      toast_task_accepted: "Task accepted.",
+      toast_task_completed: "Task completed.",
+      toast_task_expired: "Task expired.",
+      toast_task_not_verified: "Verified worker required.",
+      toast_task_need_gps: "Enable GPS to accept tasks.",
+      toast_task_too_far: "Too far for this task."
     },
     "zh-Hant": {
       ui_language: "語言",
@@ -304,7 +342,35 @@
       map_status_sim_failed: "街道模擬載入路線失敗。",
       sim_doing_eating: "用餐中",
       sim_doing_transit: "移動中",
-      sim_doing_resting: "休息中"
+      sim_doing_resting: "休息中",
+
+      tasks_title: "任務",
+      task_label: "任務",
+      task_placeholder: "取咖啡、送包裹…",
+      task_reward_label: "報酬（美元）",
+      task_time_limit_label: "時限",
+      task_distance_limit_label: "距離限制",
+      task_time_left: "剩餘 {t}",
+      task_post: "發布任務",
+      task_list_empty: "目前沒有任務。",
+      task_status_open: "開放",
+      task_status_accepted: "已接受",
+      task_status_completed: "已完成",
+      task_status_expired: "已過期",
+      task_accept: "接受",
+      task_finish: "完成",
+      task_cancel: "取消",
+      task_verified: "已驗證",
+      task_not_verified: "未驗證",
+      task_fee: "平台費",
+      task_payout: "實得",
+      toast_task_posted: "任務已發布。",
+      toast_task_accepted: "已接受任務。",
+      toast_task_completed: "任務已完成。",
+      toast_task_expired: "任務已過期。",
+      toast_task_not_verified: "需要已驗證的接單者。",
+      toast_task_need_gps: "請開啟 GPS 才能接單。",
+      toast_task_too_far: "距離超過此任務限制。"
     },
     ja: {
       ui_language: "言語",
@@ -397,7 +463,35 @@
       map_status_sim_failed: "ルートの読み込みに失敗しました。",
       sim_doing_eating: "食事中",
       sim_doing_transit: "移動中",
-      sim_doing_resting: "休憩中"
+      sim_doing_resting: "休憩中",
+
+      tasks_title: "タスク",
+      task_label: "タスク",
+      task_placeholder: "コーヒー受取、荷物配達…",
+      task_reward_label: "報酬（USD）",
+      task_time_limit_label: "制限時間",
+      task_distance_limit_label: "距離制限",
+      task_time_left: "残り {t}",
+      task_post: "投稿",
+      task_list_empty: "タスクはまだありません。",
+      task_status_open: "募集中",
+      task_status_accepted: "受諾済み",
+      task_status_completed: "完了",
+      task_status_expired: "期限切れ",
+      task_accept: "受ける",
+      task_finish: "完了",
+      task_cancel: "キャンセル",
+      task_verified: "認証済み",
+      task_not_verified: "未認証",
+      task_fee: "手数料",
+      task_payout: "受取",
+      toast_task_posted: "タスクを投稿しました。",
+      toast_task_accepted: "タスクを受けました。",
+      toast_task_completed: "タスク完了。",
+      toast_task_expired: "タスクは期限切れです。",
+      toast_task_not_verified: "認証済みユーザーが必要です。",
+      toast_task_need_gps: "GPS を有効にしてください。",
+      toast_task_too_far: "距離制限を超えています。"
     }
   };
 
@@ -433,6 +527,7 @@
 
     // Update any draft helpers that include translated labels.
     if (typeof renderActivityAssist === "function") renderActivityAssist();
+    if (typeof renderTasks === "function") renderTasks();
   };
 
   const defaultState = () => ({
@@ -449,6 +544,13 @@
         room: { code: "", joined: false, joinedAtMs: 0, leftAtMs: 0 },
         lang: "en",
         lingerUntil: 0
+      }
+    },
+    tasks: {
+      list: [],
+      prefs: {
+        feeBps: 1000,
+        userVerified: true
       }
     }
   });
@@ -469,6 +571,14 @@
           prefs: {
             ...base.activity.prefs,
             ...((parsed.activity && parsed.activity.prefs) || {})
+          }
+        },
+        tasks: {
+          ...base.tasks,
+          ...(parsed.tasks || {}),
+          prefs: {
+            ...base.tasks.prefs,
+            ...((parsed.tasks && parsed.tasks.prefs) || {})
           }
         }
       };
@@ -504,6 +614,36 @@
           leftAtMs: Number(room.leftAtMs) || 0
         };
       }
+
+      // Tasks (local-only demo).
+      if (!merged.tasks || typeof merged.tasks !== "object") merged.tasks = defaultState().tasks;
+      if (!Array.isArray(merged.tasks.list)) merged.tasks.list = [];
+      if (!merged.tasks.prefs || typeof merged.tasks.prefs !== "object") merged.tasks.prefs = defaultState().tasks.prefs;
+      merged.tasks.prefs.feeBps = clampInt(merged.tasks.prefs.feeBps, 0, 5000, 1000);
+      merged.tasks.prefs.userVerified = Boolean(merged.tasks.prefs.userVerified);
+
+      merged.tasks.list = merged.tasks.list
+        .filter((x) => x && typeof x === "object")
+        .map((x) => ({
+          id: String(x.id || ""),
+          title: String(x.title || "").slice(0, 72),
+          rewardCents: clampInt(x.rewardCents, 0, 999900, 0),
+          feeBps: clampInt(x.feeBps, 0, 5000, merged.tasks.prefs.feeBps),
+          distanceLimitM: clampInt(x.distanceLimitM, 50, 5000, 800),
+          createdAt: Number(x.createdAt) || 0,
+          expiresAt: Number(x.expiresAt) || 0,
+          status: String(x.status || "open"),
+          poster: x.poster && typeof x.poster === "object" ? { kind: String(x.poster.kind || ""), id: String(x.poster.id || "") } : null,
+          acceptedBy:
+            x.acceptedBy && typeof x.acceptedBy === "object"
+              ? { kind: String(x.acceptedBy.kind || ""), id: String(x.acceptedBy.id || "") }
+              : null,
+          acceptedAt: Number(x.acceptedAt) || 0,
+          completedAt: Number(x.completedAt) || 0
+        }))
+        .filter((x) => x.id && x.title && x.poster && x.poster.kind && x.poster.id);
+
+      merged.tasks.list = merged.tasks.list.slice(0, 50);
       // Drop legacy "area room" model (area visibility is now proximity-based).
       if (merged.activity.prefs && "areaRoom" in merged.activity.prefs) {
         delete merged.activity.prefs.areaRoom;
@@ -1498,6 +1638,502 @@
     }
   };
 
+  // --- Tasks (Local-Only Marketplace Prototype) ---
+
+  const USER_ACTOR = { kind: "user", id: "you" };
+  const TASK_STATUS = ["open", "accepted", "completed", "expired", "cancelled"];
+
+  const normalizeTaskStatus = (value) => {
+    const v = String(value || "").trim().toLowerCase();
+    return TASK_STATUS.includes(v) ? v : "open";
+  };
+
+  const normalizeTaskTitle = (value) => {
+    const s = normalizeActivityText(value);
+    return s.slice(0, 72);
+  };
+
+  const usdToCents = (value) => {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return 0;
+    return Math.max(0, Math.round(n * 100));
+  };
+
+  const fmtUsd = (cents) => {
+    const c = Number(cents) || 0;
+    const sign = c < 0 ? "-" : "";
+    const abs = Math.abs(Math.round(c));
+    const dollars = (abs / 100).toFixed(2);
+    return `${sign}$${dollars}`;
+  };
+
+  const fmtMinutes = (ms) => {
+    const m = Math.max(0, Math.round(ms / 60_000));
+    if (m < 60) return `${m}m`;
+    const h = Math.floor(m / 60);
+    const mm = m % 60;
+    return mm ? `${h}h ${mm}m` : `${h}h`;
+  };
+
+  const clampIntSafe = (value, min, max, fallback) => clampInt(value, min, max, fallback);
+
+  const haversineM = (a, b) => {
+    if (!a || !b) return Infinity;
+    const lat1 = (Number(a.lat) || 0) * (Math.PI / 180);
+    const lat2 = (Number(b.lat) || 0) * (Math.PI / 180);
+    const dLat = lat2 - lat1;
+    const dLng = ((Number(b.lng) || 0) - (Number(a.lng) || 0)) * (Math.PI / 180);
+    const sin1 = Math.sin(dLat / 2);
+    const sin2 = Math.sin(dLng / 2);
+    const h = sin1 * sin1 + Math.cos(lat1) * Math.cos(lat2) * sin2 * sin2;
+    const R = 6371_000;
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+  };
+
+  const taskFeeBps = () => clampIntSafe(state.tasks && state.tasks.prefs && state.tasks.prefs.feeBps, 0, 5000, 1000);
+
+  const computeFeeCents = (rewardCents, feeBps) => {
+    const r = Math.max(0, Math.round(Number(rewardCents) || 0));
+    const bps = clampIntSafe(feeBps, 0, 5000, 1000);
+    return Math.round((r * bps) / 10_000);
+  };
+
+  const actorKeyLocal = (actor) => {
+    if (!actor || typeof actor !== "object") return "";
+    const kind = String(actor.kind || "").trim();
+    const id = String(actor.id || "").trim();
+    if (!kind || !id) return "";
+    return `${kind}:${id}`;
+  };
+
+  const userKey = actorKeyLocal(USER_ACTOR);
+
+  const getActorInfoSafe = (actor) => {
+    if (mapApi && typeof mapApi.getActorInfo === "function") return mapApi.getActorInfo(actor);
+    if (actor && actor.kind === "user") return { label: "@you", verified: true };
+    return { label: "@sim", verified: false };
+  };
+
+  const getActorLatLngSafe = (actor) => {
+    if (mapApi && typeof mapApi.getActorLatLng === "function") return mapApi.getActorLatLng(actor);
+    return null;
+  };
+
+  const syncTasksOnMap = () => {
+    if (!mapApi || typeof mapApi.setTasks !== "function") return;
+    mapApi.setTasks(state.tasks && Array.isArray(state.tasks.list) ? state.tasks.list : []);
+  };
+
+  const renderTaskForm = () => {
+    if (els.taskFeePill) {
+      const pct = (taskFeeBps() / 100).toFixed(taskFeeBps() % 100 ? 2 : 0);
+      els.taskFeePill.textContent = `${t("task_fee").toUpperCase()}: ${pct}%`;
+    }
+    if (els.taskTimeLimit && els.taskTimeLimitValue) {
+      els.taskTimeLimitValue.textContent = `${clampIntSafe(els.taskTimeLimit.value, 15, 240, 60)}m`;
+    }
+    if (els.taskDistanceLimit && els.taskDistanceLimitValue) {
+      els.taskDistanceLimitValue.textContent = `${clampIntSafe(els.taskDistanceLimit.value, 50, 5000, 800)}m`;
+    }
+  };
+
+  const renderTaskList = () => {
+    if (!els.taskList) return;
+    els.taskList.replaceChildren();
+
+    const now = nowMs();
+    const items = (state.tasks && Array.isArray(state.tasks.list) ? state.tasks.list : [])
+      .slice()
+      .sort((a, b) => {
+        const order = (s) => (s === "accepted" ? 0 : s === "open" ? 1 : s === "completed" ? 2 : s === "expired" ? 3 : 4);
+        const sa = order(normalizeTaskStatus(a && a.status));
+        const sb = order(normalizeTaskStatus(b && b.status));
+        if (sa !== sb) return sa - sb;
+        return (Number(b && b.createdAt) || 0) - (Number(a && a.createdAt) || 0);
+      })
+      .slice(0, 14);
+
+    if (!items.length) {
+      const li = document.createElement("li");
+      li.className = "taskItem taskItem--empty";
+      li.textContent = t("task_list_empty");
+      els.taskList.appendChild(li);
+      return;
+    }
+
+    for (const task of items) {
+      if (!task || !task.id) continue;
+      const status = normalizeTaskStatus(task.status);
+      const poster = task.poster;
+      const worker = task.acceptedBy;
+      const posterInfo = getActorInfoSafe(poster);
+      const workerInfo = worker ? getActorInfoSafe(worker) : null;
+
+      const li = document.createElement("li");
+      li.className = "taskItem";
+
+      const top = document.createElement("div");
+      top.className = "taskItem__top";
+
+      const title = document.createElement("div");
+      title.className = "taskItem__title";
+      title.textContent = normalizeTaskTitle(task.title || "") || "—";
+
+      const who = document.createElement("div");
+      who.className = "taskItem__who";
+      who.textContent = workerInfo ? `${posterInfo.label} → ${workerInfo.label}` : `${posterInfo.label}`;
+
+      top.appendChild(title);
+      top.appendChild(who);
+
+      const meta = document.createElement("div");
+      meta.className = "taskItem__meta";
+      const rewardCents = Number(task.rewardCents) || 0;
+      const feeCents = computeFeeCents(rewardCents, task.feeBps || taskFeeBps());
+      const payoutCents = Math.max(0, rewardCents - feeCents);
+      const leftMs = Math.max(0, (Number(task.expiresAt) || 0) - now);
+      meta.textContent = `${fmtUsd(rewardCents)} • ${t("task_fee")}: ${fmtUsd(feeCents)} • ${t("task_payout")}: ${fmtUsd(payoutCents)}`;
+
+      const badges = document.createElement("div");
+      badges.className = "taskItem__badges";
+
+      const statusChip = document.createElement("span");
+      statusChip.className = `taskChip ${status === "accepted" ? "taskChip--ok" : status === "open" ? "taskChip--warn" : status === "completed" ? "taskChip--ok" : "taskChip--bad"}`;
+      const statusKey =
+        status === "accepted"
+          ? "task_status_accepted"
+          : status === "completed"
+            ? "task_status_completed"
+            : status === "expired"
+              ? "task_status_expired"
+              : "task_status_open";
+      statusChip.textContent = t(statusKey);
+      badges.appendChild(statusChip);
+
+      const distChip = document.createElement("span");
+      distChip.className = "taskChip";
+      distChip.textContent = `<= ${clampIntSafe(task.distanceLimitM, 50, 5000, 800)}m`;
+      badges.appendChild(distChip);
+
+      const timeChip = document.createElement("span");
+      timeChip.className = "taskChip";
+      timeChip.textContent =
+        status === "expired" ? t("task_status_expired") : t("task_time_left", { t: fmtMinutes(leftMs) });
+      badges.appendChild(timeChip);
+
+      if (workerInfo) {
+        const v = document.createElement("span");
+        v.className = `taskChip ${workerInfo.verified ? "taskChip--ok" : "taskChip--bad"}`;
+        v.textContent = workerInfo.verified ? t("task_verified") : t("task_not_verified");
+        badges.appendChild(v);
+      }
+
+      const actions = document.createElement("div");
+      actions.className = "taskItem__actions";
+
+      const posterKey = actorKeyLocal(poster);
+      const workerKey = worker ? actorKeyLocal(worker) : "";
+      const isPosterMe = posterKey === userKey;
+      const isWorkerMe = workerKey === userKey;
+
+      const addBtn = (label, kind, onClick) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = kind === "primary" ? "btn btn--primary" : "btn btn--ghost";
+        b.textContent = label;
+        b.addEventListener("click", onClick);
+        actions.appendChild(b);
+      };
+
+      if (status === "open") {
+        if (!isPosterMe) {
+          addBtn(t("task_accept"), "primary", () => acceptTask(task.id, USER_ACTOR));
+        }
+        if (isPosterMe) {
+          addBtn(t("task_cancel"), "ghost", () => cancelTask(task.id));
+        }
+      } else if (status === "accepted") {
+        if (isPosterMe || isWorkerMe) {
+          addBtn(t("task_finish"), "primary", () => finishTask(task.id));
+        }
+      }
+
+      li.appendChild(top);
+      li.appendChild(meta);
+      li.appendChild(badges);
+      if (actions.childNodes.length) li.appendChild(actions);
+
+      els.taskList.appendChild(li);
+    }
+  };
+
+  const renderTasks = () => {
+    renderTaskForm();
+    renderTaskList();
+    syncTasksOnMap();
+  };
+
+  const ensureTaskPrefs = () => {
+    if (!state.tasks || typeof state.tasks !== "object") state.tasks = defaultState().tasks;
+    if (!Array.isArray(state.tasks.list)) state.tasks.list = [];
+    if (!state.tasks.prefs || typeof state.tasks.prefs !== "object") state.tasks.prefs = defaultState().tasks.prefs;
+    state.tasks.prefs.feeBps = taskFeeBps();
+    state.tasks.prefs.userVerified = Boolean(state.tasks.prefs.userVerified);
+  };
+
+  const postTaskFromForm = () => {
+    ensureTaskPrefs();
+    if (!els.taskText || !els.taskReward || !els.taskTimeLimit || !els.taskDistanceLimit) return;
+    const title = normalizeTaskTitle(els.taskText.value);
+    if (!title) return;
+
+    const rewardCents = usdToCents(els.taskReward.value);
+    const timeLimitMin = clampIntSafe(els.taskTimeLimit.value, 15, 240, 60);
+    const distanceLimitM = clampIntSafe(els.taskDistanceLimit.value, 50, 5000, 800);
+
+    const now = nowMs();
+    const task = {
+      id: uid(),
+      title,
+      rewardCents,
+      feeBps: taskFeeBps(),
+      distanceLimitM,
+      createdAt: now,
+      expiresAt: now + timeLimitMin * 60_000,
+      status: "open",
+      poster: USER_ACTOR,
+      acceptedBy: null,
+      acceptedAt: 0,
+      completedAt: 0
+    };
+
+    state.tasks.list.unshift(task);
+    state.tasks.list = state.tasks.list.slice(0, 50);
+    els.taskText.value = "";
+    saveState();
+    renderTasks();
+    toast(t("toast_task_posted"));
+
+    // Auto-assign to a nearby verified simulated worker (demo).
+    window.setTimeout(() => {
+      autoAssignTasks();
+    }, 500);
+  };
+
+  const acceptTask = (taskId, actor) => {
+    ensureTaskPrefs();
+    const id = String(taskId || "");
+    const task = state.tasks.list.find((x) => x && x.id === id);
+    if (!task) return;
+    if (normalizeTaskStatus(task.status) !== "open") return;
+
+    const now = nowMs();
+    if (task.expiresAt && now > task.expiresAt) {
+      task.status = "expired";
+      saveState();
+      renderTasks();
+      toast(t("toast_task_expired"));
+      return;
+    }
+
+    const info = getActorInfoSafe(actor);
+    if (!info.verified) {
+      toast(t("toast_task_not_verified"));
+      return;
+    }
+
+    const llActor = getActorLatLngSafe(actor);
+    const llPoster = getActorLatLngSafe(task.poster);
+    if (!llActor || !llPoster) {
+      toast(t("toast_task_need_gps"));
+      return;
+    }
+
+    const d = haversineM(llActor, llPoster);
+    if (d > (Number(task.distanceLimitM) || 0)) {
+      toast(t("toast_task_too_far"));
+      return;
+    }
+
+    task.status = "accepted";
+    task.acceptedBy = actor;
+    task.acceptedAt = now;
+    saveState();
+    renderTasks();
+    toast(t("toast_task_accepted"));
+  };
+
+  const finishTask = (taskId) => {
+    ensureTaskPrefs();
+    const id = String(taskId || "");
+    const task = state.tasks.list.find((x) => x && x.id === id);
+    if (!task) return;
+    if (normalizeTaskStatus(task.status) !== "accepted") return;
+    const now = nowMs();
+
+    if (task.expiresAt && now > task.expiresAt) {
+      task.status = "expired";
+      saveState();
+      renderTasks();
+      toast(t("toast_task_expired"));
+      return;
+    }
+
+    task.status = "completed";
+    task.completedAt = now;
+    saveState();
+
+    // Completion boosts the worker aura like an activity log.
+    if (task.acceptedBy && task.acceptedBy.kind === "user") {
+      const text = `Task: ${normalizeTaskTitle(task.title)}`;
+      const key = activityKeyFromText(text);
+      const colorHex = activityColorHex(key);
+      const durMs = 6 * 60_000;
+      state.activity.log.unshift({
+        id: uid(),
+        text,
+        key,
+        colorHex,
+        startedAt: now - durMs,
+        endedAt: now
+      });
+      saveState();
+      renderActivity(true);
+    } else if (mapApi && typeof mapApi.applyTaskCompletion === "function") {
+      mapApi.applyTaskCompletion({ actor: task.acceptedBy, title: task.title, rewardCents: task.rewardCents });
+    }
+
+    renderTasks();
+    toast(t("toast_task_completed"));
+  };
+
+  const cancelTask = (taskId) => {
+    ensureTaskPrefs();
+    const id = String(taskId || "");
+    const task = state.tasks.list.find((x) => x && x.id === id);
+    if (!task) return;
+    if (normalizeTaskStatus(task.status) !== "open") return;
+    task.status = "cancelled";
+    saveState();
+    renderTasks();
+  };
+
+  const sweepExpiredTasks = () => {
+    ensureTaskPrefs();
+    const now = nowMs();
+    let changed = false;
+    for (const task of state.tasks.list) {
+      if (!task) continue;
+      const status = normalizeTaskStatus(task.status);
+      if (status === "completed" || status === "cancelled" || status === "expired") continue;
+      if (task.expiresAt && now > task.expiresAt) {
+        task.status = "expired";
+        changed = true;
+      }
+    }
+    if (!changed) return;
+    saveState();
+    renderTasks();
+  };
+
+  const autoAssignTasks = () => {
+    if (!mapApi || typeof mapApi.listAgents !== "function") return;
+    ensureTaskPrefs();
+    const agents = mapApi.listAgents();
+    if (!agents.length) return;
+
+    const busy = new Set(
+      state.tasks.list
+        .filter((t) => t && normalizeTaskStatus(t.status) === "accepted" && t.acceptedBy && t.acceptedBy.kind === "agent")
+        .map((t) => (t.acceptedBy && t.acceptedBy.id ? String(t.acceptedBy.id) : ""))
+        .filter((x) => x)
+    );
+
+    for (const task of state.tasks.list) {
+      if (!task) continue;
+      if (normalizeTaskStatus(task.status) !== "open") continue;
+      // Only auto-assign tasks posted by the local user.
+      if (actorKeyLocal(task.poster) !== userKey) continue;
+
+      const posterLl = getActorLatLngSafe(task.poster);
+      if (!posterLl) continue;
+
+      let best = null;
+      let bestD = Infinity;
+      for (const a of agents) {
+        if (!a || !a.verified) continue;
+        if (busy.has(String(a.id))) continue;
+        const d = haversineM({ lat: a.lat, lng: a.lng }, posterLl);
+        if (d <= (Number(task.distanceLimitM) || 0) && d < bestD) {
+          bestD = d;
+          best = a;
+        }
+      }
+
+      if (!best) continue;
+      task.status = "accepted";
+      task.acceptedBy = { kind: "agent", id: String(best.id) };
+      task.acceptedAt = nowMs();
+      busy.add(String(best.id));
+    }
+
+    saveState();
+    renderTasks();
+  };
+
+  const spawnSimTask = () => {
+    if (!mapApi || typeof mapApi.listAgents !== "function") return;
+    ensureTaskPrefs();
+    const agents = mapApi.listAgents().filter((a) => a && a.id);
+    if (!agents.length) return;
+
+    const poster = agents[Math.floor(Math.random() * agents.length)];
+    const ideas = [
+      "Coffee pickup",
+      "Grocery run",
+      "Package drop-off",
+      "Find a charger",
+      "Quick document scan",
+      "Borrow an umbrella"
+    ];
+    const title = normalizeTaskTitle(ideas[Math.floor(Math.random() * ideas.length)]);
+    const now = nowMs();
+    const timeLimitMin = [30, 45, 60, 90, 120][Math.floor(Math.random() * 5)];
+    const distanceLimitM = [300, 500, 800, 1200, 2000, 3500][Math.floor(Math.random() * 6)];
+    const rewardUsd = [8, 12, 15, 20, 25, 35][Math.floor(Math.random() * 6)];
+
+    state.tasks.list.unshift({
+      id: uid(),
+      title,
+      rewardCents: rewardUsd * 100,
+      feeBps: taskFeeBps(),
+      distanceLimitM,
+      createdAt: now,
+      expiresAt: now + timeLimitMin * 60_000,
+      status: "open",
+      poster: { kind: "agent", id: String(poster.id) },
+      acceptedBy: null,
+      acceptedAt: 0,
+      completedAt: 0
+    });
+
+    state.tasks.list = state.tasks.list.slice(0, 50);
+    saveState();
+    renderTasks();
+  };
+
+  let taskEngineTimer = null;
+
+  const startTaskEngine = () => {
+    if (taskEngineTimer) return;
+    taskEngineTimer = window.setInterval(() => {
+      sweepExpiredTasks();
+      autoAssignTasks();
+      const openSim = state.tasks.list.filter((x) => x && normalizeTaskStatus(x.status) === "open" && actorKeyLocal(x.poster) !== userKey);
+      if (openSim.length < 3) spawnSimTask();
+    }, 2_500);
+  };
+
   const startActivity = () => {
     if (state.activity.active) return;
     if (!els.activityText) return;
@@ -1590,6 +2226,8 @@
 
   const render = () => {
     renderActivity(true);
+    renderTasks();
+    startTaskEngine();
   };
 
   // --- Map ---
@@ -1654,9 +2292,68 @@
       return { center: [Math.max(-85, Math.min(85, lat)), wrapLng0(lng)], zoom };
     };
 
-    // Default view: your saved coarse "home" (city-ish) when available, otherwise SF.
+    const guessDefaultView = () => {
+      const tz = (() => {
+        try {
+          return String(Intl.DateTimeFormat().resolvedOptions().timeZone || "").trim();
+        } catch {
+          return "";
+        }
+      })();
+      const lang = (() => {
+        try {
+          return String(navigator.language || "").trim().toLowerCase();
+        } catch {
+          return "";
+        }
+      })();
+
+      const norm = (center, zoom = HOME_VIEW_ZOOM) => ({
+        center: [Math.max(-85, Math.min(85, center[0])), wrapLng0(center[1])],
+        zoom: Number.isFinite(Number(zoom)) ? Math.max(2, Math.min(18, Math.round(zoom))) : HOME_VIEW_ZOOM
+      });
+
+      const presets = {
+        "America/Los_Angeles": norm([37.7749, -122.4194]),
+        "America/Vancouver": norm([49.2827, -123.1207]),
+        "America/New_York": norm([40.7128, -74.0060]),
+        "America/Chicago": norm([41.8781, -87.6298]),
+        "America/Denver": norm([39.7392, -104.9903]),
+        "America/Phoenix": norm([33.4484, -112.0740]),
+        "America/Toronto": norm([43.6532, -79.3832]),
+        "Pacific/Honolulu": norm([21.3069, -157.8583]),
+        "Europe/London": norm([51.5072, -0.1276]),
+        "Europe/Paris": norm([48.8566, 2.3522]),
+        "Europe/Berlin": norm([52.5200, 13.4050]),
+        "Asia/Taipei": norm([25.0375, 121.5637]),
+        "Asia/Hong_Kong": norm([22.3193, 114.1694]),
+        "Asia/Tokyo": norm([35.6762, 139.6503]),
+        "Asia/Seoul": norm([37.5665, 126.9780]),
+        "Asia/Shanghai": norm([31.2304, 121.4737]),
+        "Asia/Singapore": norm([1.3521, 103.8198]),
+        "Australia/Sydney": norm([-33.8688, 151.2093])
+      };
+
+      if (tz && presets[tz]) return presets[tz];
+
+      // Broad fallbacks.
+      if (tz.startsWith("America/")) return presets["America/Los_Angeles"];
+      if (tz.startsWith("Europe/")) return presets["Europe/London"];
+      if (tz.startsWith("Australia/")) return presets["Australia/Sydney"];
+      if (tz.startsWith("Asia/")) {
+        if (lang.startsWith("ja")) return presets["Asia/Tokyo"];
+        if (lang.startsWith("zh")) return presets["Asia/Taipei"];
+        return presets["Asia/Singapore"];
+      }
+
+      if (lang.startsWith("ja")) return presets["Asia/Tokyo"];
+      if (lang.startsWith("zh")) return presets["Asia/Taipei"];
+      return presets["America/Los_Angeles"];
+    };
+
+    // Default view: your saved coarse "home" (city-ish) when available, otherwise a best-effort guess.
     let homeView = readHomeFromState();
-    const defaultView = homeView || { center: [37.7749, -122.4194], zoom: 13 };
+    const defaultView = homeView || guessDefaultView();
     map.setView(defaultView.center, defaultView.zoom);
 
     let myAccuracyRing = null;
@@ -1694,6 +2391,12 @@
       offsetNorthM: randomPrivacyOffsetM(initialGridM)
     };
     const simRenderer = L.canvas({ padding: 0.5 });
+    const taskPane = map.createPane("taskPane");
+    // Above the paper texture + aura haze so accepted-task tethers stay visible.
+    taskPane.style.zIndex = "520";
+    const taskLines = new Map(); // taskId -> polyline
+    let tasksForLines = [];
+    let lastLineSyncAt = 0;
 
     const sim = {
       enabled: false,
@@ -1707,6 +2410,8 @@
       routeCache: new Map(),
       routeCacheKeys: []
     };
+    const agentsById = new Map();
+    let agentSeq = 0;
 
     const setGpsBadge = (message, kind = "off") => {
       if (!els.mapGps) return;
@@ -1736,18 +2441,134 @@
       els.mapVis.classList.toggle("badge--warn", kind === "warn");
     };
 
+    const actorKey = (actor) => {
+      if (!actor || typeof actor !== "object") return "";
+      const kind = String(actor.kind || "").trim();
+      const id = String(actor.id || "").trim();
+      if (!kind || !id) return "";
+      return `${kind}:${id}`;
+    };
+
+    const actorLatLngFor = (actor) => {
+      if (!actor || typeof actor !== "object") return null;
+      if (actor.kind === "user") return lastUserLatLng || null;
+      if (actor.kind === "agent") {
+        const a = agentsById.get(String(actor.id || "")) || null;
+        if (!a || !a.outer) return null;
+        try {
+          return a.outer.getLatLng();
+        } catch {
+          return null;
+        }
+      }
+      return null;
+    };
+
+    const taskLineStyle = (task) => {
+      const status = String(task && task.status ? task.status : "");
+      const accepted = status === "accepted";
+      return {
+        pane: "taskPane",
+        color: accepted ? "rgba(255, 106, 0, 0.55)" : "rgba(32, 24, 18, 0.35)",
+        weight: accepted ? 2.2 : 1.8,
+        opacity: 0.9,
+        lineCap: "round",
+        dashArray: accepted ? "6 8" : "3 10"
+      };
+    };
+
+    const ensureTaskLine = (task) => {
+      if (!task || !task.id) return null;
+      const id = String(task.id);
+      const existing = taskLines.get(id) || null;
+      if (existing) return existing;
+      const line = L.polyline([], taskLineStyle(task)).addTo(map);
+      taskLines.set(id, line);
+      return line;
+    };
+
+    const syncTaskLines = (now) => {
+      const tNow = Number.isFinite(Number(now)) ? Number(now) : simNow();
+
+      const wantIds = new Set();
+      for (const task of tasksForLines) {
+        const status = String(task && task.status ? task.status : "");
+        if (status !== "accepted") continue;
+        const from = actorLatLngFor(task.poster);
+        const to = actorLatLngFor(task.acceptedBy);
+        if (!from || !to) continue;
+        wantIds.add(String(task.id));
+        const line = ensureTaskLine(task);
+        if (!line) continue;
+        line.setStyle(taskLineStyle(task));
+        line.setLatLngs([from, to]);
+      }
+
+      for (const [id, line] of taskLines.entries()) {
+        if (wantIds.has(id)) continue;
+        try {
+          line.remove();
+        } catch {
+          // ignore
+        }
+        taskLines.delete(id);
+      }
+
+      lastLineSyncAt = tNow;
+    };
+
+    const protectedAgentIds = () => {
+      const ids = new Set();
+      for (const task of tasksForLines) {
+        const status = String(task && task.status ? task.status : "");
+        if (status !== "accepted") continue;
+        const a = task && task.poster;
+        const b = task && task.acceptedBy;
+        if (a && a.kind === "agent" && a.id) ids.add(String(a.id));
+        if (b && b.kind === "agent" && b.id) ids.add(String(b.id));
+      }
+      return ids;
+    };
+
     const layersForBounds = () => {
       const layers = [];
       return layers;
     };
 
     const STREET_MIN_ZOOM = 12;
-    const DIALOG_MIN_ZOOM = 13;
+    const DIALOG_MIN_ZOOM = STREET_MIN_ZOOM;
     const AURA_GRAY_HEX = "#b8b1a5";
-    const SIM_GRAYOUT_MS = 60_000;
+    const DECAY_MINUTE_MS = 60_000;
+    const DECAY_CURVE = [
+      [0, 1.0],
+      [1 * DECAY_MINUTE_MS, 0.8],
+      [2 * DECAY_MINUTE_MS, 0.5],
+      [3 * DECAY_MINUTE_MS, 0.3],
+      [4 * DECAY_MINUTE_MS, 0.2],
+      [5 * DECAY_MINUTE_MS, 0.1],
+      [6 * DECAY_MINUTE_MS, 0.05],
+    ];
     const OSRM_BASE = "https://router.project-osrm.org";
     const ROUTE_POINT_LIMIT = 260;
     const ROUTE_CACHE_MAX = 80;
+
+    const decayFactor = (ageMs) => {
+      const a = Math.max(0, Number(ageMs) || 0);
+      // Decay updates in 1-minute steps (not continuous), per product spec.
+      let f = DECAY_CURVE[0][1];
+      for (let i = 0; i < DECAY_CURVE.length; i++) {
+        const t = DECAY_CURVE[i][0];
+        const fi = DECAY_CURVE[i][1];
+        if (a >= t) f = fi;
+        else break;
+      }
+      return f;
+    };
+
+    const radiusScaleFromDecay = (f) => {
+      const ff = Math.max(0, Math.min(1, Number(f) || 0));
+      return 0.55 + 0.45 * ff;
+    };
 
     const simNow = () => {
       // Use a monotonic clock. rAF uses the same origin as performance.now().
@@ -1888,8 +2709,8 @@
 
     const randBetween = (min, max) => min + Math.random() * (max - min);
     const pickOne = (arr) => arr[Math.floor(Math.random() * arr.length)];
-    // Broadcast cycle: fade to gray over ~10s, stay gray ~10s, then refresh (with slight jitter).
-    const nextBroadcastMs = () => SIM_GRAYOUT_MS + randBetween(9000, 11000);
+    // Broadcast/ping cycle: decay towards gray between intermittent updates.
+    const nextBroadcastMs = () => randBetween(3 * DECAY_MINUTE_MS, 9 * DECAY_MINUTE_MS);
 
     const markBroadcast = (agent, now) => {
       agent.lastBroadcastAt = now;
@@ -2019,16 +2840,17 @@
 
     const applyUserAuraStyle = () => {
       if (!userAuraLayers.length) return;
-      const USER_GRAYOUT_MS = 60_000;
       const GRAY_HEX = "#b8b1a5";
       const age = Math.max(0, Number(userAuraAgeMs) || 0);
-      const fadeT = clamp(age / USER_GRAYOUT_MS, 0, 1);
+      const decay = decayFactor(age);
       const strength = clamp(Number(userAuraStrength) || 0, 0, 1);
-      const fill = mixHex(userAuraColor, GRAY_HEX, fadeT);
-      const scale = 1 - 0.32 * fadeT;
+      const grayT = selfPreciseMode ? 0 : 1 - decay;
+      const fill = mixHex(userAuraColor, GRAY_HEX, grayT);
+      const radiusScale = radiusScaleFromDecay(decay);
       const strengthScale = 0.84 + 0.58 * strength;
       const strengthOpacity = 0.65 + 0.95 * strength;
-      const opacityAgeFactor = selfPreciseMode ? 1 : 1 - 0.7 * fadeT;
+      // Self view: opacity stays, only size decays.
+      const opacityAgeFactor = selfPreciseMode ? 1 : decay;
       // No center dot: layered haze only.
       const baseOpacities = [0.06, 0.09, 0.12];
       const baseRadii = [70, 52, 36];
@@ -2039,7 +2861,7 @@
           fillColor: fill,
           fillOpacity: clamp(o * strengthOpacity * opacityAgeFactor, 0.012, 0.26)
         });
-        userAuraLayers[i].setRadius(Math.max(10, r * strengthScale * scale));
+        userAuraLayers[i].setRadius(Math.max(10, r * strengthScale * radiusScale));
       }
     };
 
@@ -2166,6 +2988,8 @@
         ensureUserAuraLayers(lastUserLatLng);
         for (const l of userAuraLayers) l.setLatLng(lastUserLatLng);
       }
+
+      if (tasksForLines.length) syncTaskLines(simNow());
 
       // Privacy: do not render an accuracy ring.
       if (myAccuracyRing) {
@@ -2307,6 +3131,8 @@
       const parts = normalizeMixPct(agent.mix).slice(0, 6);
       const title = t("popup_aura_components");
       const who = t("popup_simulated_person");
+      const handle = agent && agent.handle ? String(agent.handle) : "@sim";
+      const verified = agent && agent.verified ? ` • ${escapeHtml(t("task_verified"))}` : "";
       const rows = parts.length
         ? parts
             .map(([type, pct]) => {
@@ -2320,7 +3146,7 @@
         : "";
       const empty = `<div class="auraPop__empty">${escapeHtml(t("aura_no_history_short"))}</div>`;
 
-      return `<div class="auraPop"><div class="auraPop__title">${escapeHtml(title)}</div><div class="auraPop__sub">${escapeHtml(who)}</div><div class="auraPop__hex">${escapeHtml(agent.auraHex || "#FF6A00")}</div>${rows || empty}</div>`;
+      return `<div class="auraPop"><div class="auraPop__title">${escapeHtml(title)}</div><div class="auraPop__sub">${escapeHtml(who)} • ${escapeHtml(handle)}${verified}</div><div class="auraPop__hex">${escapeHtml(agent.auraHex || "#FF6A00")}</div>${rows || empty}</div>`;
     };
 
     const openAgentPopup = (agent, latLng) => {
@@ -2334,44 +3160,51 @@
     const applyAgentStyle = (agent, now) => {
       const tNow = Number.isFinite(Number(now)) ? Number(now) : simNow();
       let fill = agent.auraHex || agent.persona.fill;
-      let outerRadius = agent.baseOuterRadius;
-      let innerRadius = agent.baseInnerRadius;
-      let outerOpacity = 0.16;
-      let innerOpacity = 0.22;
+      let radiusBoost = 1;
+      let opacityBoost = 1;
 
       if (agent.state === "stopped") {
-        outerOpacity = 0.24;
-        innerOpacity = 0.32;
+        opacityBoost = 1.35;
         if (agent.stopType === "eat") {
           fill = mixHex(fill, ACTIVITY_TYPES.food.color, 0.6);
-          outerRadius = agent.baseOuterRadius + 5;
-          innerRadius = agent.baseInnerRadius + 2.2;
+          radiusBoost = 1.14;
         } else if (agent.stopType === "transit") {
           fill = mixHex(fill, ACTIVITY_TYPES.travel.color, 0.55);
-          outerRadius = agent.baseOuterRadius + 2.8;
-          innerRadius = agent.baseInnerRadius + 1.4;
+          radiusBoost = 1.07;
         } else {
           fill = mixHex(fill, ACTIVITY_TYPES.rest.color, 0.55);
-          outerRadius = agent.baseOuterRadius + 1.8;
-          innerRadius = agent.baseInnerRadius + 1;
+          radiusBoost = 1.04;
         }
       }
 
       // Time decay: shrink + fade + drift to gray.
       const last = Number(agent.lastBroadcastAt) || tNow;
       const ageMs = Math.max(0, tNow - last);
-      const fadeT = clamp(ageMs / SIM_GRAYOUT_MS, 0, 1);
-      const radiusScale = 1 - 0.38 * fadeT;
-      outerRadius *= radiusScale;
-      innerRadius *= radiusScale;
-      fill = mixHex(fill, AURA_GRAY_HEX, fadeT);
-      outerOpacity = clamp(outerOpacity * (1 - 0.78 * fadeT), 0.03, 0.4);
-      innerOpacity = clamp(innerOpacity * (1 - 0.82 * fadeT), 0.04, 0.45);
+      const decay = decayFactor(ageMs);
+      const grayT = 1 - decay;
+      const radiusScale = radiusScaleFromDecay(decay) * radiusBoost;
+      fill = mixHex(fill, AURA_GRAY_HEX, grayT);
+      const opacityScale = decay * opacityBoost;
 
-      agent.outer.setStyle({ fillColor: fill, fillOpacity: outerOpacity });
-      agent.inner.setStyle({ fillColor: fill, fillOpacity: innerOpacity });
-      agent.outer.setRadius(outerRadius);
-      agent.inner.setRadius(innerRadius);
+      const layers = Array.isArray(agent.layers) && agent.layers.length ? agent.layers : [agent.outer].filter(Boolean);
+      const baseRadii = Array.isArray(agent.baseRadii) && agent.baseRadii.length
+        ? agent.baseRadii
+        : [Number(agent.baseOuterRadius) || 36];
+      const baseOpacities = Array.isArray(agent.baseOpacities) && agent.baseOpacities.length
+        ? agent.baseOpacities
+        : [0.08, 0.12, 0.16];
+
+      for (let i = 0; i < layers.length; i++) {
+        const layer = layers[i];
+        if (!layer) continue;
+        const baseR = Number(baseRadii[i] != null ? baseRadii[i] : baseRadii[0]) || 36;
+        const baseO = Number(baseOpacities[i] != null ? baseOpacities[i] : baseOpacities[0]) || 0.08;
+        layer.setStyle({
+          fillColor: fill,
+          fillOpacity: clamp(baseO * opacityScale, 0.012, 0.32)
+        });
+        layer.setRadius(Math.max(10, baseR * radiusScale));
+      }
     };
 
     const maybeUpdateAgentStyle = (agent, now) => {
@@ -2379,16 +3212,16 @@
       const tNow = Number.isFinite(Number(now)) ? Number(now) : simNow();
       const last = Number(agent.lastBroadcastAt) || tNow;
       const ageMs = Math.max(0, tNow - last);
-      const fadeT = clamp(ageMs / SIM_GRAYOUT_MS, 0, 1);
+      const decay = decayFactor(ageMs);
 
-      const lastFade = Number.isFinite(Number(agent.lastFadeT)) ? Number(agent.lastFadeT) : -1;
+      const lastDecay = Number.isFinite(Number(agent.lastDecay)) ? Number(agent.lastDecay) : -1;
       const lastStyleAt = Number(agent.lastStyleAt) || 0;
-      const needsFadeUpdate = lastFade < 0 || Math.abs(fadeT - lastFade) > 0.03;
+      const needsFadeUpdate = lastDecay < 0 || Math.abs(decay - lastDecay) > 0.03;
       const needsTimeUpdate = tNow - lastStyleAt > 700;
       if (!agent.needsStyle && !needsFadeUpdate && !needsTimeUpdate) return;
 
       agent.needsStyle = false;
-      agent.lastFadeT = fadeT;
+      agent.lastDecay = decay;
       agent.lastStyleAt = tNow;
       applyAgentStyle(agent, tNow);
     };
@@ -2400,8 +3233,18 @@
         } catch {
           // ignore
         }
-        a.outer.remove();
-        a.inner.remove();
+        if (a && a.id) agentsById.delete(a.id);
+        if (a && Array.isArray(a.layers)) {
+          for (const l of a.layers) {
+            try {
+              l.remove();
+            } catch {
+              // ignore
+            }
+          }
+        } else if (a && a.outer) {
+          a.outer.remove();
+        }
       }
       sim.agents = [];
     };
@@ -2463,12 +3306,18 @@
     };
 
     const createAgent = (route, persona) => {
-      // Aura-only: no central dot.
+      // Aura-only: layered haze (no center dot) to reduce pinpointing.
       const now = simNow();
-      const baseOuterRadius = randBetween(14, 22);
-      const baseInnerRadius = baseOuterRadius * randBetween(0.48, 0.62);
-      const outer = createAuraLayer(route.points[0], persona.fill, baseOuterRadius, 0.16);
-      const inner = createAuraLayer(route.points[0], persona.fill, baseInnerRadius, 0.22);
+      const id = uid();
+      const handle = `@sim${String(++agentSeq).padStart(3, "0")}`;
+      const verified = Math.random() < 0.42;
+      const baseOuterRadius = randBetween(44, 68);
+      const baseRadii = [baseOuterRadius, baseOuterRadius * 0.72, baseOuterRadius * 0.48];
+      const baseOpacities = [0.05, 0.08, 0.12];
+      const layers = baseRadii.map((r, i) =>
+        createAuraLayer(route.points[0], persona.fill, r, baseOpacities[i] || 0.08)
+      );
+      const outer = layers[0];
 
       const distM = randBetween(0, route.totalM);
       const dir = Math.random() < 0.5 ? 1 : -1;
@@ -2476,15 +3325,19 @@
       const jitterPx = randBetween(persona.jitterPx[0], persona.jitterPx[1]);
 
       const agent = {
+        id,
+        handle,
+        verified,
         outer,
-        inner,
+        layers,
         route,
         persona,
         mix: agentInitMix(persona),
         auraHex: "#FF6A00",
         needsStyle: true,
         baseOuterRadius,
-        baseInnerRadius,
+        baseRadii,
+        baseOpacities,
         dir,
         speedMps,
         jitterPx,
@@ -2495,7 +3348,7 @@
         lastBroadcastAt: now,
         nextBroadcastAt: now + nextBroadcastMs(),
         lastStyleAt: 0,
-        lastFadeT: -1,
+        lastDecay: -1,
         dialogBound: false,
         distM
       };
@@ -2503,8 +3356,7 @@
       const pos = routeAtDistance(route, distM, 0);
       agent.hintIdx = pos.idx;
       const ll = jitterLatLng(pos.latLng, agent.jitterPx);
-      agent.outer.setLatLng(ll);
-      agent.inner.setLatLng(ll);
+      for (const l of layers) l.setLatLng(ll);
       agent.auraHex = mixWeightedHex(agent.mix);
       applyAgentStyle(agent, now);
 
@@ -2512,9 +3364,9 @@
         const llClick = e && e.latlng ? e.latlng : agent.outer.getLatLng();
         openAgentPopup(agent, llClick);
       };
-      outer.on("click", onClick);
-      inner.on("click", onClick);
+      for (const l of layers) l.on("click", onClick);
       syncAgentDialog(agent);
+      agentsById.set(agent.id, agent);
       return agent;
     };
 
@@ -2592,10 +3444,17 @@
         const pos = routeAtDistance(agent.route, agent.distM, agent.hintIdx);
         agent.hintIdx = pos.idx;
         const ll = jitterLatLng(pos.latLng, agent.jitterPx);
-        agent.outer.setLatLng(ll);
-        agent.inner.setLatLng(ll);
+        if (Array.isArray(agent.layers) && agent.layers.length) {
+          for (const l of agent.layers) l.setLatLng(ll);
+        } else {
+          agent.outer.setLatLng(ll);
+        }
 
         maybeUpdateAgentStyle(agent, now);
+      }
+
+      if (tasksForLines.length && now - lastLineSyncAt > 120) {
+        syncTaskLines(now);
       }
 
       sim.rafId = window.requestAnimationFrame(tickAgents);
@@ -2627,6 +3486,7 @@
         ? sim.routePool.walking
         : routesDriving;
       const nowTarget = Math.max(0, Math.round(targetCount));
+      const protect = protectedAgentIds();
 
       while (sim.agents.length < nowTarget) {
         const persona = pickPersona();
@@ -2639,15 +3499,21 @@
       }
 
       while (sim.agents.length > nowTarget) {
-        const agent = sim.agents.pop();
+        const idx = sim.agents.findIndex((a) => a && a.id && !protect.has(a.id));
+        if (idx < 0) break;
+        const agent = sim.agents.splice(idx, 1)[0];
         if (!agent) break;
         try {
           agent.outer.unbindTooltip();
         } catch {
           // ignore
         }
-        agent.outer.remove();
-        agent.inner.remove();
+        if (agent.id) agentsById.delete(agent.id);
+        if (Array.isArray(agent.layers) && agent.layers.length) {
+          for (const l of agent.layers) l.remove();
+        } else {
+          agent.outer.remove();
+        }
       }
     };
 
@@ -2656,6 +3522,9 @@
       if (map.getZoom() < STREET_MIN_ZOOM) return;
 
       const buildId = ++sim.buildId;
+      const protect = protectedAgentIds();
+      const prevAgents = sim.agents;
+      const keepAgents = prevAgents.filter((a) => a && a.id && protect.has(a.id));
 
       sim.loading = true;
       setSimUi();
@@ -2666,7 +3535,7 @@
       sim.abort = ac;
 
       try {
-        const agentCount = auraTargetCountForZoom(map.getZoom());
+        const agentCount = Math.max(auraTargetCountForZoom(map.getZoom()), keepAgents.length);
         const pool = await buildRoutePool(agentCount, ac.signal);
         if (buildId !== sim.buildId) return;
 
@@ -2676,9 +3545,9 @@
           throw new Error("No routes available for this view.");
         }
 
-        const nextAgents = [];
+        const nextAgents = keepAgents.slice();
 
-        for (let i = 0; i < agentCount; i++) {
+        for (let i = nextAgents.length; i < agentCount; i++) {
           const persona = pickPersona();
           const route =
             persona.profile === "walking"
@@ -2688,17 +3557,21 @@
           nextAgents.push(createAgent(route, persona));
         }
 
-        const prevAgents = sim.agents;
         sim.routePool = pool;
         sim.agents = nextAgents;
         for (const a of prevAgents) {
+          if (a && a.id && protect.has(a.id)) continue;
           try {
             a.outer.unbindTooltip();
           } catch {
             // ignore
           }
-          a.outer.remove();
-          a.inner.remove();
+          if (a && a.id) agentsById.delete(a.id);
+          if (a && Array.isArray(a.layers)) {
+            for (const l of a.layers) l.remove();
+          } else if (a && a.outer) {
+            a.outer.remove();
+          }
         }
 
         sim.loading = false;
@@ -2763,6 +3636,13 @@
       els.mapReset.addEventListener("click", () => {
         if (homeView && Array.isArray(homeView.center) && homeView.center.length === 2) {
           map.flyTo(homeView.center, homeView.zoom || HOME_VIEW_ZOOM, { duration: 0.8 });
+          return;
+        }
+
+        // If we have GPS (even if home wasn't saved yet), reset to a coarse "city-ish" view.
+        if (lastUserLatLngRaw) {
+          const coarse = quantizeLatLng(lastUserLatLngRaw, 5000);
+          map.flyTo([coarse.lat, coarse.lng], HOME_VIEW_ZOOM, { duration: 0.8 });
           return;
         }
 
@@ -2922,6 +3802,59 @@
         }
         startUserWatch();
       },
+      setTasks: (tasks) => {
+        tasksForLines = Array.isArray(tasks) ? tasks.slice() : [];
+        syncTaskLines(simNow());
+      },
+      getActorInfo: (actor) => {
+        if (!actor || typeof actor !== "object") return { label: "—", verified: false };
+        if (actor.kind === "user") return { label: "@you", verified: true };
+        if (actor.kind === "agent") {
+          const a = agentsById.get(String(actor.id || "")) || null;
+          return { label: (a && a.handle) || "@sim", verified: Boolean(a && a.verified) };
+        }
+        return { label: "—", verified: false };
+      },
+      getActorLatLng: (actor) => {
+        const ll = actorLatLngFor(actor);
+        if (!ll) return null;
+        return { lat: ll.lat, lng: ll.lng };
+      },
+      listAgents: () => {
+        const out = [];
+        for (const a of sim.agents) {
+          if (!a || !a.outer) continue;
+          let ll = null;
+          try {
+            ll = a.outer.getLatLng();
+          } catch {
+            ll = null;
+          }
+          if (!ll) continue;
+          out.push({
+            id: a.id,
+            handle: a.handle,
+            verified: Boolean(a.verified),
+            lat: ll.lat,
+            lng: ll.lng
+          });
+        }
+        return out;
+      },
+      applyTaskCompletion: ({ actor, title = "" } = {}) => {
+        if (!actor || typeof actor !== "object") return;
+        if (actor.kind !== "agent") return;
+        const a = agentsById.get(String(actor.id || "")) || null;
+        if (!a) return;
+        // Boost the worker aura by injecting "work time" into their mix.
+        const boostSec = 12 * 60;
+        a.mix.work = (a.mix.work || 0) + boostSec;
+        a.auraHex = mixWeightedHex(a.mix);
+        a.needsStyle = true;
+        markBroadcast(a, simNow());
+        applyAgentStyle(a, simNow());
+        syncAgentDialog(a);
+      },
       refreshI18n: () => {
         setSimUi();
         setVisBadge(userVisibilityMode, "ok");
@@ -2953,6 +3886,25 @@
   }
   if (els.activityStop) {
     els.activityStop.addEventListener("click", stopAndLogActivity);
+  }
+
+  if (els.taskForm) {
+    els.taskForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      postTaskFromForm();
+    });
+  }
+
+  if (els.taskTimeLimit) {
+    const onTaskTime = () => renderTaskForm();
+    els.taskTimeLimit.addEventListener("input", onTaskTime);
+    els.taskTimeLimit.addEventListener("change", onTaskTime);
+  }
+
+  if (els.taskDistanceLimit) {
+    const onTaskDist = () => renderTaskForm();
+    els.taskDistanceLimit.addEventListener("input", onTaskDist);
+    els.taskDistanceLimit.addEventListener("change", onTaskDist);
   }
 
   if (els.activityText) {
