@@ -596,6 +596,14 @@
       return layers;
     };
 
+    const simNow = () => {
+      // Use a monotonic clock. rAF uses the same origin as performance.now().
+      if (typeof performance !== "undefined" && typeof performance.now === "function") {
+        return performance.now();
+      }
+      return nowMs();
+    };
+
     const wrapLng = (lng) => {
       // Keep dot motion sane across the dateline.
       const x = ((lng + 180) % 360 + 360) % 360 - 180;
@@ -622,10 +630,49 @@
       return L.latLng(lat, lng);
     };
 
-    const durationForZoom = () => {
-      const z = map.getZoom();
-      const base = Math.max(2000, Math.min(9000, 9000 - z * 420));
-      return base + Math.random() * base * 1.4;
+    const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+
+    const easeInOutQuad = (t) => {
+      return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    };
+
+    const pickStepPx = () => {
+      // Mostly short steps with the occasional longer reposition.
+      const r = Math.random();
+      if (r < 0.78) return 22 + Math.random() * 70; // 22..92
+      if (r < 0.95) return 86 + Math.random() * 120; // 86..206
+      return 190 + Math.random() * 220; // 190..410
+    };
+
+    const pickSpeedPxPerS = () => {
+      // Walk, sometimes jog.
+      const r = Math.random();
+      if (r < 0.86) return 18 + Math.random() * 22; // 18..40
+      return 42 + Math.random() * 38; // 42..80
+    };
+
+    const pickPauseMs = () => {
+      const r = Math.random();
+      if (r < 0.62) return 0;
+      if (r < 0.9) return 350 + Math.random() * 1200;
+      return 1400 + Math.random() * 2600;
+    };
+
+    const targetNear = (startLatLng) => {
+      const size = map.getSize();
+      const margin = 28;
+      const startPt = map.latLngToContainerPoint(startLatLng);
+      const step = pickStepPx();
+      const ang = Math.random() * Math.PI * 2;
+      const dx = Math.cos(ang) * step;
+      const dy = Math.sin(ang) * step;
+
+      const x = clamp(startPt.x + dx, margin, Math.max(margin, size.x - margin));
+      const y = clamp(startPt.y + dy, margin, Math.max(margin, size.y - margin));
+      const ll = map.containerPointToLatLng([x, y]);
+      const lat = clamp(ll.lat, -85, 85);
+      const lng = wrapLng(ll.lng);
+      return L.latLng(lat, lng);
     };
 
     const simPalette = [
@@ -633,30 +680,35 @@
       { fill: "#0a7a52", stroke: "rgba(32, 24, 18, 0.92)" }, // green
       { fill: "#b4233a", stroke: "rgba(32, 24, 18, 0.92)" }, // red
       { fill: "#2a5b8a", stroke: "rgba(32, 24, 18, 0.92)" }, // blue
+      { fill: "#f1b83a", stroke: "rgba(32, 24, 18, 0.92)" }, // amber
       { fill: "#7a5a2b", stroke: "rgba(32, 24, 18, 0.92)" } // umber
     ];
 
     const newDotSegment = (dot, startLatLng, now) => {
-      const bounds = map.getBounds();
       dot.start = startLatLng;
-      dot.target = randomLatLngInBounds(bounds, 0.12);
+      dot.target = targetNear(startLatLng);
       dot.t0 = now;
-      dot.dt = durationForZoom();
+      const startPt = map.latLngToContainerPoint(dot.start);
+      const targetPt = map.latLngToContainerPoint(dot.target);
+      const dist = Math.hypot(targetPt.x - startPt.x, targetPt.y - startPt.y);
+      const speed = pickSpeedPxPerS();
+      dot.dt = Math.max(350, (dist / speed) * 1000);
+      dot.pauseUntil = 0;
     };
 
     const createDot = (now) => {
       const bounds = map.getBounds();
       const start = randomLatLngInBounds(bounds, 0.08);
       const c = simPalette[Math.floor(Math.random() * simPalette.length)];
-      const radius = 2.6 + Math.random() * 2.1;
+      const radius = 3.2 + Math.random() * 2.3;
       const marker = L.circleMarker(start, {
         renderer: simRenderer,
         radius,
         color: c.stroke,
-        weight: 1.1,
-        opacity: 0.75,
+        weight: 1.2,
+        opacity: 0.86,
         fillColor: c.fill,
-        fillOpacity: 0.58
+        fillOpacity: 0.82
       }).addTo(map);
 
       const dot = {
@@ -664,7 +716,9 @@
         start,
         target: start,
         t0: now,
-        dt: durationForZoom()
+        dt: 1000,
+        pauseUntil: 0,
+        jitterPx: 0.35 + Math.random() * 1.35
       };
       newDotSegment(dot, start, now);
       return dot;
@@ -675,15 +729,21 @@
       sim.dots = [];
     };
 
-    const tickDots = (now) => {
+    const tickDots = () => {
+      if (!sim.enabled) return;
+      const now = simNow();
       for (const dot of sim.dots) {
+        if (dot.pauseUntil && now < dot.pauseUntil) continue;
+
         const t = (now - dot.t0) / dot.dt;
         if (t >= 1) {
+          const pauseMs = pickPauseMs();
+          dot.pauseUntil = pauseMs ? now + pauseMs : 0;
           newDotSegment(dot, dot.target, now);
-          dot.marker.setLatLng(dot.start);
           continue;
         }
 
+        const te = easeInOutQuad(Math.max(0, Math.min(1, t)));
         const lat0 = dot.start.lat;
         const lat1 = dot.target.lat;
 
@@ -692,9 +752,15 @@
         // Interpolate the short way across the dateline.
         dLng = ((dLng + 540) % 360) - 180;
 
-        const lat = lat0 + (lat1 - lat0) * t;
-        const lng = wrapLng(lng0 + dLng * t);
-        dot.marker.setLatLng([lat, lng]);
+        const lat = lat0 + (lat1 - lat0) * te;
+        const lng = wrapLng(lng0 + dLng * te);
+
+        // Subtle GPS jitter (in screen-space), keeps motion feeling "alive".
+        const basePt = map.latLngToContainerPoint([lat, lng]);
+        const jx = (Math.random() - 0.5) * dot.jitterPx * 2;
+        const jy = (Math.random() - 0.5) * dot.jitterPx * 2;
+        const jll = map.containerPointToLatLng([basePt.x + jx, basePt.y + jy]);
+        dot.marker.setLatLng([clamp(jll.lat, -85, 85), wrapLng(jll.lng)]);
       }
 
       sim.rafId = window.requestAnimationFrame(tickDots);
@@ -711,7 +777,7 @@
       if (sim.enabled) return;
       sim.enabled = true;
 
-      const now = nowMs();
+      const now = simNow();
       const count = 30;
       sim.dots = Array.from({ length: count }, () => createDot(now));
       setSimUi();
@@ -866,7 +932,7 @@
     map.on("moveend zoomend", () => {
       if (!sim.enabled) return;
       const b = map.getBounds().pad(0.12);
-      const now = nowMs();
+      const now = simNow();
       for (const dot of sim.dots) {
         if (!b.contains(dot.marker.getLatLng())) {
           const start = randomLatLngInBounds(map.getBounds(), 0.06);
