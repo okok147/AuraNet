@@ -24,14 +24,19 @@
     mapSimToggle: $("mapSimToggle"),
     mapAuraCount: $("mapAuraCount"),
 
-    time: $("time"),
-    modePill: $("modePill"),
-    timerHint: $("timerHint"),
-    toggleTimer: $("toggleTimer"),
-    resetTimer: $("resetTimer"),
-    switchMode: $("switchMode"),
-    focusMin: $("focusMin"),
-    breakMin: $("breakMin"),
+    auraPill: $("auraPill"),
+    activityForm: $("activityForm"),
+    activityText: $("activityText"),
+    activityType: $("activityType"),
+    activityShowAura: $("activityShowAura"),
+    activityTime: $("activityTime"),
+    activityHint: $("activityHint"),
+    activityStart: $("activityStart"),
+    activityStop: $("activityStop"),
+    activityClear: $("activityClear"),
+    auraSwatch: $("auraSwatch"),
+    auraValue: $("auraValue"),
+    activityList: $("activityList"),
     toast: $("toast"),
 
     editDialog: $("editDialog"),
@@ -78,11 +83,12 @@
     return `${y}-${m}-${day}`;
   };
 
-  const formatMmSs = (ms) => {
+  const formatHhMmSs = (ms) => {
     const clamped = Math.max(0, Math.round(ms / 1000));
-    const m = Math.floor(clamped / 60);
+    const h = Math.floor(clamped / 3600);
+    const m = Math.floor((clamped % 3600) / 60);
     const s = clamped % 60;
-    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   };
 
   const uid = () => {
@@ -97,13 +103,13 @@
       filter: "inbox",
       q: ""
     },
-    timer: {
-      mode: "focus",
-      running: false,
-      endsAt: null,
-      remainingMs: 25 * 60 * 1000,
-      focusMin: 25,
-      breakMin: 5
+    activity: {
+      active: null,
+      log: [],
+      prefs: {
+        showAuraOnMap: false,
+        lastType: "work"
+      }
     }
   });
 
@@ -113,12 +119,26 @@
       if (!raw) return defaultState();
       const parsed = JSON.parse(raw);
       if (!parsed || parsed.version !== 1) return defaultState();
-      return {
-        ...defaultState(),
+      const base = defaultState();
+      const merged = {
+        ...base,
         ...parsed,
-        ui: { ...defaultState().ui, ...(parsed.ui || {}) },
-        timer: { ...defaultState().timer, ...(parsed.timer || {}) }
+        ui: { ...base.ui, ...(parsed.ui || {}) },
+        activity: {
+          ...base.activity,
+          ...(parsed.activity || {}),
+          prefs: {
+            ...base.activity.prefs,
+            ...((parsed.activity && parsed.activity.prefs) || {})
+          }
+        }
       };
+      // Drop legacy timer state (previous versions).
+      delete merged.timer;
+      // Normalize shapes.
+      if (!Array.isArray(merged.tasks)) merged.tasks = [];
+      if (!Array.isArray(merged.activity.log)) merged.activity.log = [];
+      return merged;
     } catch {
       return defaultState();
     }
@@ -134,6 +154,7 @@
   };
 
   let state = loadState();
+  let mapApi = null;
 
   // --- Tasks ---
 
@@ -331,26 +352,9 @@
     }
   };
 
-  // --- Timer ---
+  // --- Toast ---
 
-  let ticker = null;
   let lastToastAt = 0;
-
-  const sessionMs = (mode) => {
-    const focusMs = clampInt(state.timer.focusMin, 5, 120, 25) * 60 * 1000;
-    const breakMs = clampInt(state.timer.breakMin, 1, 60, 5) * 60 * 1000;
-    return mode === "break" ? breakMs : focusMs;
-  };
-
-  const timerRemaining = () => {
-    if (!state.timer.running || !state.timer.endsAt) return state.timer.remainingMs;
-    return Math.max(0, state.timer.endsAt - nowMs());
-  };
-
-  const syncTimerInputs = () => {
-    els.focusMin.value = String(state.timer.focusMin);
-    els.breakMin.value = String(state.timer.breakMin);
-  };
 
   const toast = (msg) => {
     const t = nowMs();
@@ -363,99 +367,369 @@
     }, 4200);
   };
 
-  const stopTicker = () => {
-    if (!ticker) return;
-    window.clearInterval(ticker);
-    ticker = null;
+  // --- Activity Logger ---
+
+  let activityTicker = null;
+
+  const ACTIVITY_TYPES = {
+    work: { label: "Work", color: "#2a5b8a" },
+    study: { label: "Study", color: "#0a7a52" },
+    exercise: { label: "Exercise", color: "#b4233a" },
+    social: { label: "Social", color: "#f1b83a" },
+    travel: { label: "Travel", color: "#ff6a00" },
+    food: { label: "Food", color: "#7a5a2b" },
+    rest: { label: "Rest", color: "#5a6a7a" }
   };
 
-  const ensureTicker = () => {
-    if (ticker) return;
-    ticker = window.setInterval(() => {
-      const remaining = timerRemaining();
-      if (remaining <= 0 && state.timer.running) {
-        // Finish, switch mode, pause.
-        state.timer.running = false;
-        state.timer.endsAt = null;
-        state.timer.mode = state.timer.mode === "focus" ? "break" : "focus";
-        state.timer.remainingMs = sessionMs(state.timer.mode);
-        saveState();
-        toast(state.timer.mode === "focus" ? "Break done. Back to focus." : "Focus complete. Take a break.");
-      }
-      renderTimer();
-      if (!state.timer.running) stopTicker();
-    }, 250);
+  const normalizeActivityType = (value) => {
+    const key = String(value || "").trim().toLowerCase();
+    return ACTIVITY_TYPES[key] ? key : "work";
   };
 
-  const startTimer = () => {
-    if (state.timer.running) return;
-    const remaining = timerRemaining();
-    const fresh = remaining <= 0 ? sessionMs(state.timer.mode) : remaining;
-    state.timer.remainingMs = fresh;
-    state.timer.endsAt = nowMs() + fresh;
-    state.timer.running = true;
-    saveState();
-    ensureTicker();
-    renderTimer();
+  const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+
+  const hexToRgb = (hex) => {
+    const raw = String(hex || "").trim().replace(/^#/, "");
+    if (raw.length !== 6) return null;
+    const n = Number.parseInt(raw, 16);
+    if (!Number.isFinite(n)) return null;
+    return {
+      r: (n >> 16) & 255,
+      g: (n >> 8) & 255,
+      b: n & 255
+    };
   };
 
-  const pauseTimer = () => {
-    if (!state.timer.running) return;
-    state.timer.remainingMs = timerRemaining();
-    state.timer.running = false;
-    state.timer.endsAt = null;
-    saveState();
-    renderTimer();
-    stopTicker();
+  const rgbToHex = (r, g, b) => {
+    const rr = clamp(Math.round(r), 0, 255);
+    const gg = clamp(Math.round(g), 0, 255);
+    const bb = clamp(Math.round(b), 0, 255);
+    return `#${[rr, gg, bb].map((x) => x.toString(16).padStart(2, "0")).join("")}`.toUpperCase();
   };
 
-  const resetTimer = () => {
-    state.timer.running = false;
-    state.timer.endsAt = null;
-    state.timer.remainingMs = sessionMs(state.timer.mode);
-    saveState();
-    renderTimer();
-    stopTicker();
+  const srgbToLinear = (c01) => {
+    // https://www.w3.org/TR/WCAG20/#relativeluminancedef
+    return c01 <= 0.04045 ? c01 / 12.92 : ((c01 + 0.055) / 1.055) ** 2.4;
   };
 
-  const switchMode = () => {
-    state.timer.mode = state.timer.mode === "focus" ? "break" : "focus";
-    resetTimer();
-    toast(state.timer.mode === "focus" ? "Focus mode." : "Break mode.");
+  const linearToSrgb = (c01) => {
+    const c = clamp(c01, 0, 1);
+    return c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055;
   };
 
-  const setMinutes = (focusMin, breakMin) => {
-    const f = clampInt(focusMin, 5, 120, 25);
-    const b = clampInt(breakMin, 1, 60, 5);
-    state.timer.focusMin = f;
-    state.timer.breakMin = b;
-    resetTimer();
-    syncTimerInputs();
-    toast("Timer updated.");
+  const mixHex = (aHex, bHex, t) => {
+    const a = hexToRgb(aHex);
+    const b = hexToRgb(bHex);
+    if (!a || !b) return String(aHex || "#FF6A00");
+    const tt = clamp(t, 0, 1);
+
+    const ar = srgbToLinear(a.r / 255);
+    const ag = srgbToLinear(a.g / 255);
+    const ab = srgbToLinear(a.b / 255);
+    const br = srgbToLinear(b.r / 255);
+    const bg = srgbToLinear(b.g / 255);
+    const bb = srgbToLinear(b.b / 255);
+
+    const rr = linearToSrgb(ar * (1 - tt) + br * tt) * 255;
+    const gg = linearToSrgb(ag * (1 - tt) + bg * tt) * 255;
+    const bl = linearToSrgb(ab * (1 - tt) + bb * tt) * 255;
+    return rgbToHex(rr, gg, bl);
   };
 
-  const renderTimer = () => {
-    // Repair any stale timer state after load.
-    if (state.timer.running && state.timer.endsAt && state.timer.endsAt <= nowMs()) {
-      state.timer.running = false;
-      state.timer.endsAt = null;
-      state.timer.remainingMs = 0;
-      saveState();
+  const fmtShortDuration = (ms) => {
+    const s = Math.max(0, Math.round(ms / 1000));
+    const m = Math.floor(s / 60);
+    const h = Math.floor(m / 60);
+    const mm = m % 60;
+    if (h <= 0) return `${m}m`;
+    return `${h}h ${mm}m`;
+  };
+
+  const fmtHm = (ms) => {
+    return new Date(ms).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
+  const computeLongTermAura = (now) => {
+    const halfLifeDays = 7;
+    let wSum = 0;
+    let lr = 0;
+    let lg = 0;
+    let lb = 0;
+    const byType = {};
+
+    for (const entry of state.activity.log) {
+      if (!entry || !entry.endedAt || !entry.startedAt) continue;
+      const type = normalizeActivityType(entry.type);
+      const cfg = ACTIVITY_TYPES[type];
+      if (!cfg) continue;
+
+      const durMs = Math.max(0, entry.endedAt - entry.startedAt);
+      if (durMs < 30_000) continue;
+      const ageDays = Math.max(0, (now - entry.endedAt) / 86_400_000);
+      const decay = Math.pow(0.5, ageDays / halfLifeDays);
+      const weight = (durMs / 60_000) * decay; // minutes * decay
+      if (weight <= 0) continue;
+
+      const rgb = hexToRgb(cfg.color);
+      if (!rgb) continue;
+      const r = srgbToLinear(rgb.r / 255);
+      const g = srgbToLinear(rgb.g / 255);
+      const b = srgbToLinear(rgb.b / 255);
+
+      lr += r * weight;
+      lg += g * weight;
+      lb += b * weight;
+      wSum += weight;
+      byType[type] = (byType[type] || 0) + weight;
     }
 
-    const remaining = timerRemaining();
-    els.time.textContent = formatMmSs(remaining);
-    els.modePill.textContent = state.timer.mode === "focus" ? "Focus" : "Break";
+    if (wSum <= 0) {
+      return { hex: "#FF6A00", byType: [] };
+    }
 
-    els.toggleTimer.textContent = state.timer.running ? "Pause" : "Start";
-    els.timerHint.textContent = state.timer.running
-      ? "Stay with it. Small steps."
-      : remaining <= 0
-        ? "Session complete. Switch or start again."
-        : "Start when you’re ready.";
+    const rr = linearToSrgb(lr / wSum) * 255;
+    const gg = linearToSrgb(lg / wSum) * 255;
+    const bb = linearToSrgb(lb / wSum) * 255;
+    const hex = rgbToHex(rr, gg, bb);
 
-    // A subtle visual cue: keep the title in sync.
-    document.title = `${formatMmSs(remaining)} • AuraNet`;
+    const byTypeArr = Object.entries(byType).sort((a, b) => b[1] - a[1]);
+    return { hex, byType: byTypeArr };
+  };
+
+  const computeCurrentAura = (now) => {
+    const longTerm = computeLongTermAura(now);
+    const active = state.activity.active;
+    if (!active) return { hex: longTerm.hex, longTerm };
+
+    const type = normalizeActivityType(active.type);
+    const typeHex = ACTIVITY_TYPES[type] ? ACTIVITY_TYPES[type].color : "#FF6A00";
+    const elapsed = Math.max(0, now - active.startedAt);
+    const t = clamp(elapsed / (30 * 60 * 1000), 0, 1);
+    const w = clamp(0.25 + t * 0.35, 0.25, 0.6);
+    return { hex: mixHex(longTerm.hex, typeHex, w), longTerm };
+  };
+
+  const setAuraUi = (now) => {
+    const active = state.activity.active;
+    const type = active ? normalizeActivityType(active.type) : null;
+    const { hex, longTerm } = computeCurrentAura(now);
+
+    if (els.auraPill) {
+      const label = active ? `ACTIVE: ${ACTIVITY_TYPES[type].label}` : "IDLE";
+      els.auraPill.textContent = label;
+    }
+
+    if (els.auraSwatch) {
+      els.auraSwatch.style.background = `linear-gradient(135deg, ${hex}, ${mixHex(hex, "#FFFFFF", 0.35)})`;
+      els.auraSwatch.style.borderColor = "rgba(32, 24, 18, 0.18)";
+      els.auraSwatch.style.boxShadow = `0 10px 18px rgba(24, 16, 10, 0.10), 0 0 0 6px rgba(255, 106, 0, 0.08) inset`;
+    }
+
+    if (els.auraValue) {
+      const top = longTerm.byType.slice(0, 2);
+      if (top.length === 0) {
+        els.auraValue.textContent = `${hex} • No history yet`;
+      } else {
+        const sum = top.reduce((acc, [, w]) => acc + w, 0);
+        const parts = top.map(([k, w]) => `${ACTIVITY_TYPES[k].label} ${Math.round((w / sum) * 100)}%`);
+        els.auraValue.textContent = `${hex} • ${parts.join(" / ")}`;
+      }
+    }
+
+    return hex;
+  };
+
+  const activityElapsedMs = (now) => {
+    if (!state.activity.active) return 0;
+    return Math.max(0, now - state.activity.active.startedAt);
+  };
+
+  const stopActivityTicker = () => {
+    if (!activityTicker) return;
+    window.clearInterval(activityTicker);
+    activityTicker = null;
+  };
+
+  const renderActivityTimeOnly = () => {
+    const now = nowMs();
+    const active = state.activity.active;
+    const auraHex = setAuraUi(now);
+    if (!els.activityTime || !els.activityHint) return auraHex;
+
+    if (!active) {
+      els.activityTime.textContent = "00:00:00";
+      els.activityHint.textContent = "Log what you’re doing. Your aura blends over time.";
+      document.title = "AuraNet";
+      stopActivityTicker();
+      return auraHex;
+    }
+
+    const elapsed = activityElapsedMs(now);
+    els.activityTime.textContent = formatHhMmSs(elapsed);
+    els.activityHint.textContent = `Tracking: ${active.text}`;
+    document.title = `${formatHhMmSs(elapsed)} • ${ACTIVITY_TYPES[normalizeActivityType(active.type)].label} • AuraNet`;
+    return auraHex;
+  };
+
+  const ensureActivityTicker = () => {
+    if (activityTicker) return;
+    activityTicker = window.setInterval(renderActivityTimeOnly, 500);
+  };
+
+  const syncActivityControls = () => {
+    const active = state.activity.active;
+    if (els.activityStart) els.activityStart.disabled = Boolean(active);
+    if (els.activityStop) els.activityStop.disabled = !active;
+
+    if (els.activityText) els.activityText.disabled = Boolean(active);
+    if (els.activityType) els.activityType.disabled = Boolean(active);
+
+    if (els.activityShowAura) {
+      els.activityShowAura.checked = active
+        ? Boolean(active.showAuraOnMap)
+        : Boolean(state.activity.prefs.showAuraOnMap);
+    }
+
+    if (!active) stopActivityTicker();
+    else ensureActivityTicker();
+  };
+
+  const renderActivityList = () => {
+    if (!els.activityList) return;
+    els.activityList.replaceChildren();
+
+    const items = state.activity.log
+      .slice()
+      .sort((a, b) => (b.endedAt || 0) - (a.endedAt || 0))
+      .slice(0, 10);
+
+    if (items.length === 0) {
+      const li = document.createElement("li");
+      li.className = "activityItem activityItem--empty";
+      li.textContent = "No activities logged yet.";
+      els.activityList.appendChild(li);
+      return;
+    }
+
+    for (const entry of items) {
+      const type = normalizeActivityType(entry.type);
+      const cfg = ACTIVITY_TYPES[type];
+      const dur = Math.max(0, (entry.endedAt || 0) - (entry.startedAt || 0));
+
+      const li = document.createElement("li");
+      li.className = "activityItem";
+
+      const left = document.createElement("div");
+      left.className = "activityItem__main";
+
+      const title = document.createElement("div");
+      title.className = "activityItem__title";
+      title.textContent = entry.text || cfg.label;
+
+      const meta = document.createElement("div");
+      meta.className = "activityItem__meta";
+      const when = `${fmtHm(entry.startedAt)}–${fmtHm(entry.endedAt)} • ${fmtShortDuration(dur)}`;
+      meta.textContent = when;
+
+      left.appendChild(title);
+      left.appendChild(meta);
+
+      const right = document.createElement("div");
+      right.className = "activityItem__right";
+
+      const badge = document.createElement("span");
+      badge.className = "badge badge--ok";
+      badge.textContent = cfg.label.toUpperCase();
+      badge.style.borderColor = "rgba(32, 24, 18, 0.16)";
+      badge.style.background = "rgba(255, 255, 255, 0.6)";
+      badge.style.boxShadow = `0 0 0 2px ${mixHex(cfg.color, "#FFFFFF", 0.75)} inset`;
+      right.appendChild(badge);
+
+      li.appendChild(left);
+      li.appendChild(right);
+      els.activityList.appendChild(li);
+    }
+  };
+
+  const startActivity = () => {
+    if (state.activity.active) return;
+    if (!els.activityText || !els.activityType) return;
+    if (els.activityForm && typeof els.activityForm.reportValidity === "function") {
+      if (!els.activityForm.reportValidity()) return;
+    }
+
+    const text = String(els.activityText.value || "").trim();
+    if (!text) {
+      toast("Activity can’t be empty.");
+      els.activityText.focus();
+      return;
+    }
+
+    const type = normalizeActivityType(els.activityType.value);
+    const showAuraOnMap = Boolean(els.activityShowAura && els.activityShowAura.checked);
+
+    state.activity.prefs.lastType = type;
+    state.activity.prefs.showAuraOnMap = showAuraOnMap;
+
+    state.activity.active = {
+      id: uid(),
+      text,
+      type,
+      startedAt: nowMs(),
+      showAuraOnMap
+    };
+
+    saveState();
+    renderActivity(true);
+    toast("Activity started.");
+  };
+
+  const stopAndLogActivity = () => {
+    const active = state.activity.active;
+    if (!active) return;
+    const endedAt = nowMs();
+    const durationMs = Math.max(0, endedAt - active.startedAt);
+
+    state.activity.active = null;
+    if (durationMs >= 30_000) {
+      state.activity.log.unshift({
+        id: active.id,
+        text: active.text,
+        type: normalizeActivityType(active.type),
+        startedAt: active.startedAt,
+        endedAt
+      });
+    }
+
+    saveState();
+    renderActivity(true);
+    toast(durationMs >= 30_000 ? "Activity logged." : "Activity too short (not saved).");
+  };
+
+  const clearActivityLog = () => {
+    if (!window.confirm("Clear all activity entries?")) return;
+    state.activity.active = null;
+    state.activity.log = [];
+    saveState();
+    renderActivity(true);
+    toast("Activity log cleared.");
+  };
+
+  const renderActivity = (full = false) => {
+    const active = state.activity.active;
+
+    if (els.activityText && active) els.activityText.value = active.text;
+    if (els.activityType && active) els.activityType.value = normalizeActivityType(active.type);
+    if (els.activityType && !active) els.activityType.value = normalizeActivityType(state.activity.prefs.lastType);
+
+    syncActivityControls();
+    const auraHex = renderActivityTimeOnly();
+    if (mapApi) {
+      const enabled = Boolean(active && active.showAuraOnMap);
+      mapApi.setUserAura({ enabled, color: auraHex });
+    }
+
+    if (full) renderActivityList();
   };
 
   // --- Render ---
@@ -464,8 +738,7 @@
     renderStats();
     renderFilters();
     renderList();
-    renderTimer();
-    syncTimerInputs();
+    renderActivity(true);
   };
 
   // --- Map ---
@@ -490,10 +763,10 @@
   };
 
   const initPaperMap = () => {
-    if (!els.paperMap) return;
+    if (!els.paperMap) return null;
     if (typeof window.L === "undefined") {
       setMapStatus("Map library failed to load.", true);
-      return;
+      return null;
     }
 
     const L = window.L;
@@ -522,6 +795,13 @@
     map.setView(defaultView.center, defaultView.zoom);
 
     let myAccuracyRing = null;
+    let userAuraOuter = null;
+    let userAuraInner = null;
+    let userAuraEnabled = false;
+    let userAuraColor = "#FF6A00";
+    let userWatchId = null;
+    let lastUserLatLng = null;
+    let lastUserAccuracyM = null;
     const simRenderer = L.canvas({ padding: 0.5 });
 
     const sim = {
@@ -762,6 +1042,99 @@
         fillColor: fill,
         fillOpacity
       }).addTo(map);
+    };
+
+    const removeUserAuraLayers = () => {
+      if (userAuraOuter) userAuraOuter.remove();
+      if (userAuraInner) userAuraInner.remove();
+      userAuraOuter = null;
+      userAuraInner = null;
+    };
+
+    const applyUserAuraStyle = () => {
+      if (!userAuraOuter || !userAuraInner) return;
+      userAuraOuter.setStyle({ fillColor: userAuraColor, fillOpacity: 0.18 });
+      userAuraInner.setStyle({ fillColor: userAuraColor, fillOpacity: 0.26 });
+    };
+
+    const ensureUserAuraLayers = (latLng) => {
+      if (!latLng) return;
+      if (!userAuraOuter) {
+        userAuraOuter = createAuraLayer(latLng, userAuraColor, 28, 0.18);
+      }
+      if (!userAuraInner) {
+        userAuraInner = createAuraLayer(latLng, userAuraColor, 16, 0.26);
+      }
+      applyUserAuraStyle();
+    };
+
+    const setUserLatLng = (lat, lng, accuracyM, { ensureRing = false } = {}) => {
+      lastUserLatLng = L.latLng(clamp(lat, -85, 85), wrapLng(lng));
+      lastUserAccuracyM = Number.isFinite(Number(accuracyM)) ? Number(accuracyM) : lastUserAccuracyM;
+
+      if (userAuraEnabled) {
+        ensureUserAuraLayers(lastUserLatLng);
+        userAuraOuter.setLatLng(lastUserLatLng);
+        userAuraInner.setLatLng(lastUserLatLng);
+      }
+
+      if (myAccuracyRing) {
+        myAccuracyRing.setLatLng(lastUserLatLng);
+        if (lastUserAccuracyM) myAccuracyRing.setRadius(lastUserAccuracyM);
+      } else if (ensureRing) {
+        myAccuracyRing = L.circle(lastUserLatLng, {
+          radius: lastUserAccuracyM || 50,
+          color: "rgba(255, 106, 0, 0.55)",
+          weight: 2,
+          fillColor: "rgba(255, 106, 0, 0.18)",
+          fillOpacity: 0.35
+        }).addTo(map);
+      }
+    };
+
+    const stopUserWatch = () => {
+      if (userWatchId === null) return;
+      try {
+        navigator.geolocation.clearWatch(userWatchId);
+      } catch {
+        // ignore
+      }
+      userWatchId = null;
+    };
+
+    const startUserWatch = () => {
+      if (userWatchId !== null) return;
+      if (!navigator.geolocation) {
+        setGpsBadge("GPS: UNSUPPORTED", "warn");
+        toast("Geolocation not supported.");
+        return;
+      }
+
+      setGpsBadge("GPS: REQUEST", "off");
+      userWatchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          const accuracy = Number(pos.coords.accuracy) || 0;
+          setUserLatLng(lat, lng, accuracy, { ensureRing: false });
+          setGpsBadge("GPS: ON", "ok");
+        },
+        (err) => {
+          const code = err && typeof err.code === "number" ? err.code : 0;
+          let msg = "GPS error.";
+          if (code === 1) msg = "Location permission denied.";
+          if (code === 2) msg = "Location unavailable.";
+          if (code === 3) msg = "Location request timed out.";
+          setGpsBadge("GPS: OFF", "warn");
+          setMapStatus(msg, true);
+          stopUserWatch();
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 10_000,
+          maximumAge: 20_000
+        }
+      );
     };
 
     const applyAgentStyle = (agent) => {
@@ -1155,33 +1528,18 @@
           const lng = pos.coords.longitude;
           const accuracy = Number(pos.coords.accuracy) || 0;
 
-          if (!myAccuracyRing) {
-            myAccuracyRing = L.circle([lat, lng], {
-              radius: accuracy || 50,
-              color: "rgba(255, 106, 0, 0.55)",
-              weight: 2,
-              fillColor: "rgba(255, 106, 0, 0.18)",
-              fillOpacity: 0.35
-            }).addTo(map);
-          } else {
-            myAccuracyRing.setLatLng([lat, lng]);
-            myAccuracyRing.setRadius(accuracy || myAccuracyRing.getRadius());
-          }
+          setUserLatLng(lat, lng, accuracy, { ensureRing: true });
 
           setGpsBadge("GPS: ON", "ok");
           setMapStatus(
-            `Showing your location (±${Math.round(accuracy || 0)}m).`
+            `Showing your aura area (±${Math.round(accuracy || 0)}m).`
           );
           toast("Location shown on map.");
 
-          if (myAccuracyRing) {
-            map.fitBounds(myAccuracyRing.getBounds(), {
-              padding: [44, 44],
-              maxZoom: 16
-            });
-          } else {
-            map.setView([lat, lng], 16);
-          }
+          map.fitBounds(myAccuracyRing.getBounds(), {
+            padding: [44, 44],
+            maxZoom: 16
+          });
 
           window.requestAnimationFrame(() => map.invalidateSize());
           els.mapLocate.disabled = false;
@@ -1243,6 +1601,34 @@
     else setSimUi();
     setGpsBadge("GPS: OFF", "off");
     setMapStatus("Map ready.");
+
+    const api = {
+      setUserAura: ({ enabled, color } = {}) => {
+        if (typeof color === "string" && String(color).trim()) {
+          userAuraColor = String(color).trim();
+          applyUserAuraStyle();
+        }
+
+        const want = Boolean(enabled);
+        if (!want) {
+          userAuraEnabled = false;
+          stopUserWatch();
+          removeUserAuraLayers();
+          if (!myAccuracyRing) setGpsBadge("GPS: OFF", "off");
+          return;
+        }
+
+        userAuraEnabled = true;
+        if (lastUserLatLng) {
+          ensureUserAuraLayers(lastUserLatLng);
+          userAuraOuter.setLatLng(lastUserLatLng);
+          userAuraInner.setLatLng(lastUserLatLng);
+        }
+        startUserWatch();
+      }
+    };
+
+    return api;
   };
 
   // --- Events ---
@@ -1267,19 +1653,42 @@
 
   els.clearDone.addEventListener("click", clearDone);
 
-  els.toggleTimer.addEventListener("click", () => {
-    if (state.timer.running) pauseTimer();
-    else startTimer();
-  });
-  els.resetTimer.addEventListener("click", resetTimer);
-  els.switchMode.addEventListener("click", switchMode);
+  if (els.activityForm) {
+    els.activityForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (state.activity.active) stopAndLogActivity();
+      else startActivity();
+    });
+  }
 
-  els.focusMin.addEventListener("change", () => {
-    setMinutes(els.focusMin.value, els.breakMin.value);
-  });
-  els.breakMin.addEventListener("change", () => {
-    setMinutes(els.focusMin.value, els.breakMin.value);
-  });
+  if (els.activityStart) {
+    els.activityStart.addEventListener("click", startActivity);
+  }
+  if (els.activityStop) {
+    els.activityStop.addEventListener("click", stopAndLogActivity);
+  }
+  if (els.activityClear) {
+    els.activityClear.addEventListener("click", clearActivityLog);
+  }
+
+  if (els.activityType) {
+    els.activityType.addEventListener("change", () => {
+      // Persist the default type for the next session.
+      state.activity.prefs.lastType = normalizeActivityType(els.activityType.value);
+      saveState();
+      renderActivity(false);
+    });
+  }
+
+  if (els.activityShowAura) {
+    els.activityShowAura.addEventListener("change", () => {
+      const checked = Boolean(els.activityShowAura.checked);
+      state.activity.prefs.showAuraOnMap = checked;
+      if (state.activity.active) state.activity.active.showAuraOnMap = checked;
+      saveState();
+      renderActivity(false);
+    });
+  }
 
   els.editForm.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -1308,20 +1717,7 @@
     closeEdit();
   });
 
-  // Repair timer state on initial load.
-  if (state.timer.running && state.timer.endsAt) {
-    const remaining = state.timer.endsAt - nowMs();
-    if (remaining <= 0) {
-      state.timer.running = false;
-      state.timer.endsAt = null;
-      state.timer.remainingMs = 0;
-      saveState();
-    } else {
-      ensureTicker();
-    }
-  }
-
-  initPaperMap();
+  mapApi = initPaperMap();
   renderClock();
   window.setInterval(renderClock, 10_000);
   render();

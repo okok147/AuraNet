@@ -130,62 +130,74 @@
           </div>
         </section>
 
-        <section class="card card--timer" aria-labelledby="timerTitle">
+        <section class="card card--timer" aria-labelledby="activityTitle">
           <div class="card__head">
-            <h2 class="h1" id="timerTitle">Focus Timer</h2>
-            <div class="pill pill--muted" id="modePill">Focus</div>
+            <h2 class="h1" id="activityTitle">Activity Logger</h2>
+            <div class="pill pill--muted" id="auraPill">Aura</div>
           </div>
 
-          <div class="timer">
-            <div class="timer__time" id="time">25:00</div>
-            <div class="timer__hint" id="timerHint">
-              Start when you’re ready.
+          <div class="activity">
+            <div class="activity__time" id="activityTime">00:00:00</div>
+            <div class="activity__hint" id="activityHint">
+              Log what you’re doing. Your aura blends over time.
             </div>
           </div>
 
-          <div class="timerActions">
-            <button class="btn btn--primary" type="button" id="toggleTimer">
-              Start
-            </button>
-            <button class="btn btn--ghost" type="button" id="resetTimer">
-              Reset
-            </button>
-            <button class="btn btn--ghost" type="button" id="switchMode">
-              Switch
-            </button>
-          </div>
-
-          <div class="settings">
-            <div class="settings__row">
+          <form class="activityForm" id="activityForm" autocomplete="off">
+            <div class="activityForm__row">
               <label class="field">
-                <span class="field__label">Focus (min)</span>
+                <span class="field__label">Activity</span>
                 <input
                   class="input"
-                  id="focusMin"
-                  type="number"
-                  min="5"
-                  max="120"
-                  step="1"
-                  inputmode="numeric"
+                  id="activityText"
+                  name="text"
+                  placeholder="Work, commute, gym, coffee…"
+                  minlength="1"
+                  maxlength="60"
+                  required
                 />
               </label>
               <label class="field">
-                <span class="field__label">Break (min)</span>
-                <input
-                  class="input"
-                  id="breakMin"
-                  type="number"
-                  min="1"
-                  max="60"
-                  step="1"
-                  inputmode="numeric"
-                />
+                <span class="field__label">Type</span>
+                <select class="input" id="activityType" name="type">
+                  <option value="work">Work</option>
+                  <option value="study">Study</option>
+                  <option value="exercise">Exercise</option>
+                  <option value="social">Social</option>
+                  <option value="travel">Travel</option>
+                  <option value="food">Food</option>
+                  <option value="rest">Rest</option>
+                </select>
               </label>
             </div>
-            <div class="note">
-              Changing minutes resets the current session.
+
+            <label class="toggle">
+              <input type="checkbox" id="activityShowAura" />
+              <span>Show my aura on map while active</span>
+            </label>
+
+            <div class="activityForm__actions">
+              <button class="btn btn--primary" type="button" id="activityStart">
+                Start
+              </button>
+              <button class="btn btn--ghost" type="button" id="activityStop" disabled>
+                Stop & log
+              </button>
+              <button class="btn btn--ghost" type="button" id="activityClear">
+                Clear log
+              </button>
+            </div>
+          </form>
+
+          <div class="auraRow" aria-label="Long-term aura color">
+            <div class="auraSwatch" id="auraSwatch" aria-hidden="true"></div>
+            <div class="auraMeta">
+              <div class="auraMeta__title">Long-term aura</div>
+              <div class="auraMeta__value" id="auraValue">—</div>
             </div>
           </div>
+
+          <ul class="activityList" id="activityList" aria-label="Recent activities"></ul>
 
           <div class="toast" id="toast" role="status" aria-live="polite"></div>
         </section>
