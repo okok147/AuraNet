@@ -19,11 +19,10 @@
     paperMap: $("paperMap"),
     mapStatus: $("mapStatus"),
     mapReset: $("mapReset"),
-    mapCount: $("mapCount"),
     mapLocate: $("mapLocate"),
     mapGps: $("mapGps"),
     mapSimToggle: $("mapSimToggle"),
-    mapDotCount: $("mapDotCount"),
+    mapAuraCount: $("mapAuraCount"),
 
     time: $("time"),
     modePill: $("modePill"),
@@ -522,8 +521,6 @@
     const defaultView = { center: [37.7749, -122.4194], zoom: 13 };
     map.setView(defaultView.center, defaultView.zoom);
 
-    const markers = [];
-    let myMarker = null;
     let myAccuracyRing = null;
     const simRenderer = L.canvas({ padding: 0.5 });
 
@@ -531,46 +528,13 @@
       enabled: false,
       rafId: null,
       agents: [],
+      routePool: null,
       buildId: 0,
       abort: null,
       lastTickAt: 0,
       loading: false,
       routeCache: new Map(),
       routeCacheKeys: []
-    };
-
-    const renderLocations = (locations) => {
-      for (const loc of locations) {
-        const marker = L.circleMarker([loc.lat, loc.lng], {
-          radius: 7,
-          color: "rgba(32, 24, 18, 0.92)",
-          weight: 1.4,
-          fillColor: "#ff6a00",
-          fillOpacity: 0.65
-        });
-
-        const popupTitle = escapeHtml(loc.name);
-        const popupNote = escapeHtml(loc.note || "");
-        marker.bindPopup(
-          `<strong>${popupTitle}</strong>${popupNote ? `<br>${popupNote}` : ""}`
-        );
-        marker.addTo(map);
-
-        markers.push(marker);
-      }
-
-      if (els.mapCount) {
-        els.mapCount.textContent = `MARKERS: ${markers.length}`;
-      }
-
-      // If the container’s layout shifted while loading (fonts), re-measure.
-      window.requestAnimationFrame(() => map.invalidateSize());
-    };
-
-    const clearMarkers = () => {
-      for (const m of markers) m.remove();
-      markers.length = 0;
-      if (els.mapCount) els.mapCount.textContent = "MARKERS: 0";
     };
 
     const setGpsBadge = (message, kind = "off") => {
@@ -580,18 +544,16 @@
       els.mapGps.classList.toggle("badge--warn", kind === "warn");
     };
 
-    const setDotBadge = (message, kind = "off") => {
-      if (!els.mapDotCount) return;
-      els.mapDotCount.textContent = message;
-      els.mapDotCount.classList.toggle("badge--ok", kind === "ok");
-      els.mapDotCount.classList.toggle("badge--warn", kind === "warn");
+    const setAuraBadge = (message, kind = "off") => {
+      if (!els.mapAuraCount) return;
+      els.mapAuraCount.textContent = message;
+      els.mapAuraCount.classList.toggle("badge--ok", kind === "ok");
+      els.mapAuraCount.classList.toggle("badge--warn", kind === "warn");
     };
 
     const layersForBounds = () => {
-      // Reset view should stay street-level; don’t zoom out to fit sample markers.
       const layers = [];
       if (myAccuracyRing) layers.push(myAccuracyRing);
-      if (myMarker) layers.push(myMarker);
       return layers;
     };
 
@@ -783,49 +745,61 @@
       return personas[3]; // RUSH
     };
 
+    const auraTargetCountForZoom = (zoom) => {
+      // Zoomed-out = wider view = more simulated auras.
+      const z = clamp(zoom, STREET_MIN_ZOOM, 18);
+      const t = (18 - z) / (18 - STREET_MIN_ZOOM); // 0..1
+      const min = 14;
+      const max = 60;
+      return Math.round(min + t * (max - min));
+    };
+
+    const createAuraLayer = (latLng, fill, radius, fillOpacity) => {
+      return L.circleMarker(latLng, {
+        renderer: simRenderer,
+        radius,
+        stroke: false,
+        fillColor: fill,
+        fillOpacity
+      }).addTo(map);
+    };
+
     const applyAgentStyle = (agent) => {
       let fill = agent.persona.fill;
-      let radius = agent.baseRadius;
-      let fillOpacity = 0.82;
+      let outerRadius = agent.baseOuterRadius;
+      let innerRadius = agent.baseInnerRadius;
+      let outerOpacity = 0.16;
+      let innerOpacity = 0.22;
 
       if (agent.state === "stopped") {
-        fillOpacity = 0.9;
+        outerOpacity = 0.24;
+        innerOpacity = 0.32;
         if (agent.stopType === "eat") {
           fill = "#f1b83a";
-          radius = agent.baseRadius + 1.6;
+          outerRadius = agent.baseOuterRadius + 5;
+          innerRadius = agent.baseInnerRadius + 2.2;
         } else if (agent.stopType === "transit") {
           fill = "#ff6a00";
-          radius = agent.baseRadius + 0.8;
+          outerRadius = agent.baseOuterRadius + 2.8;
+          innerRadius = agent.baseInnerRadius + 1.4;
         } else {
           fill = "#7a5a2b";
-          radius = agent.baseRadius + 0.4;
+          outerRadius = agent.baseOuterRadius + 1.8;
+          innerRadius = agent.baseInnerRadius + 1;
         }
       }
 
-      agent.marker.setStyle({
-        color: "rgba(32, 24, 18, 0.92)",
-        weight: 1.2,
-        opacity: 0.86,
-        fillColor: fill,
-        fillOpacity
-      });
-      agent.marker.setRadius(radius);
-
-      if (agent.marker.getPopup()) {
-        const label =
-          agent.state === "moving"
-            ? agent.persona.kind
-            : agent.stopType === "eat"
-              ? "EATING"
-              : agent.stopType === "transit"
-                ? "BOARDING"
-                : "PAUSED";
-        agent.marker.setPopupContent(`<strong>${label}</strong>`);
-      }
+      agent.outer.setStyle({ fillColor: fill, fillOpacity: outerOpacity });
+      agent.inner.setStyle({ fillColor: fill, fillOpacity: innerOpacity });
+      agent.outer.setRadius(outerRadius);
+      agent.inner.setRadius(innerRadius);
     };
 
     const clearAgents = () => {
-      for (const a of sim.agents) a.marker.remove();
+      for (const a of sim.agents) {
+        a.outer.remove();
+        a.inner.remove();
+      }
       sim.agents = [];
     };
 
@@ -835,17 +809,33 @@
       sim.abort = null;
       if (sim.rafId) window.cancelAnimationFrame(sim.rafId);
       sim.rafId = null;
+      sim.routePool = null;
       clearAgents();
     };
 
-    const buildRoutePool = async (signal) => {
+    const buildRoutePool = async (desiredAgents, signal) => {
       const pool = { driving: [], walking: [] };
+
+      const desiredDriving = clamp(Math.round(desiredAgents / 18), 3, 9);
+      const desiredWalking = clamp(Math.round(desiredAgents / 28), 2, 7);
 
       const cfgFor = (profile) => {
         if (profile === "walking") {
-          return { desired: 2, minM: 220, maxM: 2200, minPx: 160, maxPx: 540 };
+          return {
+            desired: desiredWalking,
+            minM: 220,
+            maxM: 2200,
+            minPx: 160,
+            maxPx: 540
+          };
         }
-        return { desired: 3, minM: 450, maxM: 7200, minPx: 260, maxPx: 980 };
+        return {
+          desired: desiredDriving,
+          minM: 450,
+          maxM: 7200,
+          minPx: 260,
+          maxPx: 980
+        };
       };
 
       const fillPool = async (profile) => {
@@ -869,19 +859,12 @@
       return pool;
     };
 
-    const createAgent = (route, persona, now) => {
-      const baseRadius = 3.6 + Math.random() * 1.2;
-      const marker = L.circleMarker(route.points[0], {
-        renderer: simRenderer,
-        radius: baseRadius,
-        color: "rgba(32, 24, 18, 0.92)",
-        weight: 1.2,
-        opacity: 0.86,
-        fillColor: persona.fill,
-        fillOpacity: 0.82
-      }).addTo(map);
-
-      marker.bindPopup(`<strong>${persona.kind}</strong>`);
+    const createAgent = (route, persona) => {
+      // Aura-only: no central dot.
+      const baseOuterRadius = randBetween(14, 22);
+      const baseInnerRadius = baseOuterRadius * randBetween(0.48, 0.62);
+      const outer = createAuraLayer(route.points[0], persona.fill, baseOuterRadius, 0.16);
+      const inner = createAuraLayer(route.points[0], persona.fill, baseInnerRadius, 0.22);
 
       const distM = randBetween(0, route.totalM);
       const dir = Math.random() < 0.5 ? 1 : -1;
@@ -889,10 +872,12 @@
       const jitterPx = randBetween(persona.jitterPx[0], persona.jitterPx[1]);
 
       const agent = {
-        marker,
+        outer,
+        inner,
         route,
         persona,
-        baseRadius,
+        baseOuterRadius,
+        baseInnerRadius,
         dir,
         speedMps,
         jitterPx,
@@ -905,7 +890,9 @@
 
       const pos = routeAtDistance(route, distM, 0);
       agent.hintIdx = pos.idx;
-      agent.marker.setLatLng(jitterLatLng(pos.latLng, agent.jitterPx));
+      const ll = jitterLatLng(pos.latLng, agent.jitterPx);
+      agent.outer.setLatLng(ll);
+      agent.inner.setLatLng(ll);
       applyAgentStyle(agent);
       return agent;
     };
@@ -964,7 +951,9 @@
 
         const pos = routeAtDistance(agent.route, agent.distM, agent.hintIdx);
         agent.hintIdx = pos.idx;
-        agent.marker.setLatLng(jitterLatLng(pos.latLng, agent.jitterPx));
+        const ll = jitterLatLng(pos.latLng, agent.jitterPx);
+        agent.outer.setLatLng(ll);
+        agent.inner.setLatLng(ll);
       }
 
       sim.rafId = window.requestAnimationFrame(tickAgents);
@@ -972,25 +961,51 @@
 
     const setSimUi = () => {
       if (els.mapSimToggle) {
-        els.mapSimToggle.textContent = sim.enabled ? "Sim dots: ON" : "Sim dots: OFF";
+        els.mapSimToggle.textContent = sim.enabled ? "Sim auras: ON" : "Sim auras: OFF";
       }
 
       if (!sim.enabled) {
-        setDotBadge("DOTS: OFF", "off");
+        setAuraBadge("AURAS: OFF", "off");
         return;
       }
 
       if (map.getZoom() < STREET_MIN_ZOOM) {
-        setDotBadge(`DOTS: ZOOM ${STREET_MIN_ZOOM}+`, "warn");
+        setAuraBadge(`AURAS: ZOOM ${STREET_MIN_ZOOM}+`, "warn");
         return;
       }
 
       if (sim.loading) {
-        setDotBadge("DOTS: LOADING", "off");
+        setAuraBadge("AURAS: LOADING", "off");
         return;
       }
 
-      setDotBadge(`DOTS: ${sim.agents.length}`, sim.agents.length ? "ok" : "off");
+      setAuraBadge(`AURAS: ${sim.agents.length}`, sim.agents.length ? "ok" : "off");
+    };
+
+    const ensureAgentCount = (targetCount) => {
+      if (!sim.routePool) return;
+      const routesDriving = sim.routePool.driving || [];
+      const routesWalking = sim.routePool.walking && sim.routePool.walking.length
+        ? sim.routePool.walking
+        : routesDriving;
+      const nowTarget = Math.max(0, Math.round(targetCount));
+
+      while (sim.agents.length < nowTarget) {
+        const persona = pickPersona();
+        const route =
+          persona.profile === "walking"
+            ? pickOne(routesWalking.length ? routesWalking : routesDriving)
+            : pickOne(routesDriving.length ? routesDriving : routesWalking);
+        if (!route) break;
+        sim.agents.push(createAgent(route, persona));
+      }
+
+      while (sim.agents.length > nowTarget) {
+        const agent = sim.agents.pop();
+        if (!agent) break;
+        agent.outer.remove();
+        agent.inner.remove();
+      }
     };
 
     const rebuildSim = async () => {
@@ -998,17 +1013,18 @@
       if (map.getZoom() < STREET_MIN_ZOOM) return;
 
       const buildId = ++sim.buildId;
-      stopSimInternal();
 
       sim.loading = true;
       setSimUi();
       setMapStatus("Fetching street activity…");
 
+      if (sim.abort) sim.abort.abort();
       const ac = new AbortController();
       sim.abort = ac;
 
       try {
-        const pool = await buildRoutePool(ac.signal);
+        const agentCount = auraTargetCountForZoom(map.getZoom());
+        const pool = await buildRoutePool(agentCount, ac.signal);
         if (buildId !== sim.buildId) return;
 
         const routesDriving = pool.driving;
@@ -1017,9 +1033,7 @@
           throw new Error("No routes available for this view.");
         }
 
-        const agentCount = 22;
-        const now = simNow();
-        sim.agents = [];
+        const nextAgents = [];
 
         for (let i = 0; i < agentCount; i++) {
           const persona = pickPersona();
@@ -1028,22 +1042,33 @@
               ? pickOne(routesWalking)
               : pickOne(routesDriving.length ? routesDriving : routesWalking);
           if (!route) continue;
-          sim.agents.push(createAgent(route, persona, now));
+          nextAgents.push(createAgent(route, persona));
+        }
+
+        const prevAgents = sim.agents;
+        sim.routePool = pool;
+        sim.agents = nextAgents;
+        for (const a of prevAgents) {
+          a.outer.remove();
+          a.inner.remove();
         }
 
         sim.loading = false;
         setSimUi();
         setMapStatus("Street activity running.");
 
-        sim.lastTickAt = now;
-        sim.rafId = window.requestAnimationFrame(tickAgents);
+        if (!sim.rafId) {
+          sim.lastTickAt = simNow();
+          sim.rafId = window.requestAnimationFrame(tickAgents);
+        }
       } catch (err) {
-        console.error(err);
         if (buildId !== sim.buildId) return;
+        if (err && err.name !== "AbortError") console.error(err);
         sim.loading = false;
-        setDotBadge("DOTS: OFF", "warn");
         setMapStatus("Street simulation failed to load routes.", true);
-        stopSimInternal();
+        setSimUi();
+      } finally {
+        if (buildId === sim.buildId) sim.abort = null;
       }
     };
 
@@ -1070,7 +1095,13 @@
         setSimUi();
         return;
       }
-      if (sim.agents.length === 0 && !sim.loading) rebuildSim();
+      const targetCount = auraTargetCountForZoom(map.getZoom());
+      if (!sim.routePool) {
+        if (sim.agents.length === 0 && !sim.loading) rebuildSim();
+        return;
+      }
+      if (!sim.loading) ensureAgentCount(targetCount);
+      setSimUi();
     };
 
     const startSim = () => {
@@ -1091,40 +1122,6 @@
     const toggleSim = () => {
       if (sim.enabled) stopSim();
       else startSim();
-    };
-
-    const loadLocations = async () => {
-      setMapStatus("Loading locations…");
-      try {
-        const response = await fetch("./data/locations.json", {
-          cache: "no-store"
-        });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const payload = await response.json();
-        if (!payload || !Array.isArray(payload.locations)) {
-          throw new Error("Invalid payload");
-        }
-
-        clearMarkers();
-        renderLocations(payload.locations);
-        setGpsBadge("GPS: OFF", "off");
-        setSimUi();
-        const base = `Loaded ${payload.locations.length} location(s).`;
-        const activity =
-          sim.enabled && map.getZoom() >= STREET_MIN_ZOOM
-            ? sim.loading
-              ? "Fetching street activity…"
-              : sim.agents.length
-                ? "Street activity running."
-                : `Zoom to ${STREET_MIN_ZOOM}+ to see street activity.`
-            : "";
-        setMapStatus(activity ? `${base} ${activity}` : base);
-      } catch (err) {
-        console.error(err);
-        setGpsBadge("GPS: ERROR", "warn");
-        setDotBadge("DOTS: OFF", "warn");
-        setMapStatus("Map loaded, but location data fetch failed.", true);
-      }
     };
 
     if (els.mapReset) {
@@ -1169,20 +1166,6 @@
           } else {
             myAccuracyRing.setLatLng([lat, lng]);
             myAccuracyRing.setRadius(accuracy || myAccuracyRing.getRadius());
-          }
-
-          if (!myMarker) {
-            myMarker = L.circleMarker([lat, lng], {
-              radius: 7,
-              color: "rgba(32, 24, 18, 0.92)",
-              weight: 1.6,
-              fillColor: "#ff6a00",
-              fillOpacity: 0.9
-            })
-              .addTo(map)
-              .bindPopup("<strong>Your location</strong>");
-          } else {
-            myMarker.setLatLng([lat, lng]);
           }
 
           setGpsBadge("GPS: ON", "ok");
@@ -1240,12 +1223,15 @@
         return;
       }
 
+      syncSimForView();
+
       const movedM = map.distance(map.getCenter(), rebuildAnchor.center);
       const zoomChanged = map.getZoom() !== rebuildAnchor.zoom;
-      if (zoomChanged || movedM > 1200) {
+      const zoomDelta = Math.abs(map.getZoom() - rebuildAnchor.zoom);
+      if (movedM > 1200 || zoomDelta >= 2) {
         scheduleRebuild();
       } else {
-        syncSimForView();
+        // Minor view change: keep routes and just scale aura count.
       }
     });
 
@@ -1255,8 +1241,8 @@
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (!reduceMotion) startSim();
     else setSimUi();
-
-    loadLocations();
+    setGpsBadge("GPS: OFF", "off");
+    setMapStatus("Map ready.");
   };
 
   // --- Events ---
