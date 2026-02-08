@@ -1922,9 +1922,14 @@
       }
 
       if (!agent.dialogBound) {
+        const r =
+          typeof agent.outer.getRadius === "function"
+            ? agent.outer.getRadius()
+            : Number(agent.baseOuterRadius) || 18;
         agent.outer.bindTooltip(text, {
           permanent: true,
-          direction: "center",
+          direction: "top",
+          offset: [0, -Math.round(Math.max(16, r + 12))],
           className: "auraDialog",
           opacity: 0.95
         });
