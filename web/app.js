@@ -20,6 +20,8 @@
     mapStatus: $("mapStatus"),
     mapReset: $("mapReset"),
     mapCount: $("mapCount"),
+    mapLocate: $("mapLocate"),
+    mapGps: $("mapGps"),
 
     time: $("time"),
     modePill: $("modePill"),
@@ -518,6 +520,8 @@
     map.setView(defaultView.center, defaultView.zoom);
 
     const markers = [];
+    let myMarker = null;
+    let myAccuracyRing = null;
 
     const renderLocations = (locations) => {
       const bounds = [];
@@ -562,6 +566,20 @@
       if (els.mapCount) els.mapCount.textContent = "MARKERS: 0";
     };
 
+    const setGpsBadge = (message, kind = "off") => {
+      if (!els.mapGps) return;
+      els.mapGps.textContent = message;
+      els.mapGps.classList.toggle("badge--ok", kind === "ok");
+      els.mapGps.classList.toggle("badge--warn", kind === "warn");
+    };
+
+    const layersForBounds = () => {
+      const layers = [...markers];
+      if (myAccuracyRing) layers.push(myAccuracyRing);
+      if (myMarker) layers.push(myMarker);
+      return layers;
+    };
+
     const loadLocations = async () => {
       setMapStatus("Loading locations…");
       try {
@@ -576,22 +594,113 @@
 
         clearMarkers();
         renderLocations(payload.locations);
+        setGpsBadge("GPS: OFF", "off");
         setMapStatus(`Loaded ${payload.locations.length} location(s).`);
       } catch (err) {
         console.error(err);
+        setGpsBadge("GPS: ERROR", "warn");
         setMapStatus("Map loaded, but location data fetch failed.", true);
       }
     };
 
     if (els.mapReset) {
       els.mapReset.addEventListener("click", () => {
-        if (markers.length > 0) {
-          const group = L.featureGroup(markers);
+        const layers = layersForBounds();
+        if (layers.length > 0) {
+          const group = L.featureGroup(layers);
           map.fitBounds(group.getBounds(), { padding: [44, 44], maxZoom: 6 });
-        } else {
-          map.setView(defaultView.center, defaultView.zoom);
+          return;
         }
+        map.setView(defaultView.center, defaultView.zoom);
       });
+    }
+
+    const showMyLocation = () => {
+      if (!els.mapLocate) return;
+      if (!navigator.geolocation) {
+        setGpsBadge("GPS: UNSUPPORTED", "warn");
+        setMapStatus("Geolocation is not supported in this browser.", true);
+        toast("Geolocation not supported.");
+        return;
+      }
+
+      els.mapLocate.disabled = true;
+      setGpsBadge("GPS: REQUEST", "off");
+      setMapStatus("Requesting your location…");
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          const accuracy = Number(pos.coords.accuracy) || 0;
+
+          if (!myAccuracyRing) {
+            myAccuracyRing = L.circle([lat, lng], {
+              radius: accuracy || 50,
+              color: "rgba(255, 106, 0, 0.55)",
+              weight: 2,
+              fillColor: "rgba(255, 106, 0, 0.18)",
+              fillOpacity: 0.35
+            }).addTo(map);
+          } else {
+            myAccuracyRing.setLatLng([lat, lng]);
+            myAccuracyRing.setRadius(accuracy || myAccuracyRing.getRadius());
+          }
+
+          if (!myMarker) {
+            myMarker = L.circleMarker([lat, lng], {
+              radius: 7,
+              color: "rgba(32, 24, 18, 0.92)",
+              weight: 1.6,
+              fillColor: "#ff6a00",
+              fillOpacity: 0.9
+            })
+              .addTo(map)
+              .bindPopup("<strong>Your location</strong>");
+          } else {
+            myMarker.setLatLng([lat, lng]);
+          }
+
+          setGpsBadge("GPS: ON", "ok");
+          setMapStatus(
+            `Showing your location (±${Math.round(accuracy || 0)}m).`
+          );
+          toast("Location shown on map.");
+
+          if (myAccuracyRing) {
+            map.fitBounds(myAccuracyRing.getBounds(), {
+              padding: [44, 44],
+              maxZoom: 16
+            });
+          } else {
+            map.setView([lat, lng], 16);
+          }
+
+          window.requestAnimationFrame(() => map.invalidateSize());
+          els.mapLocate.disabled = false;
+        },
+        (err) => {
+          const code = err && typeof err.code === "number" ? err.code : 0;
+          let msg = "Unable to get your location.";
+          if (code === 1) msg = "Location permission denied.";
+          if (code === 2) msg = "Location unavailable.";
+          if (code === 3) msg = "Location request timed out.";
+
+          setGpsBadge("GPS: OFF", "warn");
+          setMapStatus(msg, true);
+          toast(msg);
+          els.mapLocate.disabled = false;
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10_000,
+          maximumAge: 60_000
+        }
+      );
+    };
+
+    if (els.mapLocate) {
+      els.mapLocate.addEventListener("click", showMyLocation);
     }
 
     loadLocations();

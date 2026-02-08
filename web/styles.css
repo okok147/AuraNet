@@ -362,6 +362,18 @@ body {
   border-color: var(--stroke);
 }
 
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn:disabled:hover {
+  transform: none;
+  background: rgba(255, 255, 255, 0.42);
+  border-color: var(--stroke2);
+}
+
 .btn:active {
   transform: translateY(0);
 }
@@ -752,6 +764,13 @@ body {
   justify-content: space-between;
   gap: 10px;
   margin-top: 12px;
+}
+
+.mapActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .mapMeta {

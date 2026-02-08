@@ -208,11 +208,17 @@
           </div>
 
           <div class="mapBar">
-            <button class="btn btn--ghost" type="button" id="mapReset">
-              Reset view
-            </button>
+            <div class="mapActions">
+              <button class="btn btn--primary" type="button" id="mapLocate">
+                My location
+              </button>
+              <button class="btn btn--ghost" type="button" id="mapReset">
+                Reset view
+              </button>
+            </div>
             <div class="mapMeta">
-              <span class="badge badge--ok" id="mapCount">Markers: 0</span>
+              <span class="badge" id="mapGps">GPS: OFF</span>
+              <span class="badge badge--ok" id="mapCount">MARKERS: 0</span>
             </div>
           </div>
         </section>
