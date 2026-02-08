@@ -12,6 +12,7 @@
     mapReset: $("mapReset"),
     mapLocate: $("mapLocate"),
     mapGps: $("mapGps"),
+    mapVis: $("mapVis"),
     mapSimToggle: $("mapSimToggle"),
     mapAuraCount: $("mapAuraCount"),
 
@@ -21,6 +22,17 @@
     activitySuggest: $("activitySuggest"),
     activityColorPreview: $("activityColorPreview"),
     activityShowAura: $("activityShowAura"),
+    idleShowAura: $("idleShowAura"),
+    visibilitySeg: $("visibilitySeg"),
+    visRoom: $("visRoom"),
+    visRoomCode: $("visRoomCode"),
+    visRoomJoin: $("visRoomJoin"),
+    visRoomLeave: $("visRoomLeave"),
+    visRoomState: $("visRoomState"),
+    visApproved: $("visApproved"),
+    approvedInput: $("approvedInput"),
+    approvedAdd: $("approvedAdd"),
+    approvedList: $("approvedList"),
     activityTime: $("activityTime"),
     activityHint: $("activityHint"),
     activityStart: $("activityStart"),
@@ -106,6 +118,28 @@
       activity_placeholder: "Work, commute, gym, coffee…",
       activity_color_label: "Color",
       activity_show_aura_toggle: "Show my aura on map while active",
+      idle_show_aura_toggle: "Show my aura on map while idle",
+      visibility_label: "Visibility",
+      visibility_everyone: "Everyone",
+      visibility_area: "Specific area",
+      visibility_connected: "Approved aura",
+      area_room_label: "Event room",
+      area_room_placeholder: "Room code",
+      area_join: "Join",
+      area_leave: "Leave",
+      approved_label: "Approved contacts",
+      approved_placeholder: "@handle",
+      approved_add: "Add",
+      approved_empty: "No approved contacts yet",
+      approved_remove: "Remove",
+      area_room_state_on: "ROOM: ON",
+      area_room_state_off: "ROOM: OFF",
+      toast_room_code_empty: "Room code can’t be empty.",
+      toast_room_joined: "Joined area room.",
+      toast_room_left: "Left area room.",
+      toast_contact_added: "Approved contact added.",
+      toast_contact_exists: "Already approved.",
+      toast_contact_removed: "Approved contact removed.",
       activity_start: "Start",
       activity_stop_log: "Stop & log",
       activity_clear: "Clear log",
@@ -148,6 +182,7 @@
       map_gps_request: "GPS: REQUEST",
       map_gps_error: "GPS: ERROR",
       map_gps_unsupported: "GPS: UNSUPPORTED",
+      map_vis_prefix: "VIS",
       map_status_ready: "Map ready.",
       map_status_requesting_gps: "Requesting GPS…",
       map_status_gps_private: "GPS ready. Centered on you (private view).",
@@ -166,6 +201,28 @@
       activity_placeholder: "工作、通勤、健身、咖啡…",
       activity_color_label: "顏色",
       activity_show_aura_toggle: "活動進行中在地圖顯示我的氣場",
+      idle_show_aura_toggle: "待機時也在地圖顯示我的氣場",
+      visibility_label: "可見性",
+      visibility_everyone: "所有人",
+      visibility_area: "同場域",
+      visibility_connected: "已核准",
+      area_room_label: "活動房間",
+      area_room_placeholder: "房間代碼",
+      area_join: "加入",
+      area_leave: "離開",
+      approved_label: "已核准聯絡人",
+      approved_placeholder: "@帳號",
+      approved_add: "新增",
+      approved_empty: "尚無已核准聯絡人",
+      approved_remove: "移除",
+      area_room_state_on: "房間：開",
+      area_room_state_off: "房間：關",
+      toast_room_code_empty: "房間代碼不能為空。",
+      toast_room_joined: "已加入活動房間。",
+      toast_room_left: "已離開活動房間。",
+      toast_contact_added: "已新增核准聯絡人。",
+      toast_contact_exists: "已在核准名單中。",
+      toast_contact_removed: "已移除核准聯絡人。",
       activity_start: "開始",
       activity_stop_log: "結束並紀錄",
       activity_clear: "清除紀錄",
@@ -208,6 +265,7 @@
       map_gps_request: "GPS：請求中",
       map_gps_error: "GPS：錯誤",
       map_gps_unsupported: "GPS：不支援",
+      map_vis_prefix: "可見",
       map_status_ready: "地圖已就緒。",
       map_status_requesting_gps: "正在請求定位…",
       map_status_gps_private: "定位已就緒。已置中到你的位置（私人視角）。",
@@ -226,6 +284,28 @@
       activity_placeholder: "仕事、通勤、ジム、コーヒー…",
       activity_color_label: "色",
       activity_show_aura_toggle: "アクティブ中に地図で自分のオーラを表示",
+      idle_show_aura_toggle: "アイドル中も地図で自分のオーラを表示",
+      visibility_label: "公開範囲",
+      visibility_everyone: "全員",
+      visibility_area: "同じ場所",
+      visibility_connected: "承認済み",
+      area_room_label: "イベントルーム",
+      area_room_placeholder: "ルームコード",
+      area_join: "参加",
+      area_leave: "退出",
+      approved_label: "承認済み連絡先",
+      approved_placeholder: "@handle",
+      approved_add: "追加",
+      approved_empty: "承認済みはまだありません",
+      approved_remove: "削除",
+      area_room_state_on: "ROOM: ON",
+      area_room_state_off: "ROOM: OFF",
+      toast_room_code_empty: "ルームコードを入力してください。",
+      toast_room_joined: "ルームに参加しました。",
+      toast_room_left: "ルームから退出しました。",
+      toast_contact_added: "承認済みに追加しました。",
+      toast_contact_exists: "すでに承認済みです。",
+      toast_contact_removed: "承認済みから削除しました。",
       activity_start: "開始",
       activity_stop_log: "停止して記録",
       activity_clear: "ログを消去",
@@ -268,6 +348,7 @@
       map_gps_request: "GPS: 要求中",
       map_gps_error: "GPS: エラー",
       map_gps_unsupported: "GPS: 非対応",
+      map_vis_prefix: "公開",
       map_status_ready: "地図の準備ができました。",
       map_status_requesting_gps: "GPS を要求しています…",
       map_status_gps_private: "GPS 準備完了。あなたの位置に移動しました（プライベート表示）。",
@@ -320,6 +401,10 @@
       log: [],
       prefs: {
         showAuraOnMap: false,
+        idleShowAuraOnMap: false,
+        visibilityMode: "everyone",
+        areaRoom: { code: "", joined: false, joinedAtMs: 0, leftAtMs: 0 },
+        allowlist: [],
         lang: "en",
         lingerUntil: 0
       }
@@ -349,6 +434,22 @@
       delete merged.timer;
       // Normalize shapes.
       if (!Array.isArray(merged.activity.log)) merged.activity.log = [];
+      // Normalize allowlist.
+      if (!Array.isArray(merged.activity.prefs.allowlist)) merged.activity.prefs.allowlist = [];
+      merged.activity.prefs.allowlist = merged.activity.prefs.allowlist
+        .map((x) => String(x || "").trim())
+        .filter((x) => x);
+      // Normalize area room shape.
+      if (!merged.activity.prefs.areaRoom || typeof merged.activity.prefs.areaRoom !== "object") {
+        merged.activity.prefs.areaRoom = { code: "", joined: false, joinedAtMs: 0, leftAtMs: 0 };
+      } else {
+        merged.activity.prefs.areaRoom = {
+          code: String(merged.activity.prefs.areaRoom.code || ""),
+          joined: Boolean(merged.activity.prefs.areaRoom.joined),
+          joinedAtMs: Number(merged.activity.prefs.areaRoom.joinedAtMs) || 0,
+          leftAtMs: Number(merged.activity.prefs.areaRoom.leftAtMs) || 0
+        };
+      }
       return merged;
     } catch {
       return defaultState();
@@ -431,6 +532,29 @@
   };
 
   const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+
+  const VISIBILITY_MODES = ["everyone", "area", "connected"];
+
+  const normalizeVisibilityMode = (value) => {
+    const v = String(value || "").trim().toLowerCase();
+    return VISIBILITY_MODES.includes(v) ? v : "everyone";
+  };
+
+  const normalizeRoomCode = (value) => {
+    return String(value || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 36);
+  };
+
+  const normalizeContactHandle = (value) => {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    let v = raw.startsWith("@") ? raw : `@${raw}`;
+    v = v.replace(/\s+/g, "");
+    v = v.slice(0, 32);
+    return v.toLowerCase();
+  };
 
   const normalizeActivityText = (value) => {
     return String(value || "").replace(/\s+/g, " ").trim();
@@ -804,13 +928,17 @@
   const shouldShowUserAura = (now) => {
     const active = state.activity.active;
     if (active) return Boolean(active.showAuraOnMap);
-    return hasAuraLinger(now);
+    return Boolean(state.activity.prefs.idleShowAuraOnMap) || hasAuraLinger(now);
   };
 
   const syncUserAuraOnMap = (now, auraHex) => {
     if (!mapApi) return;
     const enabled = shouldShowUserAura(now);
-    mapApi.setUserAura({ enabled, color: auraHex });
+    mapApi.setUserAura({
+      enabled,
+      color: auraHex,
+      visibilityMode: normalizeVisibilityMode(state.activity.prefs.visibilityMode)
+    });
     if (!enabled && state.activity.prefs.lingerUntil) {
       state.activity.prefs.lingerUntil = 0;
       saveState();
@@ -862,6 +990,10 @@
       els.activityShowAura.checked = active
         ? Boolean(active.showAuraOnMap)
         : Boolean(state.activity.prefs.showAuraOnMap);
+    }
+
+    if (els.idleShowAura) {
+      els.idleShowAura.checked = Boolean(state.activity.prefs.idleShowAuraOnMap);
     }
 
     const now = nowMs();
@@ -1065,6 +1197,83 @@
     renderSuggestList(scored);
   };
 
+  // --- Visibility (Everyone / Area / Approved) ---
+
+  const setSegSelected = (value) => {
+    if (!els.visibilitySeg) return;
+    const mode = normalizeVisibilityMode(value);
+    for (const btn of Array.from(els.visibilitySeg.querySelectorAll("button[data-vis]"))) {
+      const v = btn.getAttribute("data-vis");
+      btn.setAttribute("aria-selected", v === mode ? "true" : "false");
+    }
+  };
+
+  const renderApprovedList = () => {
+    if (!els.approvedList) return;
+    els.approvedList.replaceChildren();
+
+    const items = Array.isArray(state.activity.prefs.allowlist) ? state.activity.prefs.allowlist.slice() : [];
+    if (!items.length) {
+      const li = document.createElement("li");
+      li.className = "approvedEmpty";
+      li.textContent = t("approved_empty");
+      els.approvedList.appendChild(li);
+      return;
+    }
+
+    for (const handle of items) {
+      const li = document.createElement("li");
+      li.className = "approvedItem";
+
+      const dot = document.createElement("span");
+      dot.className = "approvedDot";
+      dot.style.background = activityColorHex(handle);
+
+      const name = document.createElement("span");
+      name.className = "approvedName";
+      name.textContent = handle;
+
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "iconBtn danger";
+      remove.textContent = t("approved_remove").toUpperCase();
+      remove.addEventListener("click", () => {
+        state.activity.prefs.allowlist = state.activity.prefs.allowlist.filter((x) => x !== handle);
+        saveState();
+        renderVisibility();
+        toast(t("toast_contact_removed"));
+      });
+
+      li.appendChild(dot);
+      li.appendChild(name);
+      li.appendChild(remove);
+      els.approvedList.appendChild(li);
+    }
+  };
+
+  const renderVisibility = () => {
+    const mode = normalizeVisibilityMode(state.activity.prefs.visibilityMode);
+    setSegSelected(mode);
+
+    if (els.visRoom) els.visRoom.hidden = mode !== "area";
+    if (els.visApproved) els.visApproved.hidden = mode !== "connected";
+
+    if (els.visRoomCode) {
+      els.visRoomCode.value = normalizeRoomCode(state.activity.prefs.areaRoom && state.activity.prefs.areaRoom.code);
+    }
+    const joined = Boolean(state.activity.prefs.areaRoom && state.activity.prefs.areaRoom.joined);
+
+    if (els.visRoomJoin) els.visRoomJoin.hidden = joined;
+    if (els.visRoomLeave) els.visRoomLeave.hidden = !joined;
+    if (els.visRoomState) {
+      els.visRoomState.textContent = joined ? t("area_room_state_on") : t("area_room_state_off");
+      els.visRoomState.classList.toggle("badge--ok", joined);
+      els.visRoomState.classList.toggle("badge--warn", !joined);
+    }
+
+    renderApprovedList();
+  };
+
   const renderActivityList = () => {
     if (!els.activityList) return;
     els.activityList.replaceChildren();
@@ -1180,7 +1389,7 @@
     }
 
     // Privacy + UX: keep aura visible briefly after logging so the color change is noticeable.
-    if (active.showAuraOnMap) {
+    if (active.showAuraOnMap && !state.activity.prefs.idleShowAuraOnMap) {
       state.activity.prefs.lingerUntil = endedAt + 12_000;
     } else {
       state.activity.prefs.lingerUntil = 0;
@@ -1208,6 +1417,7 @@
 
     syncActivityControls();
     renderActivityAssist();
+    renderVisibility();
     const auraHex = renderActivityTimeOnly();
     syncUserAuraOnMap(nowMs(), auraHex);
 
@@ -1283,10 +1493,16 @@
     let lastUserLatLngBlurred = null;
     let lastUserAccuracyM = null;
     let selfPreciseMode = false;
+    let userVisibilityMode = normalizeVisibilityMode(state.activity.prefs.visibilityMode);
+    const PRIVACY_GRID_BY_MODE_M = {
+      everyone: 5000,
+      area: 1200,
+      connected: 250
+    };
     // Privacy: blur the true GPS coordinate so the aura doesn't pinpoint you.
     const userPrivacy = {
-      // Quantize to ~250m grid.
-      gridM: 250,
+      // Quantize to a grid based on visibility mode.
+      gridM: PRIVACY_GRID_BY_MODE_M[userVisibilityMode] || 250,
       // Per-session extra offset (kept stable while the page is open).
       offsetEastM: (Math.random() - 0.5) * 260,
       offsetNorthM: (Math.random() - 0.5) * 260
@@ -1318,6 +1534,20 @@
       els.mapAuraCount.textContent = message;
       els.mapAuraCount.classList.toggle("badge--ok", kind === "ok");
       els.mapAuraCount.classList.toggle("badge--warn", kind === "warn");
+    };
+
+    const setVisBadge = (mode, kind = "off") => {
+      if (!els.mapVis) return;
+      const m = normalizeVisibilityMode(mode);
+      const label =
+        m === "area"
+          ? t("visibility_area")
+          : m === "connected"
+            ? t("visibility_connected")
+            : t("visibility_everyone");
+      els.mapVis.textContent = `${t("map_vis_prefix")}: ${label}`;
+      els.mapVis.classList.toggle("badge--ok", kind === "ok");
+      els.mapVis.classList.toggle("badge--warn", kind === "warn");
     };
 
     const layersForBounds = () => {
@@ -1615,6 +1845,28 @@
     const blurUserLatLng = (latLng) => {
       const q = quantizeLatLng(latLng, userPrivacy.gridM);
       return offsetLatLngMeters(q, userPrivacy.offsetEastM, userPrivacy.offsetNorthM);
+    };
+
+    const setUserVisibilityMode = (mode) => {
+      const next = normalizeVisibilityMode(mode);
+      if (next === userVisibilityMode) {
+        setVisBadge(userVisibilityMode, "ok");
+        return;
+      }
+      userVisibilityMode = next;
+      userPrivacy.gridM = PRIVACY_GRID_BY_MODE_M[userVisibilityMode] || userPrivacy.gridM;
+      setVisBadge(userVisibilityMode, "ok");
+
+      if (lastUserLatLngRaw) {
+        lastUserLatLngBlurred = blurUserLatLng(lastUserLatLngRaw);
+        if (!selfPreciseMode) {
+          lastUserLatLng = lastUserLatLngBlurred;
+          if (userAuraEnabled) {
+            ensureUserAuraLayers(lastUserLatLng);
+            for (const l of userAuraLayers) l.setLatLng(lastUserLatLng);
+          }
+        }
+      }
     };
 
     const setUserLatLng = (lat, lng, accuracyM, { ensureRing = false } = {}) => {
@@ -2275,9 +2527,13 @@
     else setSimUi();
     setGpsBadge(t("map_gps_off"), "off");
     setMapStatus(t("map_status_ready"));
+    setVisBadge(userVisibilityMode, "ok");
 
     const api = {
-      setUserAura: ({ enabled, color } = {}) => {
+      setUserAura: ({ enabled, color, visibilityMode } = {}) => {
+        if (typeof visibilityMode === "string" && visibilityMode.trim()) {
+          setUserVisibilityMode(visibilityMode);
+        }
         if (typeof color === "string" && String(color).trim()) {
           userAuraColor = String(color).trim();
           applyUserAuraStyle();
@@ -2301,6 +2557,7 @@
       },
       refreshI18n: () => {
         setSimUi();
+        setVisBadge(userVisibilityMode, "ok");
         if (!navigator.geolocation) {
           setGpsBadge(t("map_gps_unsupported"), "warn");
         } else if (userWatchId !== null) {
@@ -2382,6 +2639,94 @@
       if (state.activity.active) state.activity.active.showAuraOnMap = checked;
       saveState();
       renderActivity(false);
+    });
+  }
+
+  if (els.idleShowAura) {
+    els.idleShowAura.addEventListener("change", () => {
+      state.activity.prefs.idleShowAuraOnMap = Boolean(els.idleShowAura.checked);
+      saveState();
+      renderActivity(false);
+    });
+  }
+
+  if (els.visibilitySeg) {
+    els.visibilitySeg.addEventListener("click", (e) => {
+      const btn = e && e.target ? e.target.closest("button[data-vis]") : null;
+      if (!btn) return;
+      const mode = normalizeVisibilityMode(btn.getAttribute("data-vis"));
+      state.activity.prefs.visibilityMode = mode;
+      saveState();
+      renderActivity(false);
+    });
+  }
+
+  if (els.visRoomCode) {
+    els.visRoomCode.addEventListener("input", () => {
+      const code = normalizeRoomCode(els.visRoomCode.value);
+      state.activity.prefs.areaRoom.code = code;
+      saveState();
+      renderVisibility();
+    });
+  }
+
+  if (els.visRoomJoin) {
+    els.visRoomJoin.addEventListener("click", () => {
+      const code = normalizeRoomCode((state.activity.prefs.areaRoom && state.activity.prefs.areaRoom.code) || "");
+      if (!code) {
+        toast(t("toast_room_code_empty"));
+        return;
+      }
+      state.activity.prefs.areaRoom = {
+        code,
+        joined: true,
+        joinedAtMs: nowMs(),
+        leftAtMs: 0
+      };
+      saveState();
+      renderActivity(false);
+      toast(t("toast_room_joined"));
+    });
+  }
+
+  if (els.visRoomLeave) {
+    els.visRoomLeave.addEventListener("click", () => {
+      const code = normalizeRoomCode((state.activity.prefs.areaRoom && state.activity.prefs.areaRoom.code) || "");
+      state.activity.prefs.areaRoom = {
+        code,
+        joined: false,
+        joinedAtMs: Number(state.activity.prefs.areaRoom && state.activity.prefs.areaRoom.joinedAtMs) || 0,
+        leftAtMs: nowMs()
+      };
+      saveState();
+      renderActivity(false);
+      toast(t("toast_room_left"));
+    });
+  }
+
+  const addApproved = () => {
+    if (!els.approvedInput) return;
+    const handle = normalizeContactHandle(els.approvedInput.value);
+    if (!handle) return;
+    if (state.activity.prefs.allowlist.includes(handle)) {
+      toast(t("toast_contact_exists"));
+      return;
+    }
+    state.activity.prefs.allowlist.unshift(handle);
+    els.approvedInput.value = "";
+    saveState();
+    renderActivity(false);
+    toast(t("toast_contact_added"));
+  };
+
+  if (els.approvedAdd) {
+    els.approvedAdd.addEventListener("click", addApproved);
+  }
+  if (els.approvedInput) {
+    els.approvedInput.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      addApproved();
     });
   }
 

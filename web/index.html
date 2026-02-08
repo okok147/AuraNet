@@ -121,6 +121,79 @@
               </span>
             </label>
 
+            <label class="toggle">
+              <input type="checkbox" id="idleShowAura" />
+              <span data-i18n="idle_show_aura_toggle">
+                Show my aura on map while idle
+              </span>
+            </label>
+
+            <div class="visBlock" aria-label="Aura visibility controls">
+              <div class="visBlock__label" data-i18n="visibility_label">
+                Visibility
+              </div>
+              <div class="seg visBlock__seg" id="visibilitySeg" role="radiogroup" aria-label="Aura visibility">
+                <button class="seg__btn" type="button" data-vis="everyone" aria-selected="true">
+                  <span data-i18n="visibility_everyone">Everyone</span>
+                </button>
+                <button class="seg__btn" type="button" data-vis="area" aria-selected="false">
+                  <span data-i18n="visibility_area">Specific area</span>
+                </button>
+                <button class="seg__btn" type="button" data-vis="connected" aria-selected="false">
+                  <span data-i18n="visibility_connected">Approved aura</span>
+                </button>
+              </div>
+
+              <div class="visDetail" id="visibilityDetail">
+                <div class="visRoom" id="visRoom" hidden>
+                  <label class="field">
+                    <span class="field__label" data-i18n="area_room_label">
+                      Event room
+                    </span>
+                    <input
+                      class="input"
+                      id="visRoomCode"
+                      placeholder="Room code"
+                      data-i18n-placeholder="area_room_placeholder"
+                      minlength="1"
+                      maxlength="36"
+                    />
+                  </label>
+                  <div class="visRoom__actions">
+                    <button class="btn btn--ghost" type="button" id="visRoomJoin">
+                      <span data-i18n="area_join">Join</span>
+                    </button>
+                    <button class="btn btn--ghost" type="button" id="visRoomLeave" hidden>
+                      <span data-i18n="area_leave">Leave</span>
+                    </button>
+                    <span class="badge" id="visRoomState">ROOM: OFF</span>
+                  </div>
+                </div>
+
+                <div class="visApproved" id="visApproved" hidden>
+                  <div class="visApproved__row">
+                    <label class="field">
+                      <span class="field__label" data-i18n="approved_label">
+                        Approved contacts
+                      </span>
+                      <input
+                        class="input"
+                        id="approvedInput"
+                        placeholder="@handle"
+                        data-i18n-placeholder="approved_placeholder"
+                        minlength="1"
+                        maxlength="32"
+                      />
+                    </label>
+                    <button class="btn btn--ghost" type="button" id="approvedAdd">
+                      <span data-i18n="approved_add">Add</span>
+                    </button>
+                  </div>
+                  <ul class="approvedList" id="approvedList" aria-label="Approved contacts"></ul>
+                </div>
+              </div>
+            </div>
+
             <div class="activityForm__actions">
               <button class="btn btn--primary" type="button" id="activityStart">
                 <span data-i18n="activity_start">Start</span>
@@ -207,6 +280,7 @@
             </div>
             <div class="mapMeta">
               <span class="badge" id="mapGps">GPS: OFF</span>
+              <span class="badge" id="mapVis">VIS: EVERYONE</span>
               <span class="badge badge--ok" id="mapAuraCount">AURAS: 0</span>
             </div>
           </div>
