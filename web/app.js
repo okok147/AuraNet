@@ -22,6 +22,8 @@
     mapCount: $("mapCount"),
     mapLocate: $("mapLocate"),
     mapGps: $("mapGps"),
+    mapSimToggle: $("mapSimToggle"),
+    mapDotCount: $("mapDotCount"),
 
     time: $("time"),
     modePill: $("modePill"),
@@ -522,6 +524,13 @@
     const markers = [];
     let myMarker = null;
     let myAccuracyRing = null;
+    const simRenderer = L.canvas({ padding: 0.5 });
+
+    const sim = {
+      enabled: false,
+      rafId: null,
+      dots: []
+    };
 
     const renderLocations = (locations) => {
       const bounds = [];
@@ -573,11 +582,155 @@
       els.mapGps.classList.toggle("badge--warn", kind === "warn");
     };
 
+    const setDotBadge = (message, kind = "off") => {
+      if (!els.mapDotCount) return;
+      els.mapDotCount.textContent = message;
+      els.mapDotCount.classList.toggle("badge--ok", kind === "ok");
+      els.mapDotCount.classList.toggle("badge--warn", kind === "warn");
+    };
+
     const layersForBounds = () => {
       const layers = [...markers];
       if (myAccuracyRing) layers.push(myAccuracyRing);
       if (myMarker) layers.push(myMarker);
       return layers;
+    };
+
+    const wrapLng = (lng) => {
+      // Keep dot motion sane across the dateline.
+      const x = ((lng + 180) % 360 + 360) % 360 - 180;
+      return x;
+    };
+
+    const randomLngBetween = (west, east) => {
+      // Handle dateline-crossing bounds (west > east).
+      if (west <= east) return west + Math.random() * (east - west);
+      const span = east + 360 - west;
+      const v = west + Math.random() * span;
+      return v > 180 ? v - 360 : v;
+    };
+
+    const randomLatLngInBounds = (bounds, pad = 0.06) => {
+      const b = bounds.pad(pad);
+      const sw = b.getSouthWest();
+      const ne = b.getNorthEast();
+      const lat = Math.max(
+        -85,
+        Math.min(85, sw.lat + Math.random() * (ne.lat - sw.lat))
+      );
+      const lng = wrapLng(randomLngBetween(sw.lng, ne.lng));
+      return L.latLng(lat, lng);
+    };
+
+    const durationForZoom = () => {
+      const z = map.getZoom();
+      const base = Math.max(2000, Math.min(9000, 9000 - z * 420));
+      return base + Math.random() * base * 1.4;
+    };
+
+    const simPalette = [
+      { fill: "#ff6a00", stroke: "rgba(32, 24, 18, 0.92)" }, // orange
+      { fill: "#0a7a52", stroke: "rgba(32, 24, 18, 0.92)" }, // green
+      { fill: "#b4233a", stroke: "rgba(32, 24, 18, 0.92)" }, // red
+      { fill: "#2a5b8a", stroke: "rgba(32, 24, 18, 0.92)" }, // blue
+      { fill: "#7a5a2b", stroke: "rgba(32, 24, 18, 0.92)" } // umber
+    ];
+
+    const newDotSegment = (dot, startLatLng, now) => {
+      const bounds = map.getBounds();
+      dot.start = startLatLng;
+      dot.target = randomLatLngInBounds(bounds, 0.12);
+      dot.t0 = now;
+      dot.dt = durationForZoom();
+    };
+
+    const createDot = (now) => {
+      const bounds = map.getBounds();
+      const start = randomLatLngInBounds(bounds, 0.08);
+      const c = simPalette[Math.floor(Math.random() * simPalette.length)];
+      const radius = 2.6 + Math.random() * 2.1;
+      const marker = L.circleMarker(start, {
+        renderer: simRenderer,
+        radius,
+        color: c.stroke,
+        weight: 1.1,
+        opacity: 0.75,
+        fillColor: c.fill,
+        fillOpacity: 0.58
+      }).addTo(map);
+
+      const dot = {
+        marker,
+        start,
+        target: start,
+        t0: now,
+        dt: durationForZoom()
+      };
+      newDotSegment(dot, start, now);
+      return dot;
+    };
+
+    const clearDots = () => {
+      for (const d of sim.dots) d.marker.remove();
+      sim.dots = [];
+    };
+
+    const tickDots = (now) => {
+      for (const dot of sim.dots) {
+        const t = (now - dot.t0) / dot.dt;
+        if (t >= 1) {
+          newDotSegment(dot, dot.target, now);
+          dot.marker.setLatLng(dot.start);
+          continue;
+        }
+
+        const lat0 = dot.start.lat;
+        const lat1 = dot.target.lat;
+
+        const lng0 = dot.start.lng;
+        let dLng = dot.target.lng - lng0;
+        // Interpolate the short way across the dateline.
+        dLng = ((dLng + 540) % 360) - 180;
+
+        const lat = lat0 + (lat1 - lat0) * t;
+        const lng = wrapLng(lng0 + dLng * t);
+        dot.marker.setLatLng([lat, lng]);
+      }
+
+      sim.rafId = window.requestAnimationFrame(tickDots);
+    };
+
+    const setSimUi = () => {
+      if (els.mapSimToggle) {
+        els.mapSimToggle.textContent = sim.enabled ? "Sim dots: ON" : "Sim dots: OFF";
+      }
+      setDotBadge(sim.enabled ? `DOTS: ${sim.dots.length}` : "DOTS: OFF", sim.enabled ? "ok" : "off");
+    };
+
+    const startSim = () => {
+      if (sim.enabled) return;
+      sim.enabled = true;
+
+      const now = nowMs();
+      const count = 30;
+      sim.dots = Array.from({ length: count }, () => createDot(now));
+      setSimUi();
+
+      sim.rafId = window.requestAnimationFrame(tickDots);
+    };
+
+    const stopSim = () => {
+      if (!sim.enabled) return;
+      sim.enabled = false;
+      if (sim.rafId) window.cancelAnimationFrame(sim.rafId);
+      sim.rafId = null;
+      clearDots();
+      setSimUi();
+    };
+
+    const toggleSim = () => {
+      if (sim.enabled) stopSim();
+      else startSim();
     };
 
     const loadLocations = async () => {
@@ -595,10 +748,12 @@
         clearMarkers();
         renderLocations(payload.locations);
         setGpsBadge("GPS: OFF", "off");
+        setSimUi();
         setMapStatus(`Loaded ${payload.locations.length} location(s).`);
       } catch (err) {
         console.error(err);
         setGpsBadge("GPS: ERROR", "warn");
+        setDotBadge("DOTS: OFF", "warn");
         setMapStatus("Map loaded, but location data fetch failed.", true);
       }
     };
@@ -702,6 +857,31 @@
     if (els.mapLocate) {
       els.mapLocate.addEventListener("click", showMyLocation);
     }
+
+    if (els.mapSimToggle) {
+      els.mapSimToggle.addEventListener("click", toggleSim);
+    }
+
+    // Keep the activity layer near the current view.
+    map.on("moveend zoomend", () => {
+      if (!sim.enabled) return;
+      const b = map.getBounds().pad(0.12);
+      const now = nowMs();
+      for (const dot of sim.dots) {
+        if (!b.contains(dot.marker.getLatLng())) {
+          const start = randomLatLngInBounds(map.getBounds(), 0.06);
+          dot.marker.setLatLng(start);
+          newDotSegment(dot, start, now);
+        }
+      }
+    });
+
+    // Default to ON unless the user prefers reduced motion.
+    const reduceMotion =
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!reduceMotion) startSim();
+    else setSimUi();
 
     loadLocations();
   };
