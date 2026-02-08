@@ -394,5 +394,50 @@
         </section>
       </div>
     </main>
+
+    <div class="modal" id="roomModal" hidden>
+      <div class="modal__backdrop" data-room-close="1" aria-hidden="true"></div>
+      <div
+        class="modal__panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="roomTitle"
+      >
+        <div class="modal__head">
+          <div class="modal__title" id="roomTitle" data-i18n="room_title">
+            Task room
+          </div>
+          <button class="btn btn--ghost modal__close" type="button" id="roomClose">
+            <span data-i18n="room_close">Close</span>
+          </button>
+        </div>
+
+        <div class="roomMeta" id="roomMeta" aria-live="polite"></div>
+
+        <div class="roomBody" id="roomBody" aria-label="Messages"></div>
+
+        <form class="roomForm" id="roomForm" autocomplete="off">
+          <input
+            class="input roomForm__input"
+            id="roomMessage"
+            name="message"
+            placeholder="Message…"
+            data-i18n-placeholder="room_message_placeholder"
+            minlength="1"
+            maxlength="400"
+          />
+          <input class="sr-only" type="file" id="roomPhoto" accept="image/*" />
+          <button class="btn btn--ghost" type="button" id="roomPhotoBtn">
+            <span data-i18n="room_photo">Photo</span>
+          </button>
+          <button class="btn btn--ghost" type="button" id="roomLocBtn">
+            <span data-i18n="room_location">Location</span>
+          </button>
+          <button class="btn btn--primary" type="submit" id="roomSend">
+            <span data-i18n="room_send">Send</span>
+          </button>
+        </form>
+      </div>
+    </div>
   </body>
 </html>

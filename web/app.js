@@ -59,6 +59,18 @@
     taskDistanceLimit: $("taskDistanceLimit"),
     taskDistanceLimitValue: $("taskDistanceLimitValue"),
     taskList: $("taskList"),
+
+    roomModal: $("roomModal"),
+    roomClose: $("roomClose"),
+    roomTitle: $("roomTitle"),
+    roomMeta: $("roomMeta"),
+    roomBody: $("roomBody"),
+    roomForm: $("roomForm"),
+    roomMessage: $("roomMessage"),
+    roomPhoto: $("roomPhoto"),
+    roomPhotoBtn: $("roomPhotoBtn"),
+    roomLocBtn: $("roomLocBtn"),
+    roomSend: $("roomSend"),
   };
 
   const nowMs = () => Date.now();
@@ -236,20 +248,35 @@
       task_status_accepted: "Accepted",
       task_status_completed: "Completed",
       task_status_expired: "Expired",
-      task_accept: "Accept",
+      task_status_cancelled: "Cancelled",
+      task_apply: "Apply",
+      task_assign: "Accept",
       task_finish: "Finish",
       task_cancel: "Cancel",
+      task_offers_title: "Offers",
+      task_offers_empty: "No offers yet.",
+      task_applied: "Applied",
+      task_room: "Room",
       task_verified: "Verified",
       task_not_verified: "Not verified",
       task_fee: "Fee",
       task_payout: "Payout",
       toast_task_posted: "Task posted.",
+      toast_task_applied: "Applied.",
       toast_task_accepted: "Task accepted.",
       toast_task_completed: "Task completed.",
       toast_task_expired: "Task expired.",
       toast_task_not_verified: "Verified worker required.",
       toast_task_need_gps: "Enable GPS to accept tasks.",
-      toast_task_too_far: "Too far for this task."
+      toast_task_too_far: "Too far for this task.",
+      room_title: "Task room",
+      room_close: "Close",
+      room_message_placeholder: "Message…",
+      room_photo: "Photo",
+      room_location: "Location",
+      room_send: "Send",
+      room_view_on_map: "View",
+      toast_room_photo_too_large: "Photo too large. Try a smaller image."
     },
     "zh-Hant": {
       ui_language: "語言",
@@ -357,20 +384,35 @@
       task_status_accepted: "已接受",
       task_status_completed: "已完成",
       task_status_expired: "已過期",
-      task_accept: "接受",
+      task_status_cancelled: "已取消",
+      task_apply: "申請",
+      task_assign: "接受",
       task_finish: "完成",
       task_cancel: "取消",
+      task_offers_title: "應徵",
+      task_offers_empty: "尚無應徵。",
+      task_applied: "已申請",
+      task_room: "房間",
       task_verified: "已驗證",
       task_not_verified: "未驗證",
       task_fee: "平台費",
       task_payout: "實得",
       toast_task_posted: "任務已發布。",
+      toast_task_applied: "已申請。",
       toast_task_accepted: "已接受任務。",
       toast_task_completed: "任務已完成。",
       toast_task_expired: "任務已過期。",
       toast_task_not_verified: "需要已驗證的接單者。",
       toast_task_need_gps: "請開啟 GPS 才能接單。",
-      toast_task_too_far: "距離超過此任務限制。"
+      toast_task_too_far: "距離超過此任務限制。",
+      room_title: "任務房間",
+      room_close: "關閉",
+      room_message_placeholder: "輸入訊息…",
+      room_photo: "照片",
+      room_location: "位置",
+      room_send: "送出",
+      room_view_on_map: "查看",
+      toast_room_photo_too_large: "照片太大，請改用較小的圖片。"
     },
     ja: {
       ui_language: "言語",
@@ -478,20 +520,35 @@
       task_status_accepted: "受諾済み",
       task_status_completed: "完了",
       task_status_expired: "期限切れ",
-      task_accept: "受ける",
+      task_status_cancelled: "キャンセル",
+      task_apply: "応募",
+      task_assign: "受諾",
       task_finish: "完了",
       task_cancel: "キャンセル",
+      task_offers_title: "応募",
+      task_offers_empty: "応募はまだありません。",
+      task_applied: "応募済み",
+      task_room: "ルーム",
       task_verified: "認証済み",
       task_not_verified: "未認証",
       task_fee: "手数料",
       task_payout: "受取",
       toast_task_posted: "タスクを投稿しました。",
+      toast_task_applied: "応募しました。",
       toast_task_accepted: "タスクを受けました。",
       toast_task_completed: "タスク完了。",
       toast_task_expired: "タスクは期限切れです。",
       toast_task_not_verified: "認証済みユーザーが必要です。",
       toast_task_need_gps: "GPS を有効にしてください。",
-      toast_task_too_far: "距離制限を超えています。"
+      toast_task_too_far: "距離制限を超えています。",
+      room_title: "タスクルーム",
+      room_close: "閉じる",
+      room_message_placeholder: "メッセージ…",
+      room_photo: "写真",
+      room_location: "位置情報",
+      room_send: "送信",
+      room_view_on_map: "見る",
+      toast_room_photo_too_large: "写真が大きすぎます。小さい画像で試してください。"
     }
   };
 
@@ -528,6 +585,7 @@
     // Update any draft helpers that include translated labels.
     if (typeof renderActivityAssist === "function") renderActivityAssist();
     if (typeof renderTasks === "function") renderTasks();
+    if (typeof renderTaskRoom === "function") renderTaskRoom();
   };
 
   const defaultState = () => ({
@@ -548,6 +606,7 @@
     },
     tasks: {
       list: [],
+      rooms: {},
       prefs: {
         feeBps: 1000,
         userVerified: true
@@ -618,9 +677,39 @@
       // Tasks (local-only demo).
       if (!merged.tasks || typeof merged.tasks !== "object") merged.tasks = defaultState().tasks;
       if (!Array.isArray(merged.tasks.list)) merged.tasks.list = [];
+      if (!merged.tasks.rooms || typeof merged.tasks.rooms !== "object") merged.tasks.rooms = {};
       if (!merged.tasks.prefs || typeof merged.tasks.prefs !== "object") merged.tasks.prefs = defaultState().tasks.prefs;
       merged.tasks.prefs.feeBps = clampInt(merged.tasks.prefs.feeBps, 0, 5000, 1000);
       merged.tasks.prefs.userVerified = Boolean(merged.tasks.prefs.userVerified);
+
+      // Normalize task rooms (messages).
+      {
+        const roomsIn = merged.tasks.rooms;
+        const roomsOut = {};
+        for (const [taskIdRaw, room] of Object.entries(roomsIn || {})) {
+          const taskId = String(taskIdRaw || "").trim();
+          if (!taskId) continue;
+          if (!room || typeof room !== "object") continue;
+          const messages = Array.isArray(room.messages) ? room.messages : [];
+          const norm = messages
+            .filter((m) => m && typeof m === "object")
+            .map((m) => ({
+              id: String(m.id || ""),
+              type: String(m.type || "text"),
+              text: String(m.text || "").slice(0, 2000),
+              photo: typeof m.photo === "string" ? m.photo.slice(0, 2_000_000) : "",
+              lat: Number(m.lat),
+              lng: Number(m.lng),
+              accuracyM: Number(m.accuracyM) || 0,
+              from: m.from && typeof m.from === "object" ? { kind: String(m.from.kind || ""), id: String(m.from.id || "") } : null,
+              sentAt: Number(m.sentAt) || 0
+            }))
+            .filter((m) => m.id && m.from && m.from.kind && m.from.id)
+            .slice(-200);
+          roomsOut[taskId] = { messages: norm };
+        }
+        merged.tasks.rooms = roomsOut;
+      }
 
       merged.tasks.list = merged.tasks.list
         .filter((x) => x && typeof x === "object")
@@ -634,12 +723,50 @@
           expiresAt: Number(x.expiresAt) || 0,
           status: String(x.status || "open"),
           poster: x.poster && typeof x.poster === "object" ? { kind: String(x.poster.kind || ""), id: String(x.poster.id || "") } : null,
+          posterLabel: String(x.posterLabel || "").slice(0, 32),
+          posterVerified: Boolean(x.posterVerified),
           acceptedBy:
             x.acceptedBy && typeof x.acceptedBy === "object"
               ? { kind: String(x.acceptedBy.kind || ""), id: String(x.acceptedBy.id || "") }
               : null,
+          workerLabel: String(x.workerLabel || "").slice(0, 32),
+          workerVerified: Boolean(x.workerVerified),
           acceptedAt: Number(x.acceptedAt) || 0,
-          completedAt: Number(x.completedAt) || 0
+          completedAt: Number(x.completedAt) || 0,
+          applicants: Array.isArray(x.applicants)
+            ? x.applicants
+                .filter((a) => a && typeof a === "object")
+                .map((a) => ({
+                  id: String(a.id || ""),
+                  actor:
+                    a.actor && typeof a.actor === "object"
+                      ? { kind: String(a.actor.kind || ""), id: String(a.actor.id || "") }
+                      : null,
+                  label: String(a.label || "").slice(0, 32),
+                  appliedAt: Number(a.appliedAt) || 0,
+                  distanceM: Math.max(0, Math.round(Number(a.distanceM) || 0)),
+                  etaMin: clampInt(a.etaMin, 1, 999, 10),
+                  skills: Array.isArray(a.skills)
+                    ? a.skills
+                        .map((s) => String(s || "").trim())
+                        .filter((s) => s)
+                        .slice(0, 8)
+                    : [],
+                  rating: Math.max(0, Math.min(5, Number(a.rating) || 0)),
+                  tasksDone: clampInt(a.tasksDone, 0, 9999, 0),
+                  onTimePct: clampInt(a.onTimePct, 0, 100, 0),
+                  verified: Boolean(a.verified)
+                }))
+                .filter((a) => a.id && a.actor && a.actor.kind && a.actor.id)
+                .slice(0, 24)
+            : [],
+          tetherFrom:
+            x.tetherFrom && typeof x.tetherFrom === "object"
+              ? { lat: Number(x.tetherFrom.lat), lng: Number(x.tetherFrom.lng) }
+              : null,
+          tetherTo:
+            x.tetherTo && typeof x.tetherTo === "object" ? { lat: Number(x.tetherTo.lat), lng: Number(x.tetherTo.lng) } : null,
+          tetherGridM: clampInt(x.tetherGridM, 50, 2000, 0)
         }))
         .filter((x) => x.id && x.title && x.poster && x.poster.kind && x.poster.id);
 
@@ -1230,6 +1357,7 @@
     mapApi.setUserAura({
       enabled,
       color: auraHex,
+      verified: Boolean(state.tasks && state.tasks.prefs && state.tasks.prefs.userVerified),
       visibilityMode: normalizeVisibilityMode(state.activity.prefs.visibilityMode),
       areaRadiusM: normalizeAreaRadiusM(state.activity.prefs.areaRadiusM),
       ageMs: userAuraAgeMs(now),
@@ -1676,6 +1804,7 @@
   };
 
   const clampIntSafe = (value, min, max, fallback) => clampInt(value, min, max, fallback);
+  const randBetween = (min, max) => min + Math.random() * (max - min);
 
   const haversineM = (a, b) => {
     if (!a || !b) return Infinity;
@@ -1688,6 +1817,51 @@
     const h = sin1 * sin1 + Math.cos(lat1) * Math.cos(lat2) * sin2 * sin2;
     const R = 6371_000;
     return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+  };
+
+  const wrapLng180 = (lng) => ((Number(lng) + 180) % 360 + 360) % 360 - 180;
+
+  const offsetLatLngMeters = (latLng, eastM, northM) => {
+    const lat = Number(latLng && latLng.lat);
+    const lng = Number(latLng && latLng.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    const latRad = (lat * Math.PI) / 180;
+    const mPerDegLat = 111_320;
+    const mPerDegLng = Math.max(1, mPerDegLat * Math.cos(latRad));
+    const dLat = Number(northM || 0) / mPerDegLat;
+    const dLng = Number(eastM || 0) / mPerDegLng;
+    return { lat: Math.max(-85, Math.min(85, lat + dLat)), lng: wrapLng180(lng + dLng) };
+  };
+
+  const quantizeLatLngToGrid = (latLng, gridM) => {
+    const lat = Number(latLng && latLng.lat);
+    const lng = Number(latLng && latLng.lng);
+    const g = Math.max(1, Number(gridM) || 250);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    const latRad = (lat * Math.PI) / 180;
+    const mPerDegLat = 111_320;
+    const mPerDegLng = Math.max(1, mPerDegLat * Math.cos(latRad));
+    const dLat = g / mPerDegLat;
+    const dLng = g / mPerDegLng;
+    const qLat = Math.round(lat / dLat) * dLat;
+    const qLng = Math.round(lng / dLng) * dLng;
+    return { lat: Math.max(-85, Math.min(85, qLat)), lng: wrapLng180(qLng) };
+  };
+
+  const taskTetherGridMFor = (distanceLimitM) => {
+    const d = Math.max(50, Number(distanceLimitM) || 800);
+    // Larger tasks -> blur more, but cap so lines still feel local.
+    return clampIntSafe(Math.round(d * 0.25), 80, 500, 250);
+  };
+
+  const taskAreaAnchor = (latLng, gridM, seed) => {
+    const q = quantizeLatLngToGrid(latLng, gridM);
+    if (!q) return null;
+    const h = fnv1a32(String(seed || "task"));
+    const span = Math.max(8, Math.min(220, (Number(gridM) || 250) * 0.38));
+    const east = ((((h & 0xffff) / 0xffff) * 2 - 1) * span);
+    const north = (((((h >>> 16) & 0xffff) / 0xffff) * 2 - 1) * span);
+    return offsetLatLngMeters(q, east, north);
   };
 
   const taskFeeBps = () => clampIntSafe(state.tasks && state.tasks.prefs && state.tasks.prefs.feeBps, 0, 5000, 1000);
@@ -1708,9 +1882,14 @@
 
   const userKey = actorKeyLocal(USER_ACTOR);
 
+  const isUserVerified = () => Boolean(state.tasks && state.tasks.prefs && state.tasks.prefs.userVerified);
+
   const getActorInfoSafe = (actor) => {
-    if (mapApi && typeof mapApi.getActorInfo === "function") return mapApi.getActorInfo(actor);
-    if (actor && actor.kind === "user") return { label: "@you", verified: true };
+    const base = mapApi && typeof mapApi.getActorInfo === "function" ? mapApi.getActorInfo(actor) : null;
+    if (actor && actor.kind === "user") {
+      return { label: (base && base.label) || "@you", verified: isUserVerified() };
+    }
+    if (base) return base;
     return { label: "@sim", verified: false };
   };
 
@@ -1722,6 +1901,269 @@
   const syncTasksOnMap = () => {
     if (!mapApi || typeof mapApi.setTasks !== "function") return;
     mapApi.setTasks(state.tasks && Array.isArray(state.tasks.list) ? state.tasks.list : []);
+  };
+
+  // --- Task Room (Conversation) ---
+
+  let openRoomTaskId = "";
+
+  const ensureRoom = (taskId) => {
+    ensureTaskPrefs();
+    const id = String(taskId || "");
+    if (!id) return null;
+    if (!state.tasks.rooms[id]) state.tasks.rooms[id] = { messages: [] };
+    if (!Array.isArray(state.tasks.rooms[id].messages)) state.tasks.rooms[id].messages = [];
+    return state.tasks.rooms[id];
+  };
+
+  const formatMsgTime = (ms) => {
+    const t = Number(ms) || 0;
+    if (!t) return "";
+    try {
+      return new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    } catch {
+      return "";
+    }
+  };
+
+  const renderTaskRoom = () => {
+    if (!els.roomModal || !els.roomBody || !els.roomMeta) return;
+    if (!openRoomTaskId) return;
+    ensureTaskPrefs();
+    const task = state.tasks.list.find((x) => x && x.id === openRoomTaskId) || null;
+    const room = state.tasks.rooms[openRoomTaskId] || { messages: [] };
+
+    const posterInfo = task ? getActorInfoSafe(task.poster) : { label: "—", verified: false };
+    const workerInfo = task && task.acceptedBy ? getActorInfoSafe(task.acceptedBy) : { label: "—", verified: false };
+    const title = task ? normalizeTaskTitle(task.title) : "";
+    const posterLabel = task ? String(task.posterLabel || posterInfo.label || "—") : "—";
+    const workerLabel = task ? String(task.workerLabel || workerInfo.label || "—") : "—";
+
+    if (els.roomTitle) els.roomTitle.textContent = t("room_title");
+    els.roomMeta.textContent = title ? `${posterLabel} ↔ ${workerLabel} • ${title}` : `${posterLabel} ↔ ${workerLabel}`;
+
+    els.roomBody.replaceChildren();
+    const msgs = Array.isArray(room.messages) ? room.messages.slice(-200) : [];
+    for (const m of msgs) {
+      if (!m || !m.from) continue;
+      const fromKey = actorKeyLocal(m.from);
+      const isMe = fromKey === userKey;
+      const info = getActorInfoSafe(m.from);
+
+      const wrap = document.createElement("div");
+      wrap.className = `msg${isMe ? " msg--me" : ""}`;
+
+      const bubble = document.createElement("div");
+      bubble.className = "msg__bubble";
+
+      const from = document.createElement("div");
+      from.className = "msg__from";
+      from.textContent = (info && info.label) || "@";
+      bubble.appendChild(from);
+
+      const type = String(m.type || "text");
+      if (type === "photo" && m.photo) {
+        if (m.text) {
+          const tEl = document.createElement("div");
+          tEl.className = "msg__text";
+          tEl.textContent = String(m.text);
+          bubble.appendChild(tEl);
+        }
+        const ph = document.createElement("div");
+        ph.className = "msg__photo";
+        const img = document.createElement("img");
+        img.alt = "photo";
+        img.loading = "lazy";
+        img.decoding = "async";
+        img.src = String(m.photo);
+        ph.appendChild(img);
+        bubble.appendChild(ph);
+      } else if (type === "location" && Number.isFinite(Number(m.lat)) && Number.isFinite(Number(m.lng))) {
+        if (m.text) {
+          const tEl = document.createElement("div");
+          tEl.className = "msg__text";
+          tEl.textContent = String(m.text);
+          bubble.appendChild(tEl);
+        }
+        const loc = document.createElement("div");
+        loc.className = "msg__loc";
+        const coords = document.createElement("span");
+        const lat = Number(m.lat);
+        const lng = Number(m.lng);
+        coords.textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+        loc.appendChild(coords);
+        const viewBtn = document.createElement("button");
+        viewBtn.type = "button";
+        viewBtn.className = "btn btn--ghost";
+        viewBtn.textContent = t("room_view_on_map");
+        viewBtn.addEventListener("click", () => {
+          if (mapApi && typeof mapApi.focusLatLng === "function") {
+            mapApi.focusLatLng({ lat, lng, zoom: 16 });
+          }
+        });
+        loc.appendChild(viewBtn);
+        bubble.appendChild(loc);
+      } else {
+        const tEl = document.createElement("div");
+        tEl.className = "msg__text";
+        tEl.textContent = String(m.text || "");
+        bubble.appendChild(tEl);
+      }
+
+      const meta = document.createElement("div");
+      meta.className = "msg__meta";
+      meta.textContent = formatMsgTime(m.sentAt);
+      bubble.appendChild(meta);
+
+      wrap.appendChild(bubble);
+      els.roomBody.appendChild(wrap);
+    }
+
+    els.roomBody.scrollTop = els.roomBody.scrollHeight;
+  };
+
+  const openTaskRoom = (taskId) => {
+    if (!els.roomModal) return;
+    const id = String(taskId || "");
+    if (!id) return;
+    openRoomTaskId = id;
+    ensureRoom(id);
+    els.roomModal.hidden = false;
+    renderTaskRoom();
+    if (els.roomMessage) els.roomMessage.focus();
+  };
+
+  const closeTaskRoom = () => {
+    if (!els.roomModal) return;
+    openRoomTaskId = "";
+    els.roomModal.hidden = true;
+  };
+
+  const pushRoomMessage = (taskId, msg) => {
+    const room = ensureRoom(taskId);
+    if (!room) return;
+    room.messages.push(msg);
+    room.messages = room.messages.slice(-200);
+    saveState();
+    if (openRoomTaskId === String(taskId || "")) renderTaskRoom();
+  };
+
+  const readFileAsDataUrl = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("read"));
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const downscaleImageDataUrl = async (dataUrl, maxSide = 1100, quality = 0.82) => {
+    if (!dataUrl) return "";
+    const img = new Image();
+    img.decoding = "async";
+    img.src = dataUrl;
+    try {
+      await img.decode();
+    } catch {
+      // Fallback: allow browser to render without decode promise.
+    }
+
+    const w = Number(img.naturalWidth || img.width) || 0;
+    const h = Number(img.naturalHeight || img.height) || 0;
+    if (w <= 0 || h <= 0) return dataUrl;
+
+    const scale = Math.min(1, maxSide / Math.max(w, h));
+    if (scale >= 1) return dataUrl;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(w * scale));
+    canvas.height = Math.max(1, Math.round(h * scale));
+    const ctx = canvas.getContext("2d", { alpha: false });
+    if (!ctx) return dataUrl;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", quality);
+  };
+
+  const sendRoomText = () => {
+    if (!openRoomTaskId) return;
+    if (!els.roomMessage) return;
+    const text = normalizeActivityText(els.roomMessage.value);
+    if (!text) return;
+    els.roomMessage.value = "";
+    pushRoomMessage(openRoomTaskId, {
+      id: uid(),
+      type: "text",
+      text,
+      photo: "",
+      lat: NaN,
+      lng: NaN,
+      accuracyM: 0,
+      from: USER_ACTOR,
+      sentAt: nowMs()
+    });
+  };
+
+  const sendRoomPhoto = async (file) => {
+    if (!openRoomTaskId) return;
+    if (!file) return;
+    const maxFileBytes = 6_000_000;
+    if (file.size > maxFileBytes) {
+      toast(t("toast_room_photo_too_large"));
+      return;
+    }
+    let dataUrl = "";
+    try {
+      dataUrl = await readFileAsDataUrl(file);
+      dataUrl = await downscaleImageDataUrl(dataUrl);
+    } catch {
+      toast(t("toast_room_photo_too_large"));
+      return;
+    }
+    if (!dataUrl || dataUrl.length > 2_000_000) {
+      toast(t("toast_room_photo_too_large"));
+      return;
+    }
+    pushRoomMessage(openRoomTaskId, {
+      id: uid(),
+      type: "photo",
+      text: "",
+      photo: dataUrl,
+      lat: NaN,
+      lng: NaN,
+      accuracyM: 0,
+      from: USER_ACTOR,
+      sentAt: nowMs()
+    });
+  };
+
+  const sendRoomLocation = () => {
+    if (!openRoomTaskId) return;
+    if (!navigator.geolocation) {
+      toast(t("gps_unsupported"));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        const accuracy = Number(pos.coords.accuracy) || 0;
+        pushRoomMessage(openRoomTaskId, {
+          id: uid(),
+          type: "location",
+          text: "",
+          photo: "",
+          lat,
+          lng,
+          accuracyM: accuracy,
+          from: USER_ACTOR,
+          sentAt: nowMs()
+        });
+      },
+      () => {
+        toast(t("gps_error"));
+      },
+      { enableHighAccuracy: true, timeout: 10_000, maximumAge: 20_000 }
+    );
   };
 
   const renderTaskForm = () => {
@@ -1768,6 +2210,8 @@
       const worker = task.acceptedBy;
       const posterInfo = getActorInfoSafe(poster);
       const workerInfo = worker ? getActorInfoSafe(worker) : null;
+      const posterLabel = String(task.posterLabel || (posterInfo && posterInfo.label) || "—");
+      const workerLabel = workerInfo ? String(task.workerLabel || workerInfo.label || "—") : "";
 
       const li = document.createElement("li");
       li.className = "taskItem";
@@ -1781,7 +2225,7 @@
 
       const who = document.createElement("div");
       who.className = "taskItem__who";
-      who.textContent = workerInfo ? `${posterInfo.label} → ${workerInfo.label}` : `${posterInfo.label}`;
+      who.textContent = workerInfo ? `${posterLabel} → ${workerLabel}` : `${posterLabel}`;
 
       top.appendChild(title);
       top.appendChild(who);
@@ -1806,6 +2250,8 @@
             ? "task_status_completed"
             : status === "expired"
               ? "task_status_expired"
+              : status === "cancelled"
+                ? "task_status_cancelled"
               : "task_status_open";
       statusChip.textContent = t(statusKey);
       badges.appendChild(statusChip);
@@ -1818,13 +2264,16 @@
       const timeChip = document.createElement("span");
       timeChip.className = "taskChip";
       timeChip.textContent =
-        status === "expired" ? t("task_status_expired") : t("task_time_left", { t: fmtMinutes(leftMs) });
+        status === "open" || status === "accepted"
+          ? t("task_time_left", { t: fmtMinutes(leftMs) })
+          : t(statusKey);
       badges.appendChild(timeChip);
 
       if (workerInfo) {
         const v = document.createElement("span");
-        v.className = `taskChip ${workerInfo.verified ? "taskChip--ok" : "taskChip--bad"}`;
-        v.textContent = workerInfo.verified ? t("task_verified") : t("task_not_verified");
+        const verified = typeof task.workerVerified === "boolean" ? task.workerVerified : Boolean(workerInfo.verified);
+        v.className = `taskChip ${verified ? "taskChip--ok" : "taskChip--bad"}`;
+        v.textContent = verified ? t("task_verified") : t("task_not_verified");
         badges.appendChild(v);
       }
 
@@ -1835,6 +2284,8 @@
       const workerKey = worker ? actorKeyLocal(worker) : "";
       const isPosterMe = posterKey === userKey;
       const isWorkerMe = workerKey === userKey;
+      const applicants = Array.isArray(task.applicants) ? task.applicants : [];
+      const hasApplied = applicants.some((a) => actorKeyLocal(a && a.actor) === userKey);
 
       const addBtn = (label, kind, onClick) => {
         const b = document.createElement("button");
@@ -1846,14 +2297,22 @@
       };
 
       if (status === "open") {
-        if (!isPosterMe) {
-          addBtn(t("task_accept"), "primary", () => acceptTask(task.id, USER_ACTOR));
-        }
         if (isPosterMe) {
           addBtn(t("task_cancel"), "ghost", () => cancelTask(task.id));
+        } else {
+          const label = hasApplied ? t("task_applied") : t("task_apply");
+          addBtn(label, hasApplied ? "ghost" : "primary", () => {
+            if (hasApplied) return;
+            applyToTask(task.id, USER_ACTOR);
+          });
+          if (hasApplied) {
+            const last = actions.lastChild;
+            if (last && "disabled" in last) last.disabled = true;
+          }
         }
       } else if (status === "accepted") {
         if (isPosterMe || isWorkerMe) {
+          addBtn(t("task_room"), "ghost", () => openTaskRoom(task.id));
           addBtn(t("task_finish"), "primary", () => finishTask(task.id));
         }
       }
@@ -1863,6 +2322,95 @@
       li.appendChild(badges);
       if (actions.childNodes.length) li.appendChild(actions);
 
+      // Poster view: show applicants (offers) with skills and attributes.
+      if (status === "open" && isPosterMe) {
+        const wrap = document.createElement("div");
+        wrap.className = "taskOffers";
+
+        const titleEl = document.createElement("div");
+        titleEl.className = "taskOffers__title";
+        titleEl.textContent = t("task_offers_title");
+        wrap.appendChild(titleEl);
+
+        const offers = applicants
+          .slice()
+          .sort((a, b) => {
+            const av = Boolean(a && a.verified);
+            const bv = Boolean(b && b.verified);
+            if (av !== bv) return av ? -1 : 1;
+            const ad = Number(a && a.distanceM) || 0;
+            const bd = Number(b && b.distanceM) || 0;
+            if (ad !== bd) return ad - bd;
+            const ar = Number(a && a.rating) || 0;
+            const br = Number(b && b.rating) || 0;
+            return br - ar;
+          })
+          .slice(0, 8);
+
+        if (!offers.length) {
+          const empty = document.createElement("div");
+          empty.className = "taskItem__meta";
+          empty.textContent = t("task_offers_empty");
+          wrap.appendChild(empty);
+        } else {
+          for (const off of offers) {
+            if (!off || !off.actor) continue;
+            const info = getActorInfoSafe(off.actor);
+            const whoTxt = (off.label && String(off.label)) || (info && info.label) || "@sim";
+            const verified = typeof off.verified === "boolean" ? off.verified : Boolean(info && info.verified);
+
+            const item = document.createElement("div");
+            item.className = "offerItem";
+
+            const topRow = document.createElement("div");
+            topRow.className = "offerItem__top";
+
+            const whoEl = document.createElement("div");
+            whoEl.className = "offerItem__who";
+            whoEl.textContent = verified ? `${whoTxt} • ${t("task_verified")}` : `${whoTxt} • ${t("task_not_verified")}`;
+
+            const metaEl = document.createElement("div");
+            metaEl.className = "offerItem__meta";
+            const r = Number(off.rating) || 0;
+            const ot = clampIntSafe(off.onTimePct, 0, 100, 0);
+            const done = clampIntSafe(off.tasksDone, 0, 9999, 0);
+            const eta = clampIntSafe(off.etaMin, 1, 999, 10);
+            const dist = Math.max(0, Math.round(Number(off.distanceM) || 0));
+            metaEl.textContent = `R ${r ? r.toFixed(1) : "—"} • OT ${ot || "—"}% • DONE ${done || "—"} • ETA ${eta}m • ${dist}m`;
+
+            topRow.appendChild(whoEl);
+            topRow.appendChild(metaEl);
+            item.appendChild(topRow);
+
+            const skillsEl = document.createElement("div");
+            skillsEl.className = "offerItem__skills";
+            const skills = Array.isArray(off.skills) ? off.skills.slice(0, 8) : [];
+            for (const s of skills) {
+              const chip = document.createElement("span");
+              chip.className = "skillChip";
+              chip.textContent = String(s || "").slice(0, 18);
+              skillsEl.appendChild(chip);
+            }
+            if (skillsEl.childNodes.length) item.appendChild(skillsEl);
+
+            const act = document.createElement("div");
+            act.className = "offerItem__actions";
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = verified ? "btn btn--primary" : "btn btn--ghost";
+            btn.textContent = t("task_assign");
+            btn.disabled = !verified;
+            btn.addEventListener("click", () => acceptTask(task.id, off.actor));
+            act.appendChild(btn);
+            item.appendChild(act);
+
+            wrap.appendChild(item);
+          }
+        }
+
+        li.appendChild(wrap);
+      }
+
       els.taskList.appendChild(li);
     }
   };
@@ -1871,11 +2419,13 @@
     renderTaskForm();
     renderTaskList();
     syncTasksOnMap();
+    renderTaskRoom();
   };
 
   const ensureTaskPrefs = () => {
     if (!state.tasks || typeof state.tasks !== "object") state.tasks = defaultState().tasks;
     if (!Array.isArray(state.tasks.list)) state.tasks.list = [];
+    if (!state.tasks.rooms || typeof state.tasks.rooms !== "object") state.tasks.rooms = {};
     if (!state.tasks.prefs || typeof state.tasks.prefs !== "object") state.tasks.prefs = defaultState().tasks.prefs;
     state.tasks.prefs.feeBps = taskFeeBps();
     state.tasks.prefs.userVerified = Boolean(state.tasks.prefs.userVerified);
@@ -1902,10 +2452,26 @@
       expiresAt: now + timeLimitMin * 60_000,
       status: "open",
       poster: USER_ACTOR,
+      posterLabel: "@you",
+      posterVerified: isUserVerified(),
       acceptedBy: null,
+      workerLabel: "",
+      workerVerified: false,
       acceptedAt: 0,
-      completedAt: 0
+      completedAt: 0,
+      applicants: [],
+      tetherFrom: null,
+      tetherTo: null,
+      tetherGridM: 0
     };
+
+    // Store only an area anchor (not precise GPS) for task posting + later tethers.
+    const gridM = taskTetherGridMFor(distanceLimitM);
+    task.tetherGridM = gridM;
+    const llPoster = getActorLatLngSafe(USER_ACTOR);
+    if (llPoster) {
+      task.tetherFrom = taskAreaAnchor(llPoster, gridM, `task:${task.id}:from`);
+    }
 
     state.tasks.list.unshift(task);
     state.tasks.list = state.tasks.list.slice(0, 50);
@@ -1913,11 +2479,104 @@
     saveState();
     renderTasks();
     toast(t("toast_task_posted"));
+  };
 
-    // Auto-assign to a nearby verified simulated worker (demo).
-    window.setTimeout(() => {
-      autoAssignTasks();
-    }, 500);
+  const upsertApplicant = (task, applicant) => {
+    if (!task || !applicant) return false;
+    if (!Array.isArray(task.applicants)) task.applicants = [];
+    const key = actorKeyLocal(applicant.actor);
+    if (!key) return false;
+    const idx = task.applicants.findIndex((a) => actorKeyLocal(a && a.actor) === key);
+    if (idx >= 0) {
+      const prev = task.applicants[idx] || {};
+      task.applicants[idx] = { ...prev, ...applicant, id: String(prev.id || applicant.id || "") };
+      return true;
+    }
+    task.applicants.unshift(applicant);
+    task.applicants = task.applicants.slice(0, 24);
+    return true;
+  };
+
+  const userOfferProfile = () => {
+    const tasksDone = state.activity.log.filter((e) => e && typeof e.text === "string" && e.text.startsWith("Task: ")).length;
+    return {
+      skills: ["photo", "fast", "trusted"],
+      rating: 4.9,
+      tasksDone,
+      onTimePct: 98
+    };
+  };
+
+  const applyToTask = (taskId, actor) => {
+    ensureTaskPrefs();
+    const id = String(taskId || "");
+    const task = state.tasks.list.find((x) => x && x.id === id);
+    if (!task) return;
+    if (normalizeTaskStatus(task.status) !== "open") return;
+
+    const now = nowMs();
+    if (task.expiresAt && now > task.expiresAt) {
+      task.status = "expired";
+      saveState();
+      renderTasks();
+      toast(t("toast_task_expired"));
+      return;
+    }
+
+    const llActor = getActorLatLngSafe(actor);
+    const gridM = clampIntSafe(task.tetherGridM || taskTetherGridMFor(task.distanceLimitM), 80, 500, 250);
+    task.tetherGridM = gridM;
+
+    // Use the stored poster area anchor when available.
+    let posterArea = task && task.tetherFrom ? task.tetherFrom : null;
+    if (!posterArea || !Number.isFinite(Number(posterArea.lat)) || !Number.isFinite(Number(posterArea.lng))) {
+      const llPoster = getActorLatLngSafe(task.poster);
+      if (llPoster) {
+        posterArea = taskAreaAnchor(llPoster, gridM, `task:${task.id}:from`);
+        task.tetherFrom = posterArea;
+      }
+    }
+
+    if (!llActor || !posterArea) {
+      toast(t("toast_task_need_gps"));
+      return;
+    }
+
+    const d = haversineM(llActor, posterArea);
+    if (d > (Number(task.distanceLimitM) || 0)) {
+      toast(t("toast_task_too_far"));
+      return;
+    }
+
+    if (Array.isArray(task.applicants) && task.applicants.some((a) => actorKeyLocal(a && a.actor) === actorKeyLocal(actor))) {
+      toast(t("toast_task_applied"));
+      return;
+    }
+
+    // Create/update the offer entry.
+    const info = getActorInfoSafe(actor);
+    const prof = actor && actor.kind === "user" ? userOfferProfile() : { skills: [], rating: 0, tasksDone: 0, onTimePct: 0 };
+    const speedMps = actor && actor.kind === "user" ? 1.9 : 1.6;
+    const etaMin = Math.max(1, Math.round((d / Math.max(0.8, speedMps)) / 60));
+
+    const ok = upsertApplicant(task, {
+      id: uid(),
+      actor,
+      label: (info && info.label) || "@you",
+      appliedAt: now,
+      distanceM: Math.max(0, Math.round(d)),
+      etaMin,
+      skills: Array.isArray(prof.skills) ? prof.skills.slice(0, 8) : [],
+      rating: Number(prof.rating) || 0,
+      tasksDone: Number(prof.tasksDone) || 0,
+      onTimePct: clampIntSafe(prof.onTimePct, 0, 100, 0),
+      verified: Boolean(info.verified)
+    });
+
+    if (!ok) return;
+    saveState();
+    renderTasks();
+    toast(t("toast_task_applied"));
   };
 
   const acceptTask = (taskId, actor) => {
@@ -1942,14 +2601,26 @@
       return;
     }
 
-    const llActor = getActorLatLngSafe(actor);
-    const llPoster = getActorLatLngSafe(task.poster);
-    if (!llActor || !llPoster) {
+    const llWorker = getActorLatLngSafe(actor);
+    const gridM = clampIntSafe(task.tetherGridM || taskTetherGridMFor(task.distanceLimitM), 80, 500, 250);
+    task.tetherGridM = gridM;
+
+    // Poster area anchor (kept stable for privacy and to avoid pinpointing).
+    let posterArea = task && task.tetherFrom ? task.tetherFrom : null;
+    if (!posterArea || !Number.isFinite(Number(posterArea.lat)) || !Number.isFinite(Number(posterArea.lng))) {
+      const llPoster = getActorLatLngSafe(task.poster);
+      if (llPoster) {
+        posterArea = taskAreaAnchor(llPoster, gridM, `task:${task.id}:from`);
+        task.tetherFrom = posterArea;
+      }
+    }
+
+    if (!llWorker || !posterArea) {
       toast(t("toast_task_need_gps"));
       return;
     }
 
-    const d = haversineM(llActor, llPoster);
+    const d = haversineM(llWorker, posterArea);
     if (d > (Number(task.distanceLimitM) || 0)) {
       toast(t("toast_task_too_far"));
       return;
@@ -1957,7 +2628,16 @@
 
     task.status = "accepted";
     task.acceptedBy = actor;
+    task.workerLabel = (info && info.label) || task.workerLabel || "";
+    task.workerVerified = Boolean(info && info.verified);
     task.acceptedAt = now;
+
+    // Worker area anchor for the tether line (visible to everyone, not pinpointing).
+    task.tetherTo = taskAreaAnchor(llWorker, gridM, `task:${task.id}:to`);
+
+    // Ensure a conversation room exists for handoff.
+    if (!state.tasks.rooms[task.id]) state.tasks.rooms[task.id] = { messages: [] };
+
     saveState();
     renderTasks();
     toast(t("toast_task_accepted"));
@@ -2003,6 +2683,26 @@
       mapApi.applyTaskCompletion({ actor: task.acceptedBy, title: task.title, rewardCents: task.rewardCents });
     }
 
+    // Poster gets a minor boost for supporting the platform.
+    if (task.poster && task.poster.kind === "user") {
+      const text = `Support: ${normalizeTaskTitle(task.title)}`;
+      const key = activityKeyFromText(text);
+      const colorHex = activityColorHex(key);
+      const durMs = 2 * 60_000;
+      state.activity.log.unshift({
+        id: uid(),
+        text,
+        key,
+        colorHex,
+        startedAt: now - durMs,
+        endedAt: now
+      });
+      saveState();
+      renderActivity(true);
+    } else if (mapApi && typeof mapApi.applyTaskSupportBoost === "function") {
+      mapApi.applyTaskSupportBoost({ actor: task.poster });
+    }
+
     renderTasks();
     toast(t("toast_task_completed"));
   };
@@ -2036,49 +2736,211 @@
     renderTasks();
   };
 
-  const autoAssignTasks = () => {
+  const seedOffersForUserTasks = () => {
     if (!mapApi || typeof mapApi.listAgents !== "function") return;
     ensureTaskPrefs();
     const agents = mapApi.listAgents();
     if (!agents.length) return;
 
-    const busy = new Set(
-      state.tasks.list
-        .filter((t) => t && normalizeTaskStatus(t.status) === "accepted" && t.acceptedBy && t.acceptedBy.kind === "agent")
-        .map((t) => (t.acceptedBy && t.acceptedBy.id ? String(t.acceptedBy.id) : ""))
-        .filter((x) => x)
-    );
+    const now = nowMs();
+    let changed = false;
 
     for (const task of state.tasks.list) {
       if (!task) continue;
       if (normalizeTaskStatus(task.status) !== "open") continue;
-      // Only auto-assign tasks posted by the local user.
       if (actorKeyLocal(task.poster) !== userKey) continue;
 
-      const posterLl = getActorLatLngSafe(task.poster);
-      if (!posterLl) continue;
+      const gridM = clampIntSafe(task.tetherGridM || taskTetherGridMFor(task.distanceLimitM), 80, 500, 250);
+      task.tetherGridM = gridM;
 
-      let best = null;
-      let bestD = Infinity;
+      // Ensure the poster area anchor exists.
+      let posterArea = task && task.tetherFrom ? task.tetherFrom : null;
+      if (!posterArea || !Number.isFinite(Number(posterArea.lat)) || !Number.isFinite(Number(posterArea.lng))) {
+        const llPoster = getActorLatLngSafe(task.poster);
+        if (!llPoster) continue;
+        posterArea = taskAreaAnchor(llPoster, gridM, `task:${task.id}:from`);
+        task.tetherFrom = posterArea;
+        changed = true;
+      }
+      if (!posterArea) continue;
+
+      if (!Array.isArray(task.applicants)) task.applicants = [];
+      if (task.applicants.length >= 10) continue;
+
+      const existing = new Set(task.applicants.map((a) => actorKeyLocal(a && a.actor)).filter((x) => x));
+
+      const candidates = [];
       for (const a of agents) {
-        if (!a || !a.verified) continue;
-        if (busy.has(String(a.id))) continue;
-        const d = haversineM({ lat: a.lat, lng: a.lng }, posterLl);
-        if (d <= (Number(task.distanceLimitM) || 0) && d < bestD) {
-          bestD = d;
-          best = a;
+        if (!a || !a.id) continue;
+        const key = `agent:${String(a.id)}`;
+        if (existing.has(key)) continue;
+        const d = haversineM({ lat: a.lat, lng: a.lng }, posterArea);
+        if (d > (Number(task.distanceLimitM) || 0)) continue;
+        candidates.push({ a, d });
+      }
+
+      candidates.sort((x, y) => {
+        const xv = Boolean(x.a && x.a.verified);
+        const yv = Boolean(y.a && y.a.verified);
+        if (xv !== yv) return xv ? -1 : 1;
+        return x.d - y.d;
+      });
+
+      const want = Math.min(2, 10 - task.applicants.length);
+      if (want <= 0) continue;
+
+      // Don't spam: add offers gradually.
+      const p = task.applicants.length === 0 ? 0.78 : 0.42;
+      if (Math.random() > p) continue;
+
+      const pickBand = Math.min(candidates.length, 6);
+      for (let i = 0; i < want && i < candidates.length; i++) {
+        const cand = candidates[Math.floor(Math.random() * Math.max(1, pickBand))];
+        if (!cand) continue;
+        const a = cand.a;
+        const d = cand.d;
+        const speed = Math.max(0.9, Number(a.speedMps) || 2.2);
+        const etaMin = Math.max(1, Math.round((d / speed) / 60));
+        upsertApplicant(task, {
+          id: uid(),
+          actor: { kind: "agent", id: String(a.id) },
+          label: String(a.handle || "@sim"),
+          verified: Boolean(a.verified),
+          appliedAt: now - Math.round(randBetween(10_000, 70_000)),
+          distanceM: Math.max(0, Math.round(d)),
+          etaMin,
+          skills: Array.isArray(a.skills) ? a.skills.slice(0, 8) : [],
+          rating: Math.max(0, Math.min(5, Number(a.rating) || 0)),
+          tasksDone: clampIntSafe(a.tasksDone, 0, 9999, 0),
+          onTimePct: clampIntSafe(a.onTimePct, 0, 100, 0)
+        });
+        changed = true;
+        existing.add(`agent:${String(a.id)}`);
+      }
+    }
+
+    if (!changed) return;
+    saveState();
+    renderTasks();
+  };
+
+  const seedOffersForSimTasks = () => {
+    if (!mapApi || typeof mapApi.listAgents !== "function") return;
+    ensureTaskPrefs();
+    const agents = mapApi.listAgents();
+    if (!agents.length) return;
+
+    const now = nowMs();
+    let changed = false;
+
+    for (const task of state.tasks.list) {
+      if (!task) continue;
+      if (normalizeTaskStatus(task.status) !== "open") continue;
+      if (actorKeyLocal(task.poster) === userKey) continue;
+
+      // Ensure poster area anchor exists (spawnSimTask sets it, but keep safe).
+      const gridM = clampIntSafe(task.tetherGridM || taskTetherGridMFor(task.distanceLimitM), 80, 500, 250);
+      task.tetherGridM = gridM;
+      let posterArea = task && task.tetherFrom ? task.tetherFrom : null;
+      if (!posterArea || !Number.isFinite(Number(posterArea.lat)) || !Number.isFinite(Number(posterArea.lng))) continue;
+
+      if (!Array.isArray(task.applicants)) task.applicants = [];
+      if (task.applicants.length >= 6) continue;
+
+      const age = now - (Number(task.createdAt) || now);
+      if (age < 7_000) continue; // leave time for the user to apply first
+
+      if (Math.random() > 0.25) continue;
+
+      const existing = new Set(task.applicants.map((a) => actorKeyLocal(a && a.actor)).filter((x) => x));
+      const candidates = agents
+        .filter((a) => a && a.id && !existing.has(`agent:${String(a.id)}`))
+        .map((a) => ({ a, d: haversineM({ lat: a.lat, lng: a.lng }, posterArea) }))
+        .filter((x) => x.d <= (Number(task.distanceLimitM) || 0))
+        .sort((x, y) => x.d - y.d)
+        .slice(0, 4);
+
+      if (!candidates.length) continue;
+      const pick = candidates[Math.floor(Math.random() * candidates.length)];
+      if (!pick) continue;
+      const a = pick.a;
+      const d = pick.d;
+      const speed = Math.max(0.9, Number(a.speedMps) || 2.2);
+      const etaMin = Math.max(1, Math.round((d / speed) / 60));
+
+      upsertApplicant(task, {
+        id: uid(),
+        actor: { kind: "agent", id: String(a.id) },
+        label: String(a.handle || "@sim"),
+        verified: Boolean(a.verified),
+        appliedAt: now - Math.round(randBetween(10_000, 60_000)),
+        distanceM: Math.max(0, Math.round(d)),
+        etaMin,
+        skills: Array.isArray(a.skills) ? a.skills.slice(0, 8) : [],
+        rating: Math.max(0, Math.min(5, Number(a.rating) || 0)),
+        tasksDone: clampIntSafe(a.tasksDone, 0, 9999, 0),
+        onTimePct: clampIntSafe(a.onTimePct, 0, 100, 0)
+      });
+      changed = true;
+    }
+
+    if (!changed) return;
+    saveState();
+    renderTasks();
+  };
+
+  const simPosterDecide = () => {
+    ensureTaskPrefs();
+    const now = nowMs();
+    const agents = mapApi && typeof mapApi.listAgents === "function" ? mapApi.listAgents() : [];
+    const aliveAgents = new Set(agents.map((a) => (a && a.id ? String(a.id) : "")).filter((x) => x));
+
+    for (const task of state.tasks.list) {
+      if (!task) continue;
+      if (normalizeTaskStatus(task.status) !== "open") continue;
+      if (actorKeyLocal(task.poster) === userKey) continue; // user decides for their own tasks
+
+      const posterArea = task && task.tetherFrom ? task.tetherFrom : null;
+      if (!posterArea || !Number.isFinite(Number(posterArea.lat)) || !Number.isFinite(Number(posterArea.lng))) continue;
+
+      const age = now - (Number(task.createdAt) || now);
+      const applicants = Array.isArray(task.applicants) ? task.applicants : [];
+      if (!applicants.length) continue;
+
+      const userApplied = applicants.some((a) => actorKeyLocal(a && a.actor) === userKey);
+      const minWait = userApplied ? 3_500 : 12_000;
+      if (age < minWait) continue;
+
+      // Choose the best verified applicant.
+      let best = null;
+      let bestScore = -Infinity;
+      for (const off of applicants) {
+        if (!off || !off.actor) continue;
+        const actor = off.actor;
+        const key = actorKeyLocal(actor);
+        const verified = key === userKey ? isUserVerified() : Boolean(off.verified);
+        if (!verified) continue;
+        if (actor.kind === "agent" && !aliveAgents.has(String(actor.id))) continue;
+
+        const dist = Math.max(0, Number(off.distanceM) || 0);
+        const rating = Math.max(0, Math.min(5, Number(off.rating) || 0));
+        const onTime = clampIntSafe(off.onTimePct, 0, 100, 0);
+        const done = clampIntSafe(off.tasksDone, 0, 9999, 0);
+        const score =
+          (key === userKey ? 50 : 0) +
+          rating * 10 +
+          onTime * 0.08 +
+          Math.log10(1 + done) * 6 +
+          800 / (150 + dist);
+        if (score > bestScore) {
+          bestScore = score;
+          best = actor;
         }
       }
 
       if (!best) continue;
-      task.status = "accepted";
-      task.acceptedBy = { kind: "agent", id: String(best.id) };
-      task.acceptedAt = nowMs();
-      busy.add(String(best.id));
+      acceptTask(task.id, best);
     }
-
-    saveState();
-    renderTasks();
   };
 
   const spawnSimTask = () => {
@@ -2102,8 +2964,12 @@
     const distanceLimitM = [300, 500, 800, 1200, 2000, 3500][Math.floor(Math.random() * 6)];
     const rewardUsd = [8, 12, 15, 20, 25, 35][Math.floor(Math.random() * 6)];
 
+    const id = uid();
+    const gridM = taskTetherGridMFor(distanceLimitM);
+    const tetherFrom = taskAreaAnchor({ lat: poster.lat, lng: poster.lng }, gridM, `task:${id}:from`);
+
     state.tasks.list.unshift({
-      id: uid(),
+      id,
       title,
       rewardCents: rewardUsd * 100,
       feeBps: taskFeeBps(),
@@ -2112,9 +2978,17 @@
       expiresAt: now + timeLimitMin * 60_000,
       status: "open",
       poster: { kind: "agent", id: String(poster.id) },
+      posterLabel: String(poster.handle || "@sim"),
+      posterVerified: Boolean(poster.verified),
       acceptedBy: null,
+      workerLabel: "",
+      workerVerified: false,
       acceptedAt: 0,
-      completedAt: 0
+      completedAt: 0,
+      applicants: [],
+      tetherFrom,
+      tetherTo: null,
+      tetherGridM: gridM
     });
 
     state.tasks.list = state.tasks.list.slice(0, 50);
@@ -2128,7 +3002,9 @@
     if (taskEngineTimer) return;
     taskEngineTimer = window.setInterval(() => {
       sweepExpiredTasks();
-      autoAssignTasks();
+      seedOffersForUserTasks();
+      seedOffersForSimTasks();
+      simPosterDecide();
       const openSim = state.tasks.list.filter((x) => x && normalizeTaskStatus(x.status) === "open" && actorKeyLocal(x.poster) !== userKey);
       if (openSim.length < 3) spawnSimTask();
     }, 2_500);
@@ -2362,6 +3238,7 @@
     let userAuraColor = "#FF6A00";
     let userAuraAgeMs = 0;
     let userAuraStrength = 0;
+    let userAuraVerified = Boolean(state && state.tasks && state.tasks.prefs && state.tasks.prefs.userVerified);
     let userWatchId = null;
     let lastUserLatLng = null;
     let lastUserLatLngRaw = null;
@@ -2490,12 +3367,44 @@
     const syncTaskLines = (now) => {
       const tNow = Number.isFinite(Number(now)) ? Number(now) : simNow();
 
+      const asLatLng = (pt) => {
+        if (!pt || typeof pt !== "object") return null;
+        const lat = Number(pt.lat);
+        const lng = Number(pt.lng);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+        return L.latLng(clamp(lat, -85, 85), wrapLng(lng));
+      };
+
+      const gridForTask = (task) => {
+        const hinted = clampInt(task && task.tetherGridM, 80, 500, 0);
+        if (hinted) return hinted;
+        const d = Math.max(50, Number(task && task.distanceLimitM) || 800);
+        return clampInt(Math.round(d * 0.25), 80, 500, 250);
+      };
+
+      const anchorForTask = (task, ll, suffix) => {
+        if (!task || !task.id || !ll) return null;
+        const gridM = gridForTask(task);
+        const q = quantizeLatLng(ll, gridM);
+        const h = fnv1a32(`task:${String(task.id)}:${String(suffix || "")}`);
+        const span = Math.max(8, Math.min(220, gridM * 0.38));
+        const east = ((((h & 0xffff) / 0xffff) * 2 - 1) * span);
+        const north = (((((h >>> 16) & 0xffff) / 0xffff) * 2 - 1) * span);
+        return offsetLatLngMeters(q, east, north);
+      };
+
       const wantIds = new Set();
       for (const task of tasksForLines) {
         const status = String(task && task.status ? task.status : "");
         if (status !== "accepted") continue;
-        const from = actorLatLngFor(task.poster);
-        const to = actorLatLngFor(task.acceptedBy);
+        const fromStored = asLatLng(task && task.tetherFrom);
+        const toStored = asLatLng(task && task.tetherTo);
+        const from =
+          fromStored ||
+          anchorForTask(task, actorLatLngFor(task.poster), "from");
+        const to =
+          toStored ||
+          anchorForTask(task, actorLatLngFor(task.acceptedBy), "to");
         if (!from || !to) continue;
         wantIds.add(String(task.id));
         const line = ensureTaskLine(task);
@@ -2855,9 +3764,15 @@
       const baseOpacities = [0.06, 0.09, 0.12];
       const baseRadii = [70, 52, 36];
       for (let i = 0; i < userAuraLayers.length; i++) {
+        const isOuter = i === 0;
+        const showBound = Boolean(userAuraVerified) && isOuter;
         const o = baseOpacities[i] || 0.08;
         const r = baseRadii[i] || 44;
         userAuraLayers[i].setStyle({
+          stroke: showBound,
+          color: showBound ? "rgba(32, 24, 18, 0.62)" : undefined,
+          weight: showBound ? 1.7 : 0,
+          opacity: showBound ? (selfPreciseMode ? 0.72 : clamp(0.65 * opacityAgeFactor, 0.22, 0.78)) : 0,
           fillColor: fill,
           fillOpacity: clamp(o * strengthOpacity * opacityAgeFactor, 0.012, 0.26)
         });
@@ -3197,9 +4112,15 @@
       for (let i = 0; i < layers.length; i++) {
         const layer = layers[i];
         if (!layer) continue;
+        const isOuter = i === 0;
+        const showBound = Boolean(agent.verified) && isOuter;
         const baseR = Number(baseRadii[i] != null ? baseRadii[i] : baseRadii[0]) || 36;
         const baseO = Number(baseOpacities[i] != null ? baseOpacities[i] : baseOpacities[0]) || 0.08;
         layer.setStyle({
+          stroke: showBound,
+          color: showBound ? "rgba(32, 24, 18, 0.62)" : undefined,
+          weight: showBound ? 1.7 : 0,
+          opacity: showBound ? clamp(0.65 * opacityScale, 0.18, 0.85) : 0,
           fillColor: fill,
           fillOpacity: clamp(baseO * opacityScale, 0.012, 0.32)
         });
@@ -3311,6 +4232,15 @@
       const id = uid();
       const handle = `@sim${String(++agentSeq).padStart(3, "0")}`;
       const verified = Math.random() < 0.42;
+      const skillsPool = ["courier", "photo", "fast", "careful", "bilingual", "tools", "trusted", "night"];
+      const skillsCount = verified ? clamp(Math.round(randBetween(3, 5)), 3, 5) : clamp(Math.round(randBetween(2, 4)), 2, 4);
+      const skills = skillsPool
+        .slice()
+        .sort(() => Math.random() - 0.5)
+        .slice(0, skillsCount);
+      const rating = Math.round(randBetween(verified ? 4.4 : 4.0, 5.0) * 10) / 10;
+      const tasksDone = Math.round(randBetween(verified ? 12 : 0, verified ? 220 : 90));
+      const onTimePct = Math.round(randBetween(verified ? 92 : 80, 99));
       const baseOuterRadius = randBetween(44, 68);
       const baseRadii = [baseOuterRadius, baseOuterRadius * 0.72, baseOuterRadius * 0.48];
       const baseOpacities = [0.05, 0.08, 0.12];
@@ -3328,6 +4258,10 @@
         id,
         handle,
         verified,
+        skills,
+        rating,
+        tasksDone,
+        onTimePct,
         outer,
         layers,
         route,
@@ -3747,7 +4681,11 @@
     startSim();
 
     const api = {
-      setUserAura: ({ enabled, color, visibilityMode, areaRadiusM, ageMs, strength } = {}) => {
+      setUserAura: ({ enabled, color, verified, visibilityMode, areaRadiusM, ageMs, strength } = {}) => {
+        if (typeof verified === "boolean") {
+          userAuraVerified = verified;
+          applyUserAuraStyle();
+        }
         if (typeof visibilityMode === "string" && visibilityMode.trim()) {
           setUserVisibilityMode(visibilityMode);
         }
@@ -3835,6 +4773,11 @@
             id: a.id,
             handle: a.handle,
             verified: Boolean(a.verified),
+            skills: Array.isArray(a.skills) ? a.skills.slice(0, 8) : [],
+            rating: Number(a.rating) || 0,
+            tasksDone: Number(a.tasksDone) || 0,
+            onTimePct: Number(a.onTimePct) || 0,
+            speedMps: Number(a.speedMps) || 0,
             lat: ll.lat,
             lng: ll.lng
           });
@@ -3849,11 +4792,32 @@
         // Boost the worker aura by injecting "work time" into their mix.
         const boostSec = 12 * 60;
         a.mix.work = (a.mix.work || 0) + boostSec;
+        a.tasksDone = (Number(a.tasksDone) || 0) + 1;
+        a.onTimePct = clamp(Math.round(Number(a.onTimePct) || 0), 0, 100);
         a.auraHex = mixWeightedHex(a.mix);
         a.needsStyle = true;
         markBroadcast(a, simNow());
         applyAgentStyle(a, simNow());
         syncAgentDialog(a);
+      },
+      applyTaskSupportBoost: ({ actor } = {}) => {
+        if (!actor || typeof actor !== "object") return;
+        if (actor.kind !== "agent") return;
+        const a = agentsById.get(String(actor.id || "")) || null;
+        if (!a) return;
+        const boostSec = 4 * 60;
+        a.mix.social = (a.mix.social || 0) + boostSec;
+        a.auraHex = mixWeightedHex(a.mix);
+        a.needsStyle = true;
+        markBroadcast(a, simNow());
+        applyAgentStyle(a, simNow());
+        syncAgentDialog(a);
+      },
+      focusLatLng: ({ lat, lng, zoom = 16 } = {}) => {
+        const la = Number(lat);
+        const ln = Number(lng);
+        if (!Number.isFinite(la) || !Number.isFinite(ln)) return;
+        map.flyTo([clamp(la, -85, 85), wrapLng(ln)], clamp(zoom, 2, 18), { duration: 0.8 });
       },
       refreshI18n: () => {
         setSimUi();
@@ -3905,6 +4869,50 @@
     const onTaskDist = () => renderTaskForm();
     els.taskDistanceLimit.addEventListener("input", onTaskDist);
     els.taskDistanceLimit.addEventListener("change", onTaskDist);
+  }
+
+  if (els.roomClose) {
+    els.roomClose.addEventListener("click", closeTaskRoom);
+  }
+
+  if (els.roomModal) {
+    els.roomModal.addEventListener("click", (e) => {
+      const target = e && e.target ? e.target : null;
+      if (!target) return;
+      if (target && target.getAttribute && target.getAttribute("data-room-close") === "1") {
+        closeTaskRoom();
+      }
+    });
+  }
+
+  if (els.roomForm) {
+    els.roomForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      sendRoomText();
+    });
+  }
+
+  if (els.roomPhotoBtn && els.roomPhoto) {
+    els.roomPhotoBtn.addEventListener("click", () => {
+      try {
+        els.roomPhoto.click();
+      } catch {
+        // ignore
+      }
+    });
+  }
+
+  if (els.roomPhoto) {
+    els.roomPhoto.addEventListener("change", async () => {
+      const file = els.roomPhoto.files && els.roomPhoto.files[0] ? els.roomPhoto.files[0] : null;
+      els.roomPhoto.value = "";
+      if (!file) return;
+      await sendRoomPhoto(file);
+    });
+  }
+
+  if (els.roomLocBtn) {
+    els.roomLocBtn.addEventListener("click", sendRoomLocation);
   }
 
   if (els.activityText) {
