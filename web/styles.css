@@ -935,6 +935,7 @@ body {
 .visBlock__seg {
   width: 100%;
   justify-content: space-between;
+  flex-wrap: wrap;
 }
 
 .visDetail {
@@ -1382,6 +1383,14 @@ body {
 @media (max-width: 520px) {
   .activityForm__row {
     grid-template-columns: 1fr;
+  }
+
+  .visApproved__row {
+    grid-template-columns: 1fr;
+  }
+
+  .visApproved__row .btn {
+    width: 100%;
   }
 
   .activityForm__actions {
