@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="color-scheme" content="light" />
 
     <title>AuraNet</title>
     <meta
@@ -15,7 +15,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Fraunces:opsz,wght@9..144,500;9..144,650&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@500;600;700&display=swap"
       rel="stylesheet"
     />
 
@@ -28,14 +28,23 @@
     <header class="shell">
       <div class="topbar">
         <div class="brand">
-          <div class="mark" aria-hidden="true"></div>
+          <div class="mark" aria-hidden="true">
+            <span class="mark__glyph">A</span>
+          </div>
           <div class="brand__text">
             <div class="brand__name">AuraNet</div>
-            <div class="brand__tag">Offline-first focus, zero fuss.</div>
+            <div class="brand__tag">Terminal layout. Warm light theme.</div>
           </div>
         </div>
-        <div class="pill" id="storagePill" title="Saved locally in your browser">
-          Saved locally
+        <div class="hud">
+          <div class="hud__clock" id="clock" aria-label="Local time"></div>
+          <div
+            class="pill pill--ok"
+            id="storagePill"
+            title="Saved locally in your browser"
+          >
+            LOCAL SAVE: OK
+          </div>
         </div>
       </div>
     </header>
@@ -71,16 +80,20 @@
           <div class="toolbar">
             <div class="seg" role="tablist" aria-label="Task filters">
               <button class="seg__btn" type="button" data-filter="inbox">
-                Inbox
+                <kbd class="kbd">F1</kbd>
+                <span>INBOX</span>
               </button>
               <button class="seg__btn" type="button" data-filter="today">
-                Today
+                <kbd class="kbd">F2</kbd>
+                <span>TODAY</span>
               </button>
               <button class="seg__btn" type="button" data-filter="done">
-                Done
+                <kbd class="kbd">F3</kbd>
+                <span>DONE</span>
               </button>
               <button class="seg__btn" type="button" data-filter="all">
-                All
+                <kbd class="kbd">F4</kbd>
+                <span>ALL</span>
               </button>
             </div>
             <label class="search">
@@ -88,7 +101,7 @@
               <input
                 class="input input--search"
                 id="search"
-                placeholder="Search…"
+                placeholder="SEARCH…"
               />
             </label>
             <button class="btn btn--ghost" type="button" id="clearDone">
@@ -197,4 +210,3 @@
     </dialog>
   </body>
 </html>
-

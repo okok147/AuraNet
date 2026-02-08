@@ -5,6 +5,7 @@
 
   const els = {
     storagePill: $("storagePill"),
+    clock: $("clock"),
     stats: $("stats"),
     addForm: $("addForm"),
     taskText: $("taskText"),
@@ -32,6 +33,28 @@
   };
 
   const nowMs = () => Date.now();
+
+  const setStoragePill = (ok) => {
+    if (!els.storagePill) return;
+    els.storagePill.classList.toggle("pill--ok", ok);
+    els.storagePill.classList.toggle("pill--bad", !ok);
+    els.storagePill.textContent = ok ? "LOCAL SAVE: OK" : "LOCAL SAVE: BLOCKED";
+  };
+
+  const fmtClock = () => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mm = String(d.getMinutes()).padStart(2, "0");
+    return `${y}-${m}-${day} ${hh}:${mm}`;
+  };
+
+  const renderClock = () => {
+    if (!els.clock) return;
+    els.clock.textContent = fmtClock();
+  };
 
   const clampInt = (value, min, max, fallback) => {
     const n = Number.parseInt(String(value), 10);
@@ -96,11 +119,9 @@
   const saveState = () => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      els.storagePill.textContent = "Saved locally";
-      els.storagePill.style.borderColor = "rgba(45, 212, 191, 0.35)";
+      setStoragePill(true);
     } catch {
-      els.storagePill.textContent = "Storage blocked";
-      els.storagePill.style.borderColor = "rgba(255, 92, 115, 0.35)";
+      setStoragePill(false);
     }
   };
 
@@ -515,6 +536,7 @@
     }
   }
 
+  renderClock();
+  window.setInterval(renderClock, 10_000);
   render();
 })();
-
