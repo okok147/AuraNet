@@ -700,13 +700,21 @@
     map.setView(defaultView.center, defaultView.zoom);
 
     let myAccuracyRing = null;
-    let userAuraOuter = null;
-    let userAuraInner = null;
+    let userAuraLayers = [];
     let userAuraEnabled = false;
     let userAuraColor = "#FF6A00";
     let userWatchId = null;
     let lastUserLatLng = null;
+    let lastUserLatLngRaw = null;
     let lastUserAccuracyM = null;
+    // Privacy: blur the true GPS coordinate so the aura doesn't pinpoint you.
+    const userPrivacy = {
+      // Quantize to ~250m grid.
+      gridM: 250,
+      // Per-session extra offset (kept stable while the page is open).
+      offsetEastM: (Math.random() - 0.5) * 260,
+      offsetNorthM: (Math.random() - 0.5) * 260
+    };
     const simRenderer = L.canvas({ padding: 0.5 });
 
     const sim = {
@@ -738,7 +746,6 @@
 
     const layersForBounds = () => {
       const layers = [];
-      if (myAccuracyRing) layers.push(myAccuracyRing);
       return layers;
     };
 
@@ -950,50 +957,73 @@
     };
 
     const removeUserAuraLayers = () => {
-      if (userAuraOuter) userAuraOuter.remove();
-      if (userAuraInner) userAuraInner.remove();
-      userAuraOuter = null;
-      userAuraInner = null;
+      for (const l of userAuraLayers) l.remove();
+      userAuraLayers = [];
     };
 
     const applyUserAuraStyle = () => {
-      if (!userAuraOuter || !userAuraInner) return;
-      userAuraOuter.setStyle({ fillColor: userAuraColor, fillOpacity: 0.18 });
-      userAuraInner.setStyle({ fillColor: userAuraColor, fillOpacity: 0.26 });
+      if (!userAuraLayers.length) return;
+      // No center dot: layered haze only.
+      const opacities = [0.06, 0.09, 0.12];
+      for (let i = 0; i < userAuraLayers.length; i++) {
+        userAuraLayers[i].setStyle({
+          fillColor: userAuraColor,
+          fillOpacity: opacities[i] || 0.08
+        });
+      }
     };
 
     const ensureUserAuraLayers = (latLng) => {
       if (!latLng) return;
-      if (!userAuraOuter) {
-        userAuraOuter = createAuraLayer(latLng, userAuraColor, 28, 0.18);
-      }
-      if (!userAuraInner) {
-        userAuraInner = createAuraLayer(latLng, userAuraColor, 16, 0.26);
+      if (userAuraLayers.length === 0) {
+        userAuraLayers = [
+          createAuraLayer(latLng, userAuraColor, 70, 0.06),
+          createAuraLayer(latLng, userAuraColor, 52, 0.09),
+          createAuraLayer(latLng, userAuraColor, 36, 0.12)
+        ];
       }
       applyUserAuraStyle();
     };
 
+    const offsetLatLngMeters = (latLng, eastM, northM) => {
+      const latRad = (latLng.lat * Math.PI) / 180;
+      const mPerDegLat = 111_320;
+      const mPerDegLng = Math.max(1, mPerDegLat * Math.cos(latRad));
+      const dLat = northM / mPerDegLat;
+      const dLng = eastM / mPerDegLng;
+      return L.latLng(clamp(latLng.lat + dLat, -85, 85), wrapLng(latLng.lng + dLng));
+    };
+
+    const quantizeLatLng = (latLng, gridM) => {
+      const latRad = (latLng.lat * Math.PI) / 180;
+      const mPerDegLat = 111_320;
+      const mPerDegLng = Math.max(1, mPerDegLat * Math.cos(latRad));
+      const dLat = gridM / mPerDegLat;
+      const dLng = gridM / mPerDegLng;
+      const qLat = Math.round(latLng.lat / dLat) * dLat;
+      const qLng = Math.round(latLng.lng / dLng) * dLng;
+      return L.latLng(clamp(qLat, -85, 85), wrapLng(qLng));
+    };
+
+    const blurUserLatLng = (latLng) => {
+      const q = quantizeLatLng(latLng, userPrivacy.gridM);
+      return offsetLatLngMeters(q, userPrivacy.offsetEastM, userPrivacy.offsetNorthM);
+    };
+
     const setUserLatLng = (lat, lng, accuracyM, { ensureRing = false } = {}) => {
-      lastUserLatLng = L.latLng(clamp(lat, -85, 85), wrapLng(lng));
+      lastUserLatLngRaw = L.latLng(clamp(lat, -85, 85), wrapLng(lng));
+      lastUserLatLng = blurUserLatLng(lastUserLatLngRaw);
       lastUserAccuracyM = Number.isFinite(Number(accuracyM)) ? Number(accuracyM) : lastUserAccuracyM;
 
       if (userAuraEnabled) {
         ensureUserAuraLayers(lastUserLatLng);
-        userAuraOuter.setLatLng(lastUserLatLng);
-        userAuraInner.setLatLng(lastUserLatLng);
+        for (const l of userAuraLayers) l.setLatLng(lastUserLatLng);
       }
 
+      // Privacy: do not render an accuracy ring.
       if (myAccuracyRing) {
-        myAccuracyRing.setLatLng(lastUserLatLng);
-        if (lastUserAccuracyM) myAccuracyRing.setRadius(lastUserAccuracyM);
-      } else if (ensureRing) {
-        myAccuracyRing = L.circle(lastUserLatLng, {
-          radius: lastUserAccuracyM || 50,
-          color: "rgba(255, 106, 0, 0.55)",
-          weight: 2,
-          fillColor: "rgba(255, 106, 0, 0.18)",
-          fillOpacity: 0.35
-        }).addTo(map);
+        myAccuracyRing.remove();
+        myAccuracyRing = null;
       }
     };
 
@@ -1425,7 +1455,7 @@
 
       els.mapLocate.disabled = true;
       setGpsBadge("GPS: REQUEST", "off");
-      setMapStatus("Requesting your location…");
+      setMapStatus("Requesting GPS…");
 
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -1433,18 +1463,13 @@
           const lng = pos.coords.longitude;
           const accuracy = Number(pos.coords.accuracy) || 0;
 
-          setUserLatLng(lat, lng, accuracy, { ensureRing: true });
+          setUserLatLng(lat, lng, accuracy, { ensureRing: false });
 
           setGpsBadge("GPS: ON", "ok");
           setMapStatus(
-            `Showing your aura area (±${Math.round(accuracy || 0)}m).`
+            "GPS ready. Your aura is blurred for privacy."
           );
-          toast("Location shown on map.");
-
-          map.fitBounds(myAccuracyRing.getBounds(), {
-            padding: [44, 44],
-            maxZoom: 16
-          });
+          toast("GPS ready.");
 
           window.requestAnimationFrame(() => map.invalidateSize());
           els.mapLocate.disabled = false;
@@ -1519,7 +1544,7 @@
           userAuraEnabled = false;
           stopUserWatch();
           removeUserAuraLayers();
-          if (!myAccuracyRing) setGpsBadge("GPS: OFF", "off");
+          setGpsBadge("GPS: OFF", "off");
           return;
         }
 
