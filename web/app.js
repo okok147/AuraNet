@@ -518,7 +518,8 @@
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    const defaultView = { center: [18, 10], zoom: 2 };
+    // Street-level default view so the activity simulation has meaningful roads.
+    const defaultView = { center: [37.7749, -122.4194], zoom: 13 };
     map.setView(defaultView.center, defaultView.zoom);
 
     const markers = [];
@@ -529,11 +530,16 @@
     const sim = {
       enabled: false,
       rafId: null,
-      dots: []
+      agents: [],
+      buildId: 0,
+      abort: null,
+      lastTickAt: 0,
+      loading: false,
+      routeCache: new Map(),
+      routeCacheKeys: []
     };
 
     const renderLocations = (locations) => {
-      const bounds = [];
       for (const loc of locations) {
         const marker = L.circleMarker([loc.lat, loc.lng], {
           radius: 7,
@@ -551,18 +557,10 @@
         marker.addTo(map);
 
         markers.push(marker);
-        bounds.push([loc.lat, loc.lng]);
       }
 
       if (els.mapCount) {
         els.mapCount.textContent = `MARKERS: ${markers.length}`;
-      }
-
-      if (bounds.length > 0) {
-        map.fitBounds(bounds, {
-          padding: [44, 44],
-          maxZoom: 6
-        });
       }
 
       // If the container’s layout shifted while loading (fonts), re-measure.
@@ -590,208 +588,504 @@
     };
 
     const layersForBounds = () => {
-      const layers = [...markers];
+      // Reset view should stay street-level; don’t zoom out to fit sample markers.
+      const layers = [];
       if (myAccuracyRing) layers.push(myAccuracyRing);
       if (myMarker) layers.push(myMarker);
       return layers;
     };
 
+    const STREET_MIN_ZOOM = 12;
+    const OSRM_BASE = "https://router.project-osrm.org";
+    const ROUTE_POINT_LIMIT = 260;
+    const ROUTE_CACHE_MAX = 80;
+
     const simNow = () => {
       // Use a monotonic clock. rAF uses the same origin as performance.now().
-      if (typeof performance !== "undefined" && typeof performance.now === "function") {
+      if (
+        typeof performance !== "undefined" &&
+        typeof performance.now === "function"
+      ) {
         return performance.now();
       }
       return nowMs();
     };
 
+    const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+
     const wrapLng = (lng) => {
-      // Keep dot motion sane across the dateline.
       const x = ((lng + 180) % 360 + 360) % 360 - 180;
       return x;
     };
 
-    const randomLngBetween = (west, east) => {
-      // Handle dateline-crossing bounds (west > east).
-      if (west <= east) return west + Math.random() * (east - west);
-      const span = east + 360 - west;
-      const v = west + Math.random() * span;
-      return v > 180 ? v - 360 : v;
+    const routeCacheSet = (key, route) => {
+      if (sim.routeCache.has(key)) return;
+      sim.routeCache.set(key, route);
+      sim.routeCacheKeys.push(key);
+      if (sim.routeCacheKeys.length > ROUTE_CACHE_MAX) {
+        const old = sim.routeCacheKeys.shift();
+        if (old) sim.routeCache.delete(old);
+      }
     };
 
-    const randomLatLngInBounds = (bounds, pad = 0.06) => {
-      const b = bounds.pad(pad);
-      const sw = b.getSouthWest();
-      const ne = b.getNorthEast();
-      const lat = Math.max(
-        -85,
-        Math.min(85, sw.lat + Math.random() * (ne.lat - sw.lat))
-      );
-      const lng = wrapLng(randomLngBetween(sw.lng, ne.lng));
-      return L.latLng(lat, lng);
+    const roundCoord = (n, digits = 4) => {
+      const f = 10 ** digits;
+      return Math.round(n * f) / f;
     };
 
-    const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
-
-    const easeInOutQuad = (t) => {
-      return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    const routeKey = (profile, start, end) => {
+      return `${profile}:${roundCoord(start.lat)},${roundCoord(start.lng)}:${roundCoord(end.lat)},${roundCoord(end.lng)}`;
     };
 
-    const pickStepPx = () => {
-      // Mostly short steps with the occasional longer reposition.
-      const r = Math.random();
-      if (r < 0.78) return 22 + Math.random() * 70; // 22..92
-      if (r < 0.95) return 86 + Math.random() * 120; // 86..206
-      return 190 + Math.random() * 220; // 190..410
+    const fetchRoute = async (profile, start, end, signal) => {
+      const key = routeKey(profile, start, end);
+      const cached = sim.routeCache.get(key);
+      if (cached) return cached;
+
+      const coords = `${start.lng},${start.lat};${end.lng},${end.lat}`;
+      const qs = new URLSearchParams({
+        overview: "full",
+        geometries: "geojson",
+        steps: "false",
+        alternatives: "false",
+        annotations: "false",
+        radiuses: "350;350"
+      });
+      const url = `${OSRM_BASE}/route/v1/${profile}/${coords}?${qs}`;
+      const res = await fetch(url, { signal, cache: "no-store" });
+      if (!res.ok) throw new Error(`route ${res.status}`);
+
+      const data = await res.json();
+      const geometry = data && data.routes && data.routes[0] && data.routes[0].geometry;
+      const coordsArr = geometry && geometry.coordinates;
+      if (!Array.isArray(coordsArr) || coordsArr.length < 2) {
+        throw new Error("route geometry missing");
+      }
+
+      let points = coordsArr.map((c) => L.latLng(c[1], c[0]));
+      if (points.length > ROUTE_POINT_LIMIT) {
+        const step = Math.ceil(points.length / ROUTE_POINT_LIMIT);
+        const slim = [];
+        for (let i = 0; i < points.length; i += step) slim.push(points[i]);
+        if (slim[slim.length - 1] !== points[points.length - 1]) {
+          slim.push(points[points.length - 1]);
+        }
+        points = slim;
+      }
+
+      const cum = [0];
+      for (let i = 1; i < points.length; i++) {
+        cum.push(cum[i - 1] + map.distance(points[i - 1], points[i]));
+      }
+
+      const route = {
+        profile,
+        points,
+        cum,
+        totalM: cum[cum.length - 1]
+      };
+      routeCacheSet(key, route);
+      return route;
     };
 
-    const pickSpeedPxPerS = () => {
-      // Walk, sometimes jog.
-      const r = Math.random();
-      if (r < 0.86) return 18 + Math.random() * 22; // 18..40
-      return 42 + Math.random() * 38; // 42..80
-    };
-
-    const pickPauseMs = () => {
-      const r = Math.random();
-      if (r < 0.62) return 0;
-      if (r < 0.9) return 350 + Math.random() * 1200;
-      return 1400 + Math.random() * 2600;
-    };
-
-    const targetNear = (startLatLng) => {
+    const randomViewLatLng = (margin = 40) => {
       const size = map.getSize();
-      const margin = 28;
-      const startPt = map.latLngToContainerPoint(startLatLng);
-      const step = pickStepPx();
-      const ang = Math.random() * Math.PI * 2;
-      const dx = Math.cos(ang) * step;
-      const dy = Math.sin(ang) * step;
-
-      const x = clamp(startPt.x + dx, margin, Math.max(margin, size.x - margin));
-      const y = clamp(startPt.y + dy, margin, Math.max(margin, size.y - margin));
+      const x = margin + Math.random() * Math.max(1, size.x - margin * 2);
+      const y = margin + Math.random() * Math.max(1, size.y - margin * 2);
       const ll = map.containerPointToLatLng([x, y]);
-      const lat = clamp(ll.lat, -85, 85);
-      const lng = wrapLng(ll.lng);
-      return L.latLng(lat, lng);
+      return L.latLng(clamp(ll.lat, -85, 85), wrapLng(ll.lng));
     };
 
-    const simPalette = [
-      { fill: "#ff6a00", stroke: "rgba(32, 24, 18, 0.92)" }, // orange
-      { fill: "#0a7a52", stroke: "rgba(32, 24, 18, 0.92)" }, // green
-      { fill: "#b4233a", stroke: "rgba(32, 24, 18, 0.92)" }, // red
-      { fill: "#2a5b8a", stroke: "rgba(32, 24, 18, 0.92)" }, // blue
-      { fill: "#f1b83a", stroke: "rgba(32, 24, 18, 0.92)" }, // amber
-      { fill: "#7a5a2b", stroke: "rgba(32, 24, 18, 0.92)" } // umber
+    const targetFrom = (startLatLng, minPx, maxPx, margin = 40) => {
+      const size = map.getSize();
+      const pt = map.latLngToContainerPoint(startLatLng);
+      const dist = minPx + Math.random() * (maxPx - minPx);
+      const ang = Math.random() * Math.PI * 2;
+      const x = clamp(pt.x + Math.cos(ang) * dist, margin, Math.max(margin, size.x - margin));
+      const y = clamp(pt.y + Math.sin(ang) * dist, margin, Math.max(margin, size.y - margin));
+      const ll = map.containerPointToLatLng([x, y]);
+      return L.latLng(clamp(ll.lat, -85, 85), wrapLng(ll.lng));
+    };
+
+    const routeAtDistance = (route, distM, hintIdx = 0) => {
+      const pts = route.points;
+      const cum = route.cum;
+      if (!pts || pts.length === 0) return { latLng: map.getCenter(), idx: 0 };
+      if (pts.length === 1) return { latLng: pts[0], idx: 0 };
+
+      const d = clamp(distM, 0, route.totalM);
+      let i = clamp(hintIdx, 0, pts.length - 2);
+      while (i < cum.length - 2 && cum[i + 1] < d) i++;
+      while (i > 0 && cum[i] > d) i--;
+
+      const d0 = cum[i];
+      const d1 = cum[i + 1];
+      const t = d1 === d0 ? 0 : (d - d0) / (d1 - d0);
+      const a = pts[i];
+      const b = pts[i + 1];
+      return {
+        latLng: L.latLng(a.lat + (b.lat - a.lat) * t, a.lng + (b.lng - a.lng) * t),
+        idx: i
+      };
+    };
+
+    const jitterLatLng = (latLng, jitterPx) => {
+      const pt = map.latLngToContainerPoint(latLng);
+      const jx = (Math.random() - 0.5) * jitterPx * 2;
+      const jy = (Math.random() - 0.5) * jitterPx * 2;
+      const ll = map.containerPointToLatLng([pt.x + jx, pt.y + jy]);
+      return L.latLng(clamp(ll.lat, -85, 85), wrapLng(ll.lng));
+    };
+
+    const randBetween = (min, max) => min + Math.random() * (max - min);
+    const pickOne = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+    const personas = [
+      {
+        kind: "WALK",
+        profile: "walking",
+        fill: "#0a7a52",
+        speedMps: [1.3, 2.2],
+        jitterPx: [0.7, 1.7],
+        microStopPerS: 0.06
+      },
+      {
+        kind: "TRANSIT",
+        profile: "driving",
+        fill: "#ff6a00",
+        speedMps: [5.5, 10.5],
+        jitterPx: [0.4, 1.0],
+        microStopPerS: 0.045
+      },
+      {
+        kind: "RIDE",
+        profile: "driving",
+        fill: "#2a5b8a",
+        speedMps: [9.5, 16.0],
+        jitterPx: [0.25, 0.75],
+        microStopPerS: 0.015
+      },
+      {
+        kind: "RUSH",
+        profile: "driving",
+        fill: "#b4233a",
+        speedMps: [12.0, 20.0],
+        jitterPx: [0.22, 0.7],
+        microStopPerS: 0.01
+      }
     ];
 
-    const newDotSegment = (dot, startLatLng, now) => {
-      dot.start = startLatLng;
-      dot.target = targetNear(startLatLng);
-      dot.t0 = now;
-      const startPt = map.latLngToContainerPoint(dot.start);
-      const targetPt = map.latLngToContainerPoint(dot.target);
-      const dist = Math.hypot(targetPt.x - startPt.x, targetPt.y - startPt.y);
-      const speed = pickSpeedPxPerS();
-      dot.dt = Math.max(350, (dist / speed) * 1000);
-      dot.pauseUntil = 0;
+    const pickPersona = () => {
+      const r = Math.random();
+      if (r < 0.36) return personas[0]; // WALK
+      if (r < 0.56) return personas[1]; // TRANSIT
+      if (r < 0.86) return personas[2]; // RIDE
+      return personas[3]; // RUSH
     };
 
-    const createDot = (now) => {
-      const bounds = map.getBounds();
-      const start = randomLatLngInBounds(bounds, 0.08);
-      const c = simPalette[Math.floor(Math.random() * simPalette.length)];
-      const radius = 3.2 + Math.random() * 2.3;
-      const marker = L.circleMarker(start, {
-        renderer: simRenderer,
-        radius,
-        color: c.stroke,
+    const applyAgentStyle = (agent) => {
+      let fill = agent.persona.fill;
+      let radius = agent.baseRadius;
+      let fillOpacity = 0.82;
+
+      if (agent.state === "stopped") {
+        fillOpacity = 0.9;
+        if (agent.stopType === "eat") {
+          fill = "#f1b83a";
+          radius = agent.baseRadius + 1.6;
+        } else if (agent.stopType === "transit") {
+          fill = "#ff6a00";
+          radius = agent.baseRadius + 0.8;
+        } else {
+          fill = "#7a5a2b";
+          radius = agent.baseRadius + 0.4;
+        }
+      }
+
+      agent.marker.setStyle({
+        color: "rgba(32, 24, 18, 0.92)",
         weight: 1.2,
         opacity: 0.86,
-        fillColor: c.fill,
+        fillColor: fill,
+        fillOpacity
+      });
+      agent.marker.setRadius(radius);
+
+      if (agent.marker.getPopup()) {
+        const label =
+          agent.state === "moving"
+            ? agent.persona.kind
+            : agent.stopType === "eat"
+              ? "EATING"
+              : agent.stopType === "transit"
+                ? "BOARDING"
+                : "PAUSED";
+        agent.marker.setPopupContent(`<strong>${label}</strong>`);
+      }
+    };
+
+    const clearAgents = () => {
+      for (const a of sim.agents) a.marker.remove();
+      sim.agents = [];
+    };
+
+    const stopSimInternal = () => {
+      sim.loading = false;
+      if (sim.abort) sim.abort.abort();
+      sim.abort = null;
+      if (sim.rafId) window.cancelAnimationFrame(sim.rafId);
+      sim.rafId = null;
+      clearAgents();
+    };
+
+    const buildRoutePool = async (signal) => {
+      const pool = { driving: [], walking: [] };
+
+      const cfgFor = (profile) => {
+        if (profile === "walking") {
+          return { desired: 2, minM: 220, maxM: 2200, minPx: 160, maxPx: 540 };
+        }
+        return { desired: 3, minM: 450, maxM: 7200, minPx: 260, maxPx: 980 };
+      };
+
+      const fillPool = async (profile) => {
+        const cfg = cfgFor(profile);
+        const maxAttempts = cfg.desired * 6;
+        for (let i = 0; i < maxAttempts && pool[profile].length < cfg.desired; i++) {
+          const start = randomViewLatLng(52);
+          const end = targetFrom(start, cfg.minPx, cfg.maxPx, 52);
+          try {
+            const route = await fetchRoute(profile, start, end, signal);
+            if (route.totalM < cfg.minM || route.totalM > cfg.maxM) continue;
+            pool[profile].push(route);
+          } catch (err) {
+            // Ignore and retry with a new pair.
+          }
+        }
+      };
+
+      await fillPool("driving");
+      await fillPool("walking");
+      return pool;
+    };
+
+    const createAgent = (route, persona, now) => {
+      const baseRadius = 3.6 + Math.random() * 1.2;
+      const marker = L.circleMarker(route.points[0], {
+        renderer: simRenderer,
+        radius: baseRadius,
+        color: "rgba(32, 24, 18, 0.92)",
+        weight: 1.2,
+        opacity: 0.86,
+        fillColor: persona.fill,
         fillOpacity: 0.82
       }).addTo(map);
 
-      const dot = {
+      marker.bindPopup(`<strong>${persona.kind}</strong>`);
+
+      const distM = randBetween(0, route.totalM);
+      const dir = Math.random() < 0.5 ? 1 : -1;
+      const speedMps = randBetween(persona.speedMps[0], persona.speedMps[1]);
+      const jitterPx = randBetween(persona.jitterPx[0], persona.jitterPx[1]);
+
+      const agent = {
         marker,
-        start,
-        target: start,
-        t0: now,
-        dt: 1000,
-        pauseUntil: 0,
-        jitterPx: 0.35 + Math.random() * 1.35
+        route,
+        persona,
+        baseRadius,
+        dir,
+        speedMps,
+        jitterPx,
+        hintIdx: 0,
+        state: "moving",
+        stopType: "",
+        stopUntil: 0,
+        distM
       };
-      newDotSegment(dot, start, now);
-      return dot;
+
+      const pos = routeAtDistance(route, distM, 0);
+      agent.hintIdx = pos.idx;
+      agent.marker.setLatLng(jitterLatLng(pos.latLng, agent.jitterPx));
+      applyAgentStyle(agent);
+      return agent;
     };
 
-    const clearDots = () => {
-      for (const d of sim.dots) d.marker.remove();
-      sim.dots = [];
+    const pickStop = (agent) => {
+      // Long stops simulate “eating”. Transit gets shorter station-like stops.
+      if (Math.random() < 0.18) {
+        return { type: "eat", ms: randBetween(7000, 17000) };
+      }
+      if (agent.persona.kind === "TRANSIT" && Math.random() < 0.55) {
+        return { type: "transit", ms: randBetween(1100, 4200) };
+      }
+      return { type: "idle", ms: randBetween(700, 2400) };
     };
 
-    const tickDots = () => {
-      if (!sim.enabled) return;
+    const maybeMicroStop = (agent, dtSec, now) => {
+      const p = agent.persona.microStopPerS * dtSec;
+      if (p <= 0) return false;
+      if (Math.random() >= p) return false;
+
+      agent.state = "stopped";
+      agent.stopType = agent.persona.kind === "TRANSIT" ? "transit" : "idle";
+      agent.stopUntil = now + randBetween(650, agent.persona.kind === "WALK" ? 1900 : 1400);
+      applyAgentStyle(agent);
+      return true;
+    };
+
+    const tickAgents = () => {
+      if (!sim.enabled || sim.agents.length === 0) return;
       const now = simNow();
-      for (const dot of sim.dots) {
-        if (dot.pauseUntil && now < dot.pauseUntil) continue;
+      const dtSecRaw = (now - sim.lastTickAt) / 1000;
+      const dtSec = clamp(dtSecRaw, 0, 0.2);
+      sim.lastTickAt = now;
 
-        const t = (now - dot.t0) / dot.dt;
-        if (t >= 1) {
-          const pauseMs = pickPauseMs();
-          dot.pauseUntil = pauseMs ? now + pauseMs : 0;
-          newDotSegment(dot, dot.target, now);
-          continue;
+      for (const agent of sim.agents) {
+        if (agent.state === "stopped") {
+          if (now < agent.stopUntil) continue;
+          agent.state = "moving";
+          agent.stopType = "";
+          applyAgentStyle(agent);
         }
 
-        const te = easeInOutQuad(Math.max(0, Math.min(1, t)));
-        const lat0 = dot.start.lat;
-        const lat1 = dot.target.lat;
+        if (maybeMicroStop(agent, dtSec, now)) continue;
 
-        const lng0 = dot.start.lng;
-        let dLng = dot.target.lng - lng0;
-        // Interpolate the short way across the dateline.
-        dLng = ((dLng + 540) % 360) - 180;
+        agent.distM += agent.dir * agent.speedMps * dtSec;
 
-        const lat = lat0 + (lat1 - lat0) * te;
-        const lng = wrapLng(lng0 + dLng * te);
+        if (agent.distM <= 0 || agent.distM >= agent.route.totalM) {
+          agent.distM = clamp(agent.distM, 0, agent.route.totalM);
+          const stop = pickStop(agent);
+          agent.state = "stopped";
+          agent.stopType = stop.type;
+          agent.stopUntil = now + stop.ms;
+          agent.dir *= -1; // bounce back along the same streets
+          applyAgentStyle(agent);
+        }
 
-        // Subtle GPS jitter (in screen-space), keeps motion feeling "alive".
-        const basePt = map.latLngToContainerPoint([lat, lng]);
-        const jx = (Math.random() - 0.5) * dot.jitterPx * 2;
-        const jy = (Math.random() - 0.5) * dot.jitterPx * 2;
-        const jll = map.containerPointToLatLng([basePt.x + jx, basePt.y + jy]);
-        dot.marker.setLatLng([clamp(jll.lat, -85, 85), wrapLng(jll.lng)]);
+        const pos = routeAtDistance(agent.route, agent.distM, agent.hintIdx);
+        agent.hintIdx = pos.idx;
+        agent.marker.setLatLng(jitterLatLng(pos.latLng, agent.jitterPx));
       }
 
-      sim.rafId = window.requestAnimationFrame(tickDots);
+      sim.rafId = window.requestAnimationFrame(tickAgents);
     };
 
     const setSimUi = () => {
       if (els.mapSimToggle) {
         els.mapSimToggle.textContent = sim.enabled ? "Sim dots: ON" : "Sim dots: OFF";
       }
-      setDotBadge(sim.enabled ? `DOTS: ${sim.dots.length}` : "DOTS: OFF", sim.enabled ? "ok" : "off");
+
+      if (!sim.enabled) {
+        setDotBadge("DOTS: OFF", "off");
+        return;
+      }
+
+      if (map.getZoom() < STREET_MIN_ZOOM) {
+        setDotBadge(`DOTS: ZOOM ${STREET_MIN_ZOOM}+`, "warn");
+        return;
+      }
+
+      if (sim.loading) {
+        setDotBadge("DOTS: LOADING", "off");
+        return;
+      }
+
+      setDotBadge(`DOTS: ${sim.agents.length}`, sim.agents.length ? "ok" : "off");
+    };
+
+    const rebuildSim = async () => {
+      if (!sim.enabled) return;
+      if (map.getZoom() < STREET_MIN_ZOOM) return;
+
+      const buildId = ++sim.buildId;
+      stopSimInternal();
+
+      sim.loading = true;
+      setSimUi();
+      setMapStatus("Fetching street activity…");
+
+      const ac = new AbortController();
+      sim.abort = ac;
+
+      try {
+        const pool = await buildRoutePool(ac.signal);
+        if (buildId !== sim.buildId) return;
+
+        const routesDriving = pool.driving;
+        const routesWalking = pool.walking.length ? pool.walking : pool.driving;
+        if (!routesDriving.length && !routesWalking.length) {
+          throw new Error("No routes available for this view.");
+        }
+
+        const agentCount = 22;
+        const now = simNow();
+        sim.agents = [];
+
+        for (let i = 0; i < agentCount; i++) {
+          const persona = pickPersona();
+          const route =
+            persona.profile === "walking"
+              ? pickOne(routesWalking)
+              : pickOne(routesDriving.length ? routesDriving : routesWalking);
+          if (!route) continue;
+          sim.agents.push(createAgent(route, persona, now));
+        }
+
+        sim.loading = false;
+        setSimUi();
+        setMapStatus("Street activity running.");
+
+        sim.lastTickAt = now;
+        sim.rafId = window.requestAnimationFrame(tickAgents);
+      } catch (err) {
+        console.error(err);
+        if (buildId !== sim.buildId) return;
+        sim.loading = false;
+        setDotBadge("DOTS: OFF", "warn");
+        setMapStatus("Street simulation failed to load routes.", true);
+        stopSimInternal();
+      }
+    };
+
+    let rebuildTimer = null;
+    let rebuildAnchor = { center: map.getCenter(), zoom: map.getZoom() };
+
+    const scheduleRebuild = () => {
+      if (!sim.enabled) return;
+      if (map.getZoom() < STREET_MIN_ZOOM) return;
+
+      if (rebuildTimer) window.clearTimeout(rebuildTimer);
+      rebuildTimer = window.setTimeout(() => {
+        rebuildTimer = null;
+        rebuildAnchor = { center: map.getCenter(), zoom: map.getZoom() };
+        rebuildSim();
+      }, 650);
+    };
+
+    const syncSimForView = () => {
+      if (!sim.enabled) return;
+      if (map.getZoom() < STREET_MIN_ZOOM) {
+        stopSimInternal();
+        setMapStatus(`Zoom to ${STREET_MIN_ZOOM}+ to see street activity.`);
+        setSimUi();
+        return;
+      }
+      if (sim.agents.length === 0 && !sim.loading) rebuildSim();
     };
 
     const startSim = () => {
       if (sim.enabled) return;
       sim.enabled = true;
-
-      const now = simNow();
-      const count = 30;
-      sim.dots = Array.from({ length: count }, () => createDot(now));
       setSimUi();
-
-      sim.rafId = window.requestAnimationFrame(tickDots);
+      syncSimForView();
     };
 
     const stopSim = () => {
       if (!sim.enabled) return;
       sim.enabled = false;
-      if (sim.rafId) window.cancelAnimationFrame(sim.rafId);
-      sim.rafId = null;
-      clearDots();
+      stopSimInternal();
       setSimUi();
+      setMapStatus("Street activity paused.");
     };
 
     const toggleSim = () => {
@@ -815,7 +1109,16 @@
         renderLocations(payload.locations);
         setGpsBadge("GPS: OFF", "off");
         setSimUi();
-        setMapStatus(`Loaded ${payload.locations.length} location(s).`);
+        const base = `Loaded ${payload.locations.length} location(s).`;
+        const activity =
+          sim.enabled && map.getZoom() >= STREET_MIN_ZOOM
+            ? sim.loading
+              ? "Fetching street activity…"
+              : sim.agents.length
+                ? "Street activity running."
+                : `Zoom to ${STREET_MIN_ZOOM}+ to see street activity.`
+            : "";
+        setMapStatus(activity ? `${base} ${activity}` : base);
       } catch (err) {
         console.error(err);
         setGpsBadge("GPS: ERROR", "warn");
@@ -829,7 +1132,7 @@
         const layers = layersForBounds();
         if (layers.length > 0) {
           const group = L.featureGroup(layers);
-          map.fitBounds(group.getBounds(), { padding: [44, 44], maxZoom: 6 });
+          map.fitBounds(group.getBounds(), { padding: [44, 44], maxZoom: 16 });
           return;
         }
         map.setView(defaultView.center, defaultView.zoom);
@@ -928,17 +1231,21 @@
       els.mapSimToggle.addEventListener("click", toggleSim);
     }
 
-    // Keep the activity layer near the current view.
     map.on("moveend zoomend", () => {
       if (!sim.enabled) return;
-      const b = map.getBounds().pad(0.12);
-      const now = simNow();
-      for (const dot of sim.dots) {
-        if (!b.contains(dot.marker.getLatLng())) {
-          const start = randomLatLngInBounds(map.getBounds(), 0.06);
-          dot.marker.setLatLng(start);
-          newDotSegment(dot, start, now);
-        }
+      setSimUi();
+
+      if (map.getZoom() < STREET_MIN_ZOOM) {
+        syncSimForView();
+        return;
+      }
+
+      const movedM = map.distance(map.getCenter(), rebuildAnchor.center);
+      const zoomChanged = map.getZoom() !== rebuildAnchor.zoom;
+      if (zoomChanged || movedM > 1200) {
+        scheduleRebuild();
+      } else {
+        syncSimForView();
       }
     });
 
