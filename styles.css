@@ -1,0 +1,188 @@
+:root {
+  --parchment-base: #f3e5c8;
+  --parchment-mid: #e4cda2;
+  --parchment-shadow: #a9885f;
+  --ink-strong: #33261b;
+  --ink-soft: #594737;
+  --frame: #6c5238;
+  --frame-shadow: #3f3023;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: "Manrope", system-ui, sans-serif;
+  color: var(--ink-strong);
+  background:
+    radial-gradient(circle at 20% 12%, #f9eed7 0%, transparent 48%),
+    radial-gradient(circle at 86% 0%, #e9d6b1 0%, transparent 38%),
+    linear-gradient(145deg, #b58d5f 0%, #96744c 45%, #8b6a44 100%);
+  display: grid;
+  place-items: center;
+  padding: 2rem 1rem;
+}
+
+.app-shell {
+  width: min(1100px, 100%);
+  border: 2px solid color-mix(in srgb, var(--frame-shadow) 80%, black);
+  border-radius: 18px;
+  background: linear-gradient(145deg, #ead5ad 0%, #e6cf9f 100%);
+  box-shadow:
+    0 24px 65px rgba(31, 23, 14, 0.45),
+    0 3px 0 rgba(255, 246, 224, 0.6) inset;
+  overflow: hidden;
+}
+
+.hero {
+  padding: 1.8rem 2rem 1.3rem;
+  border-bottom: 1px solid rgba(75, 57, 39, 0.3);
+  background: linear-gradient(180deg, rgba(255, 243, 216, 0.85) 0%, rgba(239, 214, 168, 0.4) 100%);
+}
+
+.kicker {
+  font-size: 0.84rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+
+h1 {
+  font-family: "EB Garamond", serif;
+  margin: 0.35rem 0;
+  font-size: clamp(1.9rem, 3.2vw, 2.8rem);
+  letter-spacing: 0.01em;
+  line-height: 1.08;
+}
+
+.subtitle {
+  margin: 0;
+  color: color-mix(in srgb, var(--ink-soft) 82%, black);
+  max-width: 62ch;
+}
+
+.map-stage {
+  position: relative;
+  padding: 1.05rem;
+  background: linear-gradient(180deg, #c8a879 0%, #b48f62 100%);
+}
+
+.map-canvas {
+  width: 100%;
+  height: min(64vh, 640px);
+  min-height: 400px;
+  border-radius: 14px;
+  border: 1px solid rgba(72, 54, 36, 0.65);
+  box-shadow:
+    0 0 0 2px rgba(255, 239, 203, 0.7) inset,
+    0 10px 25px rgba(44, 30, 16, 0.35);
+  overflow: hidden;
+}
+
+.paper-overlay,
+.stage-vignette {
+  pointer-events: none;
+  position: absolute;
+  border-radius: 14px;
+}
+
+.paper-overlay {
+  inset: 1.05rem;
+  opacity: 0.63;
+  mix-blend-mode: multiply;
+  background:
+    radial-gradient(circle at 22% 18%, rgba(255, 248, 226, 0.7) 0%, transparent 38%),
+    radial-gradient(circle at 77% 72%, rgba(139, 106, 67, 0.32) 0%, transparent 40%),
+    repeating-linear-gradient(
+      55deg,
+      rgba(87, 66, 44, 0.09) 0,
+      rgba(87, 66, 44, 0.09) 1px,
+      rgba(252, 239, 209, 0.07) 1px,
+      rgba(252, 239, 209, 0.07) 4px
+    ),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='0.28'/%3E%3C/svg%3E");
+  background-size: auto, auto, auto, 220px 220px;
+}
+
+.stage-vignette {
+  inset: 1.05rem;
+  box-shadow:
+    0 0 0 1px rgba(74, 57, 37, 0.65) inset,
+    0 0 0 6px rgba(255, 236, 196, 0.25) inset,
+    0 -10px 35px rgba(48, 34, 20, 0.35) inset;
+}
+
+.leaflet-tile {
+  filter: sepia(0.52) saturate(0.72) hue-rotate(-12deg) contrast(0.93) brightness(1.04);
+}
+
+.leaflet-control-zoom a {
+  color: var(--ink-strong);
+  background: color-mix(in srgb, var(--parchment-base) 85%, white);
+  border-bottom-color: rgba(107, 84, 56, 0.45);
+}
+
+.leaflet-control-attribution {
+  background: rgba(237, 220, 184, 0.88);
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.status-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem 1.5rem;
+  padding: 1rem 1.4rem 1.2rem;
+  border-top: 1px solid rgba(66, 49, 32, 0.25);
+  background: linear-gradient(180deg, rgba(245, 224, 182, 0.6) 0%, rgba(235, 209, 160, 0.72) 100%);
+}
+
+.status-live {
+  margin: 0;
+  font-weight: 700;
+}
+
+.hint {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  body {
+    padding: 1rem 0.5rem;
+  }
+
+  .hero {
+    padding: 1.2rem 1.2rem 1rem;
+  }
+
+  .map-stage {
+    padding: 0.75rem;
+  }
+
+  .paper-overlay,
+  .stage-vignette {
+    inset: 0.75rem;
+  }
+
+  .map-canvas {
+    min-height: 350px;
+    height: 60vh;
+  }
+
+  .status-panel {
+    padding: 0.85rem 1rem 1rem;
+  }
+}
