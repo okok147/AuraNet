@@ -144,32 +144,55 @@
               </div>
 
               <div class="visDetail" id="visibilityDetail">
-                <div class="visRoom" id="visRoom" hidden>
-                  <label class="field">
-                    <span class="field__label" data-i18n="area_room_label">
-                      Event room
+                <div class="visArea" id="visArea" hidden>
+                  <label class="field" for="areaRadius">
+                    <span class="field__label" data-i18n="visibility_area_radius_label">
+                      Visible area
                     </span>
                     <input
-                      class="input"
-                      id="visRoomCode"
-                      placeholder="Room code"
-                      data-i18n-placeholder="area_room_placeholder"
-                      minlength="1"
-                      maxlength="36"
+                      class="range"
+                      type="range"
+                      id="areaRadius"
+                      min="10"
+                      max="500"
+                      step="10"
+                      value="100"
                     />
+                    <div class="rangeMeta" aria-live="polite">
+                      <span class="rangeMeta__value" id="areaRadiusValue">100m</span>
+                      <span class="rangeMeta__min">10m</span>
+                      <span class="rangeMeta__max">500m</span>
+                    </div>
                   </label>
-                  <div class="visRoom__actions">
-                    <button class="btn btn--ghost" type="button" id="visRoomJoin">
-                      <span data-i18n="area_join">Join</span>
-                    </button>
-                    <button class="btn btn--ghost" type="button" id="visRoomLeave" hidden>
-                      <span data-i18n="area_leave">Leave</span>
-                    </button>
-                    <span class="badge" id="visRoomState">ROOM: OFF</span>
-                  </div>
+                  <div class="visArea__note" id="visAreaNote"></div>
                 </div>
 
                 <div class="visApproved" id="visApproved" hidden>
+                  <div class="visRoom" id="visRoom">
+                    <label class="field">
+                      <span class="field__label" data-i18n="room_label">
+                        Room
+                      </span>
+                      <input
+                        class="input"
+                        id="visRoomCode"
+                        placeholder="Room code"
+                        data-i18n-placeholder="room_placeholder"
+                        minlength="1"
+                        maxlength="36"
+                      />
+                    </label>
+                    <div class="visRoom__actions">
+                      <button class="btn btn--ghost" type="button" id="visRoomJoin">
+                        <span data-i18n="room_join">Join</span>
+                      </button>
+                      <button class="btn btn--ghost" type="button" id="visRoomLeave" hidden>
+                        <span data-i18n="room_leave">Leave</span>
+                      </button>
+                      <span class="badge" id="visRoomState">ROOM: OFF</span>
+                    </div>
+                  </div>
+
                   <div class="visApproved__row">
                     <label class="field">
                       <span class="field__label" data-i18n="approved_label">
@@ -199,9 +222,6 @@
               </button>
               <button class="btn btn--ghost" type="button" id="activityStop" disabled>
                 <span data-i18n="activity_stop_log">Stop & log</span>
-              </button>
-              <button class="btn btn--ghost" type="button" id="activityClear">
-                <span data-i18n="activity_clear">Clear log</span>
               </button>
             </div>
           </form>
@@ -260,9 +280,10 @@
               class="mapCanvas"
               role="application"
               aria-label="Interactive map"
-            ></div>
-            <div class="mapPaper" aria-hidden="true"></div>
-            <div class="mapVignette" aria-hidden="true"></div>
+            >
+              <div class="mapPaper" aria-hidden="true"></div>
+              <div class="mapVignette" aria-hidden="true"></div>
+            </div>
           </div>
 
           <div class="mapBar">

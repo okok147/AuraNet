@@ -23,6 +23,7 @@
     activityShowAura: $("activityShowAura"),
     idleShowAura: $("idleShowAura"),
     visibilitySeg: $("visibilitySeg"),
+    visArea: $("visArea"),
     visRoom: $("visRoom"),
     visRoomCode: $("visRoomCode"),
     visRoomJoin: $("visRoomJoin"),
@@ -36,7 +37,6 @@
     activityHint: $("activityHint"),
     activityStart: $("activityStart"),
     activityStop: $("activityStop"),
-    activityClear: $("activityClear"),
     auraSwatch: $("auraSwatch"),
     auraValue: $("auraValue"),
     auraHex: $("auraHex"),
@@ -45,6 +45,10 @@
     activityList: $("activityList"),
     langSelect: $("langSelect"),
     toast: $("toast"),
+
+    areaRadius: $("areaRadius"),
+    areaRadiusValue: $("areaRadiusValue"),
+    visAreaNote: $("visAreaNote"),
   };
 
   const nowMs = () => Date.now();
@@ -79,6 +83,14 @@
 
   const todayISO = () => {
     const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
+  const dayISOFromMs = (ms) => {
+    const d = new Date(ms);
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
@@ -121,7 +133,16 @@
       visibility_label: "Visibility",
       visibility_everyone: "Everyone",
       visibility_area: "Specific area",
+      visibility_area_radius_label: "Visible area",
+      visibility_area_badge: "Specific area ({m}m)",
+      visibility_area_note: "Visible to people within {m} of you.",
       visibility_connected: "Approved aura",
+      room_label: "Room",
+      room_placeholder: "Room code",
+      room_join: "Join",
+      room_leave: "Leave",
+      room_state_on: "ROOM: ON",
+      room_state_off: "ROOM: OFF",
       area_room_label: "Event room",
       area_room_placeholder: "Room code",
       area_join: "Join",
@@ -134,8 +155,8 @@
       area_room_state_on: "ROOM: ON",
       area_room_state_off: "ROOM: OFF",
       toast_room_code_empty: "Room code can’t be empty.",
-      toast_room_joined: "Joined area room.",
-      toast_room_left: "Left area room.",
+      toast_room_joined: "Joined room.",
+      toast_room_left: "Left room.",
       toast_contact_added: "Approved contact added.",
       toast_contact_exists: "Already approved.",
       toast_contact_removed: "Approved contact removed.",
@@ -205,7 +226,16 @@
       visibility_label: "可見性",
       visibility_everyone: "所有人",
       visibility_area: "同場域",
+      visibility_area_radius_label: "可見範圍",
+      visibility_area_badge: "同場域（{m} 公尺）",
+      visibility_area_note: "只有距離你 {m} 公尺內的人能看到你的氣場。",
       visibility_connected: "已核准",
+      room_label: "房間",
+      room_placeholder: "房間代碼",
+      room_join: "加入",
+      room_leave: "離開",
+      room_state_on: "房間：開",
+      room_state_off: "房間：關",
       area_room_label: "活動房間",
       area_room_placeholder: "房間代碼",
       area_join: "加入",
@@ -218,8 +248,8 @@
       area_room_state_on: "房間：開",
       area_room_state_off: "房間：關",
       toast_room_code_empty: "房間代碼不能為空。",
-      toast_room_joined: "已加入活動房間。",
-      toast_room_left: "已離開活動房間。",
+      toast_room_joined: "已加入房間。",
+      toast_room_left: "已離開房間。",
       toast_contact_added: "已新增核准聯絡人。",
       toast_contact_exists: "已在核准名單中。",
       toast_contact_removed: "已移除核准聯絡人。",
@@ -289,7 +319,16 @@
       visibility_label: "公開範囲",
       visibility_everyone: "全員",
       visibility_area: "同じ場所",
+      visibility_area_radius_label: "表示範囲",
+      visibility_area_badge: "同じ場所（{m}m）",
+      visibility_area_note: "あなたから{m}m以内の人にだけオーラを表示します。",
       visibility_connected: "承認済み",
+      room_label: "ルーム",
+      room_placeholder: "ルームコード",
+      room_join: "参加",
+      room_leave: "退出",
+      room_state_on: "ROOM: ON",
+      room_state_off: "ROOM: OFF",
       area_room_label: "イベントルーム",
       area_room_placeholder: "ルームコード",
       area_join: "参加",
@@ -405,8 +444,9 @@
         showAuraOnMap: false,
         idleShowAuraOnMap: false,
         visibilityMode: "everyone",
-        areaRoom: { code: "", joined: false, joinedAtMs: 0, leftAtMs: 0 },
+        areaRadiusM: 100,
         allowlist: [],
+        room: { code: "", joined: false, joinedAtMs: 0, leftAtMs: 0 },
         lang: "en",
         lingerUntil: 0
       }
@@ -441,16 +481,32 @@
       merged.activity.prefs.allowlist = merged.activity.prefs.allowlist
         .map((x) => String(x || "").trim())
         .filter((x) => x);
-      // Normalize area room shape.
-      if (!merged.activity.prefs.areaRoom || typeof merged.activity.prefs.areaRoom !== "object") {
-        merged.activity.prefs.areaRoom = { code: "", joined: false, joinedAtMs: 0, leftAtMs: 0 };
+
+      merged.activity.prefs.areaRadiusM = clampInt(
+        merged.activity.prefs.areaRadiusM,
+        10,
+        500,
+        100
+      );
+
+      // Normalize room shape (used under Approved aura).
+      const room = merged.activity.prefs.room;
+      if (!room || typeof room !== "object") {
+        merged.activity.prefs.room = { code: "", joined: false, joinedAtMs: 0, leftAtMs: 0 };
       } else {
-        merged.activity.prefs.areaRoom = {
-          code: String(merged.activity.prefs.areaRoom.code || ""),
-          joined: Boolean(merged.activity.prefs.areaRoom.joined),
-          joinedAtMs: Number(merged.activity.prefs.areaRoom.joinedAtMs) || 0,
-          leftAtMs: Number(merged.activity.prefs.areaRoom.leftAtMs) || 0
+        merged.activity.prefs.room = {
+          code: String(room.code || "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, 36),
+          joined: Boolean(room.joined),
+          joinedAtMs: Number(room.joinedAtMs) || 0,
+          leftAtMs: Number(room.leftAtMs) || 0
         };
+      }
+      // Drop legacy "area room" model (area visibility is now proximity-based).
+      if (merged.activity.prefs && "areaRoom" in merged.activity.prefs) {
+        delete merged.activity.prefs.areaRoom;
       }
       return merged;
     } catch {
@@ -540,6 +596,10 @@
   const normalizeVisibilityMode = (value) => {
     const v = String(value || "").trim().toLowerCase();
     return VISIBILITY_MODES.includes(v) ? v : "everyone";
+  };
+
+  const normalizeAreaRadiusM = (value) => {
+    return clampInt(value, 10, 500, 100);
   };
 
   const normalizeRoomCode = (value) => {
@@ -683,15 +743,30 @@
   };
 
   const computeLongTermAura = (now) => {
-    const halfLifeDays = 7;
-    let wSum = 0;
-    let lr = 0;
-    let lg = 0;
-    let lb = 0;
-    const byActivity = new Map();
+    // Habit-first weighting:
+    // - Aggregate by (activity key, day).
+    // - Each day contributes up to ~1 with a saturating curve (so one long session doesn't dominate).
+    // - Older days decay with a half-life.
+    const halfLifeDays = 12;
+    const maxLookbackDays = 120;
+    const minDurMs = 30_000;
+    const minutesSaturation = 30;
 
+    const dayScore = (minutes) => 1 - Math.exp(-Math.max(0, minutes) / minutesSaturation); // 0..1
+
+    const buckets = new Map(); // key -> Map(dayISO -> bucket)
     for (const entry of state.activity.log) {
       if (!entry || !entry.endedAt || !entry.startedAt) continue;
+      const endedAt = Number(entry.endedAt) || 0;
+      const startedAt = Number(entry.startedAt) || 0;
+      if (endedAt <= 0 || startedAt <= 0) continue;
+
+      const ageDays = Math.max(0, (now - endedAt) / 86_400_000);
+      if (ageDays > maxLookbackDays) continue;
+
+      const durMs = Math.max(0, endedAt - startedAt);
+      if (durMs < minDurMs) continue;
+
       const text = normalizeActivityText(entry.text || "");
       const legacyType = entry.type ? normalizeActivityType(entry.type) : null;
       const fallbackLabel = text || (legacyType ? typeLabel(legacyType) : "");
@@ -701,11 +776,45 @@
       const legacyColor = legacyType && ACTIVITY_TYPES[legacyType] ? ACTIVITY_TYPES[legacyType].color : null;
       const colorHex = String(entry.colorHex || entry.color || legacyColor || activityColorHex(key)).trim();
 
-      const durMs = Math.max(0, entry.endedAt - entry.startedAt);
-      if (durMs < 30_000) continue;
-      const ageDays = Math.max(0, (now - entry.endedAt) / 86_400_000);
-      const decay = Math.pow(0.5, ageDays / halfLifeDays);
-      const weight = (durMs / 60_000) * decay; // minutes * decay
+      const dayId = dayISOFromMs(endedAt);
+      const perKey = buckets.get(key) || new Map();
+      const prev = perKey.get(dayId) || {
+        key,
+        label: fallbackLabel || "—",
+        colorHex,
+        minutes: 0,
+        lastAt: 0
+      };
+      prev.minutes += durMs / 60_000;
+      if (endedAt >= prev.lastAt) {
+        prev.lastAt = endedAt;
+        prev.label = fallbackLabel || prev.label;
+        prev.colorHex = colorHex;
+      }
+      perKey.set(dayId, prev);
+      buckets.set(key, perKey);
+    }
+
+    let wSum = 0;
+    let lr = 0;
+    let lg = 0;
+    let lb = 0;
+    const byActivity = new Map(); // key -> {key,label,colorHex,weight}
+
+    for (const [key, perDay] of buckets.entries()) {
+      let weight = 0;
+      let label = "—";
+      let colorHex = activityColorHex(key);
+
+      for (const bucket of perDay.values()) {
+        if (!bucket) continue;
+        label = bucket.label || label;
+        colorHex = bucket.colorHex || colorHex;
+        const ageDays = Math.max(0, (now - (bucket.lastAt || now)) / 86_400_000);
+        const decay = Math.pow(0.5, ageDays / halfLifeDays);
+        weight += decay * dayScore(bucket.minutes || 0);
+      }
+
       if (weight <= 0) continue;
 
       const rgb = hexToRgb(colorHex);
@@ -719,25 +828,10 @@
       lb += b * weight;
       wSum += weight;
 
-      const prev = byActivity.get(key) || {
-        key,
-        label: fallbackLabel || "—",
-        colorHex,
-        weight: 0,
-        lastAt: 0
-      };
-      prev.weight += weight;
-      if ((entry.endedAt || 0) >= prev.lastAt) {
-        prev.label = fallbackLabel || prev.label;
-        prev.lastAt = entry.endedAt || prev.lastAt;
-      }
-      prev.colorHex = colorHex;
-      byActivity.set(key, prev);
+      byActivity.set(key, { key, label, colorHex, weight });
     }
 
-    if (wSum <= 0) {
-      return { hex: "#FF6A00", byActivity: [] };
-    }
+    if (wSum <= 0) return { hex: "#FF6A00", byActivity: [] };
 
     const rr = linearToSrgb(lr / wSum) * 255;
     const gg = linearToSrgb(lg / wSum) * 255;
@@ -747,7 +841,52 @@
     const byActivityArr = Array.from(byActivity.values())
       .sort((a, b) => b.weight - a.weight)
       .map(({ key, label, colorHex, weight }) => ({ key, label, colorHex, weight }));
+
     return { hex, byActivity: byActivityArr };
+  };
+
+  const computeAuraStrength = (now) => {
+    // Strength is based on daily repetition (habit), not a single long session.
+    // We look at distinct active days per activity key in a recent window,
+    // then apply a saturating curve and blend the top few habits.
+    const windowDays = 21;
+    const minDurMs = 30_000;
+    const perKeyDays = new Map(); // key -> Set(dayISO)
+
+    for (const entry of state.activity.log) {
+      if (!entry || !entry.endedAt || !entry.startedAt) continue;
+      const endedAt = Number(entry.endedAt) || 0;
+      const startedAt = Number(entry.startedAt) || 0;
+      if (endedAt <= 0 || startedAt <= 0) continue;
+      if (endedAt > now) continue;
+      const ageDays = Math.max(0, (now - endedAt) / 86_400_000);
+      if (ageDays > windowDays) continue;
+
+      const durMs = Math.max(0, endedAt - startedAt);
+      if (durMs < minDurMs) continue;
+
+      const text = normalizeActivityText(entry.text || "");
+      const legacyType = entry.type ? normalizeActivityType(entry.type) : null;
+      const fallbackLabel = text || (legacyType ? typeLabel(legacyType) : "");
+      const key = activityKeyFromText(entry.key || text || fallbackLabel);
+      if (!key) continue;
+
+      const dayId = dayISOFromMs(endedAt);
+      const set = perKeyDays.get(key) || new Set();
+      set.add(dayId);
+      perKeyDays.set(key, set);
+    }
+
+    const counts = Array.from(perKeyDays.values())
+      .map((s) => s.size)
+      .sort((a, b) => b - a);
+
+    const curve = (days) => 1 - Math.exp(-Math.max(0, days) / 3); // 0..1, fast saturation
+    const c0 = curve(counts[0] || 0);
+    const c1 = curve(counts[1] || 0);
+    const c2 = curve(counts[2] || 0);
+    const strength = clamp(c0 * 0.62 + c1 * 0.26 + c2 * 0.12, 0, 1);
+    return { strength, counts };
   };
 
   const renderAuraComposition = (longTerm) => {
@@ -947,11 +1086,14 @@
   const syncUserAuraOnMap = (now, auraHex) => {
     if (!mapApi) return;
     const enabled = shouldShowUserAura(now);
+    const strength = computeAuraStrength(now).strength;
     mapApi.setUserAura({
       enabled,
       color: auraHex,
       visibilityMode: normalizeVisibilityMode(state.activity.prefs.visibilityMode),
-      ageMs: userAuraAgeMs(now)
+      areaRadiusM: normalizeAreaRadiusM(state.activity.prefs.areaRadiusM),
+      ageMs: userAuraAgeMs(now),
+      strength
     });
     if (!enabled && state.activity.prefs.lingerUntil) {
       state.activity.prefs.lingerUntil = 0;
@@ -1269,18 +1411,24 @@
     const mode = normalizeVisibilityMode(state.activity.prefs.visibilityMode);
     setSegSelected(mode);
 
-    if (els.visRoom) els.visRoom.hidden = mode !== "area";
+    if (els.visArea) els.visArea.hidden = mode !== "area";
     if (els.visApproved) els.visApproved.hidden = mode !== "connected";
 
-    if (els.visRoomCode) {
-      els.visRoomCode.value = normalizeRoomCode(state.activity.prefs.areaRoom && state.activity.prefs.areaRoom.code);
-    }
-    const joined = Boolean(state.activity.prefs.areaRoom && state.activity.prefs.areaRoom.joined);
+    const areaM = normalizeAreaRadiusM(state.activity.prefs.areaRadiusM);
+    state.activity.prefs.areaRadiusM = areaM;
+    if (els.areaRadius) els.areaRadius.value = String(areaM);
+    if (els.areaRadiusValue) els.areaRadiusValue.textContent = `${areaM}m`;
+    if (els.visAreaNote) els.visAreaNote.textContent = t("visibility_area_note", { m: areaM });
 
+    const room = state.activity.prefs.room || { code: "", joined: false };
+    const roomCode = normalizeRoomCode(room.code);
+    const joined = Boolean(room.joined);
+    if (els.visRoom) els.visRoom.hidden = mode !== "connected";
+    if (els.visRoomCode) els.visRoomCode.value = roomCode;
     if (els.visRoomJoin) els.visRoomJoin.hidden = joined;
     if (els.visRoomLeave) els.visRoomLeave.hidden = !joined;
     if (els.visRoomState) {
-      els.visRoomState.textContent = joined ? t("area_room_state_on") : t("area_room_state_off");
+      els.visRoomState.textContent = joined ? t("room_state_on") : t("room_state_off");
       els.visRoomState.classList.toggle("badge--ok", joined);
       els.visRoomState.classList.toggle("badge--warn", !joined);
     }
@@ -1493,8 +1641,22 @@
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    // Street-level default view so the activity simulation has meaningful roads.
-    const defaultView = { center: [37.7749, -122.4194], zoom: 13 };
+    const HOME_VIEW_ZOOM = 12;
+    const wrapLng0 = (lng) => ((lng + 180) % 360 + 360) % 360 - 180;
+    const readHomeFromState = () => {
+      const h = state && state.activity && state.activity.prefs && state.activity.prefs.home;
+      if (!h || typeof h !== "object") return null;
+      const lat = Number(h.lat);
+      const lng = Number(h.lng);
+      const zoomRaw = Number(h.zoom);
+      const zoom = Number.isFinite(zoomRaw) ? Math.max(2, Math.min(18, Math.round(zoomRaw))) : HOME_VIEW_ZOOM;
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+      return { center: [Math.max(-85, Math.min(85, lat)), wrapLng0(lng)], zoom };
+    };
+
+    // Default view: your saved coarse "home" (city-ish) when available, otherwise SF.
+    let homeView = readHomeFromState();
+    const defaultView = homeView || { center: [37.7749, -122.4194], zoom: 13 };
     map.setView(defaultView.center, defaultView.zoom);
 
     let myAccuracyRing = null;
@@ -1502,6 +1664,7 @@
     let userAuraEnabled = false;
     let userAuraColor = "#FF6A00";
     let userAuraAgeMs = 0;
+    let userAuraStrength = 0;
     let userWatchId = null;
     let lastUserLatLng = null;
     let lastUserLatLngRaw = null;
@@ -1509,18 +1672,26 @@
     let lastUserAccuracyM = null;
     let selfPreciseMode = false;
     let userVisibilityMode = normalizeVisibilityMode(state.activity.prefs.visibilityMode);
+    let userAreaRadiusM = normalizeAreaRadiusM(state.activity.prefs.areaRadiusM);
     const PRIVACY_GRID_BY_MODE_M = {
       everyone: 5000,
-      area: 1200,
       connected: 250
     };
+    const gridForMode = (mode) => {
+      const m = normalizeVisibilityMode(mode);
+      if (m === "area") return userAreaRadiusM;
+      return PRIVACY_GRID_BY_MODE_M[m] || 250;
+    };
+    const privacyOffsetSpanM = (gridM) => Math.max(6, Math.min(260, (Number(gridM) || 250) * 0.45));
+    const randomPrivacyOffsetM = (gridM) => (Math.random() - 0.5) * privacyOffsetSpanM(gridM);
     // Privacy: blur the true GPS coordinate so the aura doesn't pinpoint you.
+    const initialGridM = gridForMode(userVisibilityMode);
     const userPrivacy = {
       // Quantize to a grid based on visibility mode.
-      gridM: PRIVACY_GRID_BY_MODE_M[userVisibilityMode] || 250,
+      gridM: initialGridM,
       // Per-session extra offset (kept stable while the page is open).
-      offsetEastM: (Math.random() - 0.5) * 260,
-      offsetNorthM: (Math.random() - 0.5) * 260
+      offsetEastM: randomPrivacyOffsetM(initialGridM),
+      offsetNorthM: randomPrivacyOffsetM(initialGridM)
     };
     const simRenderer = L.canvas({ padding: 0.5 });
 
@@ -1556,7 +1727,7 @@
       const m = normalizeVisibilityMode(mode);
       const label =
         m === "area"
-          ? t("visibility_area")
+          ? t("visibility_area_badge", { m: userAreaRadiusM })
           : m === "connected"
             ? t("visibility_connected")
             : t("visibility_everyone");
@@ -1571,9 +1742,9 @@
     };
 
     const STREET_MIN_ZOOM = 12;
-    const DIALOG_MIN_ZOOM = 14;
+    const DIALOG_MIN_ZOOM = 13;
     const AURA_GRAY_HEX = "#b8b1a5";
-    const SIM_GRAYOUT_MS = 10_000;
+    const SIM_GRAYOUT_MS = 60_000;
     const OSRM_BASE = "https://router.project-osrm.org";
     const ROUTE_POINT_LIMIT = 260;
     const ROUTE_CACHE_MAX = 80;
@@ -1726,7 +1897,8 @@
     };
 
     const agentDialogText = (agent) => {
-      if (!agent || agent.state !== "stopped") return "";
+      if (!agent) return "";
+      if (agent.state === "moving") return t("sim_doing_transit");
       if (agent.stopType === "eat") return t("sim_doing_eating");
       if (agent.stopType === "transit") return t("sim_doing_transit");
       return t("sim_doing_resting");
@@ -1734,7 +1906,7 @@
 
     const syncAgentDialog = (agent) => {
       if (!agent || !agent.outer) return;
-      const want = map.getZoom() >= DIALOG_MIN_ZOOM && agent.state === "stopped";
+      const want = map.getZoom() >= DIALOG_MIN_ZOOM;
       const text = want ? agentDialogText(agent) : "";
 
       if (!text) {
@@ -1842,12 +2014,16 @@
 
     const applyUserAuraStyle = () => {
       if (!userAuraLayers.length) return;
-      const USER_GRAYOUT_MS = 2 * 60 * 1000;
+      const USER_GRAYOUT_MS = 60_000;
       const GRAY_HEX = "#b8b1a5";
       const age = Math.max(0, Number(userAuraAgeMs) || 0);
       const fadeT = clamp(age / USER_GRAYOUT_MS, 0, 1);
+      const strength = clamp(Number(userAuraStrength) || 0, 0, 1);
       const fill = mixHex(userAuraColor, GRAY_HEX, fadeT);
       const scale = 1 - 0.32 * fadeT;
+      const strengthScale = 0.84 + 0.58 * strength;
+      const strengthOpacity = 0.65 + 0.95 * strength;
+      const opacityAgeFactor = selfPreciseMode ? 1 : 1 - 0.7 * fadeT;
       // No center dot: layered haze only.
       const baseOpacities = [0.06, 0.09, 0.12];
       const baseRadii = [70, 52, 36];
@@ -1856,9 +2032,9 @@
         const r = baseRadii[i] || 44;
         userAuraLayers[i].setStyle({
           fillColor: fill,
-          fillOpacity: clamp(o * (1 - 0.7 * fadeT), 0.012, 0.2)
+          fillOpacity: clamp(o * strengthOpacity * opacityAgeFactor, 0.012, 0.26)
         });
-        userAuraLayers[i].setRadius(Math.max(10, r * scale));
+        userAuraLayers[i].setRadius(Math.max(10, r * strengthScale * scale));
       }
     };
 
@@ -1930,6 +2106,25 @@
       return offsetLatLngMeters(q, userPrivacy.offsetEastM, userPrivacy.offsetNorthM);
     };
 
+    const maybeSaveHomeFromRaw = (rawLatLng) => {
+      if (!rawLatLng) return;
+      // Store only a coarse (city-ish) center, not the exact GPS point.
+      const coarse = quantizeLatLng(rawLatLng, 5000);
+      const next = [coarse.lat, coarse.lng];
+      try {
+        if (homeView && Array.isArray(homeView.center) && homeView.center.length === 2) {
+          const prev = L.latLng(homeView.center[0], homeView.center[1]);
+          const d = map.distance(prev, coarse);
+          if (d < 900) return;
+        }
+      } catch {
+        // ignore
+      }
+      homeView = { center: next, zoom: HOME_VIEW_ZOOM };
+      state.activity.prefs.home = { lat: next[0], lng: next[1], zoom: HOME_VIEW_ZOOM, updatedAtMs: nowMs() };
+      saveState();
+    };
+
     const setUserVisibilityMode = (mode) => {
       const next = normalizeVisibilityMode(mode);
       if (next === userVisibilityMode) {
@@ -1937,7 +2132,11 @@
         return;
       }
       userVisibilityMode = next;
-      userPrivacy.gridM = PRIVACY_GRID_BY_MODE_M[userVisibilityMode] || userPrivacy.gridM;
+      userPrivacy.gridM = gridForMode(userVisibilityMode);
+      // Keep the offset proportional to the chosen privacy grid. Otherwise switching to
+      // a smaller grid (e.g. 100m) could jump too far.
+      userPrivacy.offsetEastM = randomPrivacyOffsetM(userPrivacy.gridM);
+      userPrivacy.offsetNorthM = randomPrivacyOffsetM(userPrivacy.gridM);
       setVisBadge(userVisibilityMode, "ok");
 
       if (lastUserLatLngRaw) {
@@ -1995,6 +2194,7 @@
           const lng = pos.coords.longitude;
           const accuracy = Number(pos.coords.accuracy) || 0;
           setUserLatLng(lat, lng, accuracy, { ensureRing: false });
+          maybeSaveHomeFromRaw(lastUserLatLngRaw);
           setGpsBadge(t("map_gps_on"), "ok");
         },
         (err) => {
@@ -2309,6 +2509,7 @@
       };
       outer.on("click", onClick);
       inner.on("click", onClick);
+      syncAgentDialog(agent);
       return agent;
     };
 
@@ -2555,12 +2756,18 @@
 
     if (els.mapReset) {
       els.mapReset.addEventListener("click", () => {
+        if (homeView && Array.isArray(homeView.center) && homeView.center.length === 2) {
+          map.flyTo(homeView.center, homeView.zoom || HOME_VIEW_ZOOM, { duration: 0.8 });
+          return;
+        }
+
         const layers = layersForBounds();
         if (layers.length > 0) {
           const group = L.featureGroup(layers);
           map.fitBounds(group.getBounds(), { padding: [44, 44], maxZoom: 16 });
           return;
         }
+
         map.setView(defaultView.center, defaultView.zoom);
       });
     }
@@ -2586,6 +2793,7 @@
 
           selfPreciseMode = true;
           setUserLatLng(lat, lng, accuracy, { ensureRing: false });
+          maybeSaveHomeFromRaw(lastUserLatLngRaw);
           map.flyTo([clamp(lat, -85, 85), wrapLng(lng)], Math.max(map.getZoom(), 16), {
             duration: 0.8
           });
@@ -2642,6 +2850,11 @@
       }
     });
 
+    map.on("zoomend", () => {
+      if (!sim.enabled) return;
+      refreshAgentDialogs();
+    });
+
     setGpsBadge(t("map_gps_off"), "off");
     setMapStatus(t("map_status_ready"));
     setVisBadge(userVisibilityMode, "ok");
@@ -2649,12 +2862,38 @@
     startSim();
 
     const api = {
-      setUserAura: ({ enabled, color, visibilityMode, ageMs } = {}) => {
+      setUserAura: ({ enabled, color, visibilityMode, areaRadiusM, ageMs, strength } = {}) => {
         if (typeof visibilityMode === "string" && visibilityMode.trim()) {
           setUserVisibilityMode(visibilityMode);
         }
+        if (Number.isFinite(Number(areaRadiusM))) {
+          const next = normalizeAreaRadiusM(areaRadiusM);
+          if (next !== userAreaRadiusM) {
+            userAreaRadiusM = next;
+            if (userVisibilityMode === "area") {
+              userPrivacy.gridM = gridForMode(userVisibilityMode);
+              userPrivacy.offsetEastM = randomPrivacyOffsetM(userPrivacy.gridM);
+              userPrivacy.offsetNorthM = randomPrivacyOffsetM(userPrivacy.gridM);
+              if (lastUserLatLngRaw) {
+                lastUserLatLngBlurred = blurUserLatLng(lastUserLatLngRaw);
+                if (!selfPreciseMode) {
+                  lastUserLatLng = lastUserLatLngBlurred;
+                  if (userAuraEnabled) {
+                    ensureUserAuraLayers(lastUserLatLng);
+                    for (const l of userAuraLayers) l.setLatLng(lastUserLatLng);
+                  }
+                }
+              }
+            }
+            setVisBadge(userVisibilityMode, "ok");
+          }
+        }
         if (Number.isFinite(Number(ageMs))) {
           userAuraAgeMs = Math.max(0, Number(ageMs));
+          applyUserAuraStyle();
+        }
+        if (Number.isFinite(Number(strength))) {
+          userAuraStrength = clamp(Number(strength), 0, 1);
           applyUserAuraStyle();
         }
         if (typeof color === "string" && String(color).trim()) {
@@ -2709,9 +2948,6 @@
   }
   if (els.activityStop) {
     els.activityStop.addEventListener("click", stopAndLogActivity);
-  }
-  if (els.activityClear) {
-    els.activityClear.addEventListener("click", clearActivityLog);
   }
 
   if (els.activityText) {
@@ -2784,10 +3020,21 @@
     });
   }
 
+  if (els.areaRadius) {
+    const onChange = () => {
+      const m = normalizeAreaRadiusM(els.areaRadius.value);
+      state.activity.prefs.areaRadiusM = m;
+      saveState();
+      renderActivity(false);
+    };
+    els.areaRadius.addEventListener("input", onChange);
+    els.areaRadius.addEventListener("change", onChange);
+  }
+
   if (els.visRoomCode) {
     els.visRoomCode.addEventListener("input", () => {
       const code = normalizeRoomCode(els.visRoomCode.value);
-      state.activity.prefs.areaRoom.code = code;
+      state.activity.prefs.room.code = code;
       saveState();
       renderVisibility();
     });
@@ -2795,12 +3042,12 @@
 
   if (els.visRoomJoin) {
     els.visRoomJoin.addEventListener("click", () => {
-      const code = normalizeRoomCode((state.activity.prefs.areaRoom && state.activity.prefs.areaRoom.code) || "");
+      const code = normalizeRoomCode((state.activity.prefs.room && state.activity.prefs.room.code) || "");
       if (!code) {
         toast(t("toast_room_code_empty"));
         return;
       }
-      state.activity.prefs.areaRoom = {
+      state.activity.prefs.room = {
         code,
         joined: true,
         joinedAtMs: nowMs(),
@@ -2814,11 +3061,11 @@
 
   if (els.visRoomLeave) {
     els.visRoomLeave.addEventListener("click", () => {
-      const code = normalizeRoomCode((state.activity.prefs.areaRoom && state.activity.prefs.areaRoom.code) || "");
-      state.activity.prefs.areaRoom = {
+      const code = normalizeRoomCode((state.activity.prefs.room && state.activity.prefs.room.code) || "");
+      state.activity.prefs.room = {
         code,
         joined: false,
-        joinedAtMs: Number(state.activity.prefs.areaRoom && state.activity.prefs.areaRoom.joinedAtMs) || 0,
+        joinedAtMs: Number(state.activity.prefs.room && state.activity.prefs.room.joinedAtMs) || 0,
         leftAtMs: nowMs()
       };
       saveState();
