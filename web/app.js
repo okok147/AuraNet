@@ -13,7 +13,6 @@
     mapLocate: $("mapLocate"),
     mapGps: $("mapGps"),
     mapVis: $("mapVis"),
-    mapSimToggle: $("mapSimToggle"),
     mapAuraCount: $("mapAuraCount"),
 
     auraPill: $("auraPill"),
@@ -170,8 +169,6 @@
       map_loading: "Loading map…",
       map_locate: "My location",
       map_reset: "Reset view",
-      map_sim_on: "Sim auras: ON",
-      map_sim_off: "Sim auras: OFF",
       map_auras_prefix: "AURAS",
       map_auras_off: "AURAS: OFF",
       map_auras_loading: "AURAS: LOADING",
@@ -253,8 +250,6 @@
       map_loading: "載入地圖中…",
       map_locate: "我的位置",
       map_reset: "重置視角",
-      map_sim_on: "模擬氣場：開",
-      map_sim_off: "模擬氣場：關",
       map_auras_prefix: "氣場",
       map_auras_off: "氣場：關",
       map_auras_loading: "氣場：載入中",
@@ -336,8 +331,6 @@
       map_loading: "地図を読み込み中…",
       map_locate: "現在地",
       map_reset: "表示を戻す",
-      map_sim_on: "オーラ模擬: ON",
-      map_sim_off: "オーラ模擬: OFF",
       map_auras_prefix: "オーラ",
       map_auras_off: "オーラ: OFF",
       map_auras_loading: "オーラ: 読み込み中",
@@ -2262,10 +2255,6 @@
     };
 
     const setSimUi = () => {
-      if (els.mapSimToggle) {
-        els.mapSimToggle.textContent = sim.enabled ? t("map_sim_on") : t("map_sim_off");
-      }
-
       if (!sim.enabled) {
         setAuraBadge(t("map_auras_off"), "off");
         return;
@@ -2413,19 +2402,6 @@
       syncSimForView();
     };
 
-    const stopSim = () => {
-      if (!sim.enabled) return;
-      sim.enabled = false;
-      stopSimInternal();
-      setSimUi();
-      setMapStatus(t("map_status_paused"));
-    };
-
-    const toggleSim = () => {
-      if (sim.enabled) stopSim();
-      else startSim();
-    };
-
     if (els.mapReset) {
       els.mapReset.addEventListener("click", () => {
         const layers = layersForBounds();
@@ -2494,10 +2470,6 @@
       els.mapLocate.addEventListener("click", showMyLocation);
     }
 
-    if (els.mapSimToggle) {
-      els.mapSimToggle.addEventListener("click", toggleSim);
-    }
-
     map.on("moveend zoomend", () => {
       if (!sim.enabled) return;
       setSimUi();
@@ -2519,15 +2491,11 @@
       }
     });
 
-    // Default to ON unless the user prefers reduced motion.
-    const reduceMotion =
-      window.matchMedia &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!reduceMotion) startSim();
-    else setSimUi();
     setGpsBadge(t("map_gps_off"), "off");
     setMapStatus(t("map_status_ready"));
     setVisBadge(userVisibilityMode, "ok");
+    // Simulation is always enabled by default.
+    startSim();
 
     const api = {
       setUserAura: ({ enabled, color, visibilityMode } = {}) => {
