@@ -18,7 +18,8 @@
     auraPill: $("auraPill"),
     activityForm: $("activityForm"),
     activityText: $("activityText"),
-    activityType: $("activityType"),
+    activitySuggest: $("activitySuggest"),
+    activityColorPreview: $("activityColorPreview"),
     activityShowAura: $("activityShowAura"),
     activityTime: $("activityTime"),
     activityHint: $("activityHint"),
@@ -99,11 +100,11 @@
     en: {
       ui_language: "Language",
       activity_title: "Activity Logger",
-      activity_hint_idle: "Log what you’re doing. Your aura blends over time.",
+      activity_hint_idle: "Log what you’re doing. Each activity generates a unique color over time.",
       activity_tracking: "Tracking: {text}",
       activity_label: "Activity",
       activity_placeholder: "Work, commute, gym, coffee…",
-      activity_type_label: "Type",
+      activity_color_label: "Color",
       activity_show_aura_toggle: "Show my aura on map while active",
       activity_start: "Start",
       activity_stop_log: "Stop & log",
@@ -120,7 +121,7 @@
       toast_activity_cleared: "Activity log cleared.",
       toast_activity_empty: "Activity can’t be empty.",
       aura_pill_idle: "IDLE",
-      aura_pill_active: "ACTIVE: {type}",
+      aura_pill_active: "ACTIVE: {activity}",
       popup_aura_components: "Aura components",
       popup_simulated_person: "Simulated person",
       popup_you: "You",
@@ -159,11 +160,11 @@
     "zh-Hant": {
       ui_language: "語言",
       activity_title: "活動紀錄",
-      activity_hint_idle: "紀錄你正在做的事，你的氣場會隨時間混合。",
+      activity_hint_idle: "紀錄你正在做的事，每個活動都會生成獨特的顏色並隨時間混合。",
       activity_tracking: "追蹤中：{text}",
       activity_label: "活動",
       activity_placeholder: "工作、通勤、健身、咖啡…",
-      activity_type_label: "類型",
+      activity_color_label: "顏色",
       activity_show_aura_toggle: "活動進行中在地圖顯示我的氣場",
       activity_start: "開始",
       activity_stop_log: "結束並紀錄",
@@ -180,7 +181,7 @@
       toast_activity_cleared: "已清除活動紀錄。",
       toast_activity_empty: "活動內容不能為空。",
       aura_pill_idle: "待機",
-      aura_pill_active: "進行中：{type}",
+      aura_pill_active: "進行中：{activity}",
       popup_aura_components: "氣場組成",
       popup_simulated_person: "模擬人物",
       popup_you: "你",
@@ -219,11 +220,11 @@
     ja: {
       ui_language: "言語",
       activity_title: "アクティビティ記録",
-      activity_hint_idle: "いまの行動を記録。オーラは時間で混ざります。",
+      activity_hint_idle: "いまの行動を記録。各アクティビティが固有の色を作り、時間で混ざります。",
       activity_tracking: "追跡中: {text}",
       activity_label: "アクティビティ",
       activity_placeholder: "仕事、通勤、ジム、コーヒー…",
-      activity_type_label: "種類",
+      activity_color_label: "色",
       activity_show_aura_toggle: "アクティブ中に地図で自分のオーラを表示",
       activity_start: "開始",
       activity_stop_log: "停止して記録",
@@ -240,7 +241,7 @@
       toast_activity_cleared: "履歴を消去しました。",
       toast_activity_empty: "内容を入力してください。",
       aura_pill_idle: "待機",
-      aura_pill_active: "進行中: {type}",
+      aura_pill_active: "進行中: {activity}",
       popup_aura_components: "オーラ構成",
       popup_simulated_person: "シミュレーション人物",
       popup_you: "あなた",
@@ -303,18 +304,13 @@
       if ("placeholder" in el) el.placeholder = t(key);
     }
 
-    if (els.activityType) {
-      for (const opt of Array.from(els.activityType.options || [])) {
-        const v = opt && opt.value;
-        if (!v) continue;
-        opt.textContent = typeLabel(v);
-      }
-    }
-
     if (els.langSelect) {
       els.langSelect.value = i18nLang;
       els.langSelect.setAttribute("aria-label", t("ui_language"));
     }
+
+    // Update any draft helpers that include translated labels.
+    if (typeof renderActivityAssist === "function") renderActivityAssist();
   };
 
   const defaultState = () => ({
@@ -324,7 +320,6 @@
       log: [],
       prefs: {
         showAuraOnMap: false,
-        lastType: "work",
         lang: "en",
         lingerUntil: 0
       }
@@ -437,6 +432,69 @@
 
   const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
 
+  const normalizeActivityText = (value) => {
+    return String(value || "").replace(/\s+/g, " ").trim();
+  };
+
+  const activityKeyFromText = (value) => {
+    // Lowercase + strip ASCII punctuation so "coffee!" and "coffee" map together.
+    const s = normalizeActivityText(value).toLowerCase();
+    return s
+      .replace(/[\u0000-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007F]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  };
+
+  const fnv1a32 = (str) => {
+    // Deterministic string hash (FNV-1a 32-bit).
+    let h = 0x811c9dc5;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 0x01000193);
+    }
+    return h >>> 0;
+  };
+
+  const hslToRgb = (h, s, l) => {
+    const hh = ((((Number(h) || 0) % 360) + 360) % 360) / 360;
+    const ss = clamp((Number(s) || 0) / 100, 0, 1);
+    const ll = clamp((Number(l) || 0) / 100, 0, 1);
+
+    if (ss <= 0) {
+      const v = ll * 255;
+      return { r: v, g: v, b: v };
+    }
+
+    const q = ll < 0.5 ? ll * (1 + ss) : ll + ss - ll * ss;
+    const p = 2 * ll - q;
+    const hue2rgb = (pp, qq, tt) => {
+      let t = tt;
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1 / 6) return pp + (qq - pp) * 6 * t;
+      if (t < 1 / 2) return qq;
+      if (t < 2 / 3) return pp + (qq - pp) * (2 / 3 - t) * 6;
+      return pp;
+    };
+
+    return {
+      r: hue2rgb(p, q, hh + 1 / 3) * 255,
+      g: hue2rgb(p, q, hh) * 255,
+      b: hue2rgb(p, q, hh - 1 / 3) * 255
+    };
+  };
+
+  const activityColorHex = (textOrKey) => {
+    const key = activityKeyFromText(textOrKey);
+    if (!key) return "#FF6A00";
+    const h = fnv1a32(key);
+    const hue = h % 360;
+    const sat = 58 + ((h >>> 8) % 18); // 58–75
+    const lig = 46 + ((h >>> 16) % 16); // 46–61
+    const rgb = hslToRgb(hue, sat, lig);
+    return rgbToHex(rgb.r, rgb.g, rgb.b);
+  };
+
   const hexToRgb = (hex) => {
     const raw = String(hex || "").trim().replace(/^#/, "");
     if (raw.length !== 6) return null;
@@ -504,13 +562,18 @@
     let lr = 0;
     let lg = 0;
     let lb = 0;
-    const byType = {};
+    const byActivity = new Map();
 
     for (const entry of state.activity.log) {
       if (!entry || !entry.endedAt || !entry.startedAt) continue;
-      const type = normalizeActivityType(entry.type);
-      const cfg = ACTIVITY_TYPES[type];
-      if (!cfg) continue;
+      const text = normalizeActivityText(entry.text || "");
+      const legacyType = entry.type ? normalizeActivityType(entry.type) : null;
+      const fallbackLabel = text || (legacyType ? typeLabel(legacyType) : "");
+      const key = activityKeyFromText(entry.key || text || fallbackLabel);
+      if (!key) continue;
+
+      const legacyColor = legacyType && ACTIVITY_TYPES[legacyType] ? ACTIVITY_TYPES[legacyType].color : null;
+      const colorHex = String(entry.colorHex || entry.color || legacyColor || activityColorHex(key)).trim();
 
       const durMs = Math.max(0, entry.endedAt - entry.startedAt);
       if (durMs < 30_000) continue;
@@ -519,7 +582,7 @@
       const weight = (durMs / 60_000) * decay; // minutes * decay
       if (weight <= 0) continue;
 
-      const rgb = hexToRgb(cfg.color);
+      const rgb = hexToRgb(colorHex);
       if (!rgb) continue;
       const r = srgbToLinear(rgb.r / 255);
       const g = srgbToLinear(rgb.g / 255);
@@ -529,11 +592,25 @@
       lg += g * weight;
       lb += b * weight;
       wSum += weight;
-      byType[type] = (byType[type] || 0) + weight;
+
+      const prev = byActivity.get(key) || {
+        key,
+        label: fallbackLabel || "—",
+        colorHex,
+        weight: 0,
+        lastAt: 0
+      };
+      prev.weight += weight;
+      if ((entry.endedAt || 0) >= prev.lastAt) {
+        prev.label = fallbackLabel || prev.label;
+        prev.lastAt = entry.endedAt || prev.lastAt;
+      }
+      prev.colorHex = colorHex;
+      byActivity.set(key, prev);
     }
 
     if (wSum <= 0) {
-      return { hex: "#FF6A00", byType: [] };
+      return { hex: "#FF6A00", byActivity: [] };
     }
 
     const rr = linearToSrgb(lr / wSum) * 255;
@@ -541,8 +618,10 @@
     const bb = linearToSrgb(lb / wSum) * 255;
     const hex = rgbToHex(rr, gg, bb);
 
-    const byTypeArr = Object.entries(byType).sort((a, b) => b[1] - a[1]);
-    return { hex, byType: byTypeArr };
+    const byActivityArr = Array.from(byActivity.values())
+      .sort((a, b) => b.weight - a.weight)
+      .map(({ key, label, colorHex, weight }) => ({ key, label, colorHex, weight }));
+    return { hex, byActivity: byActivityArr };
   };
 
   const renderAuraComposition = (longTerm) => {
@@ -550,8 +629,8 @@
     const svg = els.auraChart;
     const legend = els.auraLegend;
 
-    const entries = Array.isArray(longTerm.byType) ? longTerm.byType.slice() : [];
-    const total = entries.reduce((acc, [, w]) => acc + (Number(w) || 0), 0);
+    const entries = Array.isArray(longTerm.byActivity) ? longTerm.byActivity.slice() : [];
+    const total = entries.reduce((acc, e) => acc + (Number(e && e.weight) || 0), 0);
 
     // Clear existing nodes.
     while (svg.firstChild) svg.removeChild(svg.firstChild);
@@ -594,24 +673,19 @@
     const top = entries.slice(0, maxSlices);
     const rest = entries.slice(maxSlices);
     if (rest.length) {
-      const otherW = rest.reduce((acc, [, w]) => acc + (Number(w) || 0), 0);
-      top.push(["other", otherW]);
+      const otherW = rest.reduce((acc, e) => acc + (Number(e && e.weight) || 0), 0);
+      top.push({
+        key: "other",
+        label: i18nLang === "zh-Hant" ? "其他" : i18nLang === "ja" ? "その他" : "Other",
+        colorHex: "rgba(32, 24, 18, 0.28)",
+        weight: otherW
+      });
     }
-
-    const typeColor = (type) => {
-      if (type === "other") return "rgba(32, 24, 18, 0.28)";
-      return (ACTIVITY_TYPES[type] && ACTIVITY_TYPES[type].color) || "#FF6A00";
-    };
-
-    const typeLabelLocal = (type) => {
-      if (type === "other") return i18nLang === "zh-Hant" ? "其他" : i18nLang === "ja" ? "その他" : "Other";
-      return typeLabel(type);
-    };
 
     // Donut segments using stroke-dasharray.
     let offset = 0;
-    for (const [type, wRaw] of top) {
-      const w = Number(wRaw) || 0;
+    for (const entry of top) {
+      const w = Number(entry && entry.weight) || 0;
       if (w <= 0) continue;
       const frac = w / total;
       const len = Math.max(0, frac * circ);
@@ -622,7 +696,7 @@
         cy,
         r,
         fill: "none",
-        stroke: typeColor(type),
+        stroke: (entry && entry.colorHex) || "#FF6A00",
         "stroke-width": strokeW,
         "stroke-linecap": "butt",
         "stroke-dasharray": `${len} ${circ - len}`,
@@ -634,8 +708,8 @@
     }
 
     // Legend.
-    for (const [type, wRaw] of top) {
-      const w = Number(wRaw) || 0;
+    for (const entry of top) {
+      const w = Number(entry && entry.weight) || 0;
       if (w <= 0) continue;
       const pct = Math.round((w / total) * 100);
       if (pct <= 0) continue;
@@ -645,11 +719,11 @@
 
       const dot = document.createElement("span");
       dot.className = "auraLegend__dot";
-      dot.style.background = typeColor(type);
+      dot.style.background = (entry && entry.colorHex) || "#FF6A00";
 
       const name = document.createElement("span");
       name.className = "auraLegend__name";
-      name.textContent = typeLabelLocal(type);
+      name.textContent = (entry && entry.label) || "—";
 
       const val = document.createElement("span");
       val.className = "auraLegend__val";
@@ -667,22 +741,22 @@
     const active = state.activity.active;
     if (!active) return { hex: longTerm.hex, longTerm };
 
-    const type = normalizeActivityType(active.type);
-    const typeHex = ACTIVITY_TYPES[type] ? ACTIVITY_TYPES[type].color : "#FF6A00";
+    const activityHex = String(active.colorHex || activityColorHex(active.key || active.text)).trim();
     const elapsed = Math.max(0, now - active.startedAt);
     const t = clamp(elapsed / (30 * 60 * 1000), 0, 1);
     const w = clamp(0.25 + t * 0.35, 0.25, 0.6);
-    return { hex: mixHex(longTerm.hex, typeHex, w), longTerm };
+    return { hex: mixHex(longTerm.hex, activityHex, w), longTerm };
   };
 
   const setAuraUi = (now) => {
     const active = state.activity.active;
-    const type = active ? normalizeActivityType(active.type) : null;
     const { hex, longTerm } = computeCurrentAura(now);
 
     if (els.auraPill) {
       els.auraPill.textContent = active
-        ? t("aura_pill_active", { type: typeLabel(type) })
+        ? t("aura_pill_active", {
+            activity: normalizeActivityText(active.text || "").slice(0, 22) || "—"
+          })
         : t("aura_pill_idle");
     }
 
@@ -693,12 +767,18 @@
     }
 
     if (els.auraValue) {
-      const top = longTerm.byType.slice(0, 2);
+      const entries = Array.isArray(longTerm.byActivity) ? longTerm.byActivity : [];
+      const top = entries.slice(0, 2);
       if (top.length === 0) {
         els.auraValue.textContent = `${hex} • ${t("aura_no_history_short")}`;
       } else {
-        const sum = top.reduce((acc, [, w]) => acc + w, 0);
-        const parts = top.map(([k, w]) => `${typeLabel(k)} ${Math.round((w / sum) * 100)}%`);
+        const sum = top.reduce((acc, e) => acc + (Number(e && e.weight) || 0), 0) || 0;
+        const parts = top.map((e) => {
+          const w = Number(e && e.weight) || 0;
+          const label = normalizeActivityText((e && e.label) || "—").slice(0, 18) || "—";
+          const pct = sum > 0 ? Math.round((w / sum) * 100) : 0;
+          return `${label} ${pct}%`;
+        });
         els.auraValue.textContent = `${hex} • ${parts.join(" / ")}`;
       }
     }
@@ -761,7 +841,7 @@
     const elapsed = activityElapsedMs(now);
     els.activityTime.textContent = formatHhMmSs(elapsed);
     els.activityHint.textContent = t("activity_tracking", { text: active.text });
-    document.title = `${formatHhMmSs(elapsed)} • ${typeLabel(active.type)} • AuraNet`;
+    document.title = `${formatHhMmSs(elapsed)} • ${normalizeActivityText(active.text || "").slice(0, 28) || "—"} • AuraNet`;
     syncUserAuraOnMap(now, auraHex);
     return auraHex;
   };
@@ -777,7 +857,6 @@
     if (els.activityStop) els.activityStop.disabled = !active;
 
     if (els.activityText) els.activityText.disabled = Boolean(active);
-    if (els.activityType) els.activityType.disabled = Boolean(active);
 
     if (els.activityShowAura) {
       els.activityShowAura.checked = active
@@ -788,6 +867,202 @@
     const now = nowMs();
     if (active || hasAuraLinger(now)) ensureActivityTicker();
     else stopActivityTicker();
+  };
+
+  // --- Activity Assist (color + similar suggestions) ---
+
+  let suggestIndex = -1;
+
+  const setActivityColorPreview = (hex) => {
+    if (!els.activityColorPreview) return;
+    const el = els.activityColorPreview;
+    if (!hex) {
+      el.hidden = true;
+      el.replaceChildren();
+      return;
+    }
+
+    el.hidden = false;
+    el.replaceChildren();
+
+    const dot = document.createElement("span");
+    dot.className = "activityColorPreview__dot";
+    dot.style.background = String(hex);
+
+    const label = document.createElement("span");
+    label.textContent = t("activity_color_label");
+
+    const code = document.createElement("span");
+    code.className = "activityColorPreview__hex";
+    code.textContent = String(hex).toUpperCase();
+
+    el.appendChild(dot);
+    el.appendChild(label);
+    el.appendChild(code);
+  };
+
+  const setSuggestHidden = (hidden) => {
+    if (!els.activitySuggest) return;
+    els.activitySuggest.hidden = Boolean(hidden);
+    if (hidden) {
+      suggestIndex = -1;
+      els.activitySuggest.replaceChildren();
+    }
+  };
+
+  const bigramCounts = (s) => {
+    const str = String(s || "");
+    const map = new Map();
+    for (let i = 0; i < str.length - 1; i++) {
+      const bg = str.slice(i, i + 2);
+      map.set(bg, (map.get(bg) || 0) + 1);
+    }
+    return map;
+  };
+
+  const diceCoefficient = (a, b) => {
+    const aa = String(a || "");
+    const bb = String(b || "");
+    if (aa.length < 2 || bb.length < 2) return 0;
+    const a2 = bigramCounts(aa);
+    const b2 = bigramCounts(bb);
+    let inter = 0;
+    for (const [bg, ca] of a2.entries()) {
+      const cb = b2.get(bg) || 0;
+      inter += Math.min(ca, cb);
+    }
+    return (2 * inter) / ((aa.length - 1) + (bb.length - 1));
+  };
+
+  const similarityScore = (queryKey, candidateKey) => {
+    const q = String(queryKey || "");
+    const c = String(candidateKey || "");
+    if (!q || !c) return 0;
+    if (c === q) return 100;
+    if (c.startsWith(q)) return 84;
+    if (c.includes(q)) return 64;
+    return Math.round(diceCoefficient(q, c) * 52);
+  };
+
+  const collectKnownActivities = () => {
+    const seen = new Map();
+    for (const entry of state.activity.log) {
+      if (!entry || !entry.endedAt) continue;
+      const text = normalizeActivityText(entry.text || "");
+      const legacyType = entry.type ? normalizeActivityType(entry.type) : null;
+      const fallbackLabel = text || (legacyType ? typeLabel(legacyType) : "");
+      const key = activityKeyFromText(entry.key || text || fallbackLabel);
+      if (!key) continue;
+
+      const legacyColor = legacyType && ACTIVITY_TYPES[legacyType] ? ACTIVITY_TYPES[legacyType].color : null;
+      const colorHex = String(entry.colorHex || entry.color || legacyColor || activityColorHex(key)).trim();
+
+      const prev = seen.get(key) || {
+        key,
+        label: fallbackLabel || "—",
+        colorHex,
+        lastAt: 0,
+        count: 0
+      };
+      prev.count += 1;
+      if ((entry.endedAt || 0) >= prev.lastAt) {
+        prev.label = fallbackLabel || prev.label;
+        prev.lastAt = entry.endedAt || prev.lastAt;
+      }
+      prev.colorHex = colorHex;
+      seen.set(key, prev);
+    }
+    return Array.from(seen.values()).sort((a, b) => b.lastAt - a.lastAt);
+  };
+
+  const renderSuggestList = (items) => {
+    if (!els.activitySuggest) return;
+    els.activitySuggest.replaceChildren();
+    suggestIndex = -1;
+
+    if (!items.length) {
+      setSuggestHidden(true);
+      return;
+    }
+
+    setSuggestHidden(false);
+
+    for (const item of items) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "activitySuggest__btn";
+      btn.setAttribute("role", "option");
+      btn.setAttribute("aria-selected", "false");
+
+      const dot = document.createElement("span");
+      dot.className = "activitySuggest__dot";
+      dot.style.background = item.colorHex;
+
+      const text = document.createElement("span");
+      text.className = "activitySuggest__text";
+      text.textContent = item.label;
+
+      const hex = document.createElement("span");
+      hex.className = "activitySuggest__hex";
+      hex.textContent = item.colorHex.toUpperCase();
+
+      btn.appendChild(dot);
+      btn.appendChild(text);
+      btn.appendChild(hex);
+
+      btn.addEventListener("click", () => {
+        if (!els.activityText) return;
+        els.activityText.value = item.label;
+        setSuggestHidden(true);
+        renderActivityAssist();
+        els.activityText.focus();
+      });
+
+      els.activitySuggest.appendChild(btn);
+    }
+  };
+
+  const syncSuggestSelection = () => {
+    if (!els.activitySuggest || els.activitySuggest.hidden) return;
+    const buttons = Array.from(els.activitySuggest.querySelectorAll("button.activitySuggest__btn"));
+    for (let i = 0; i < buttons.length; i++) {
+      buttons[i].setAttribute("aria-selected", i === suggestIndex ? "true" : "false");
+    }
+  };
+
+  const renderActivityAssist = () => {
+    if (!els.activityText) return;
+    const active = state.activity.active;
+
+    if (active) {
+      setSuggestHidden(true);
+      setActivityColorPreview(active.colorHex || activityColorHex(active.key || active.text));
+      return;
+    }
+
+    const draft = normalizeActivityText(els.activityText.value);
+    const draftKey = activityKeyFromText(draft);
+
+    if (!draftKey) {
+      setActivityColorPreview(null);
+      setSuggestHidden(true);
+      return;
+    }
+
+    setActivityColorPreview(activityColorHex(draftKey));
+
+    const known = collectKnownActivities();
+    const scored = known
+      .map((a) => ({
+        ...a,
+        score: similarityScore(draftKey, a.key)
+      }))
+      .filter((a) => a.score >= 22 && a.key !== draftKey)
+      .sort((a, b) => b.score - a.score || b.lastAt - a.lastAt)
+      .slice(0, 5)
+      .map(({ key, label, colorHex }) => ({ key, label, colorHex }));
+
+    renderSuggestList(scored);
   };
 
   const renderActivityList = () => {
@@ -808,8 +1083,13 @@
     }
 
     for (const entry of items) {
-      const type = normalizeActivityType(entry.type);
-      const cfg = ACTIVITY_TYPES[type];
+      if (!entry || !entry.endedAt || !entry.startedAt) continue;
+      const text = normalizeActivityText(entry.text || "");
+      const legacyType = entry.type ? normalizeActivityType(entry.type) : null;
+      const fallbackLabel = text || (legacyType ? typeLabel(legacyType) : "—");
+      const key = activityKeyFromText(entry.key || text || fallbackLabel);
+      const legacyColor = legacyType && ACTIVITY_TYPES[legacyType] ? ACTIVITY_TYPES[legacyType].color : null;
+      const colorHex = String(entry.colorHex || entry.color || legacyColor || activityColorHex(key)).trim();
       const dur = Math.max(0, (entry.endedAt || 0) - (entry.startedAt || 0));
 
       const li = document.createElement("li");
@@ -820,7 +1100,7 @@
 
       const title = document.createElement("div");
       title.className = "activityItem__title";
-      title.textContent = entry.text || cfg.label;
+      title.textContent = fallbackLabel;
 
       const meta = document.createElement("div");
       meta.className = "activityItem__meta";
@@ -834,11 +1114,11 @@
       right.className = "activityItem__right";
 
       const badge = document.createElement("span");
-      badge.className = "badge badge--ok";
-      badge.textContent = typeLabel(type).toUpperCase();
+      badge.className = "badge";
+      badge.textContent = colorHex.toUpperCase();
       badge.style.borderColor = "rgba(32, 24, 18, 0.16)";
       badge.style.background = "rgba(255, 255, 255, 0.6)";
-      badge.style.boxShadow = `0 0 0 2px ${mixHex(cfg.color, "#FFFFFF", 0.75)} inset`;
+      badge.style.boxShadow = `0 0 0 2px ${mixHex(colorHex, "#FFFFFF", 0.72)} inset`;
       right.appendChild(badge);
 
       li.appendChild(left);
@@ -849,28 +1129,29 @@
 
   const startActivity = () => {
     if (state.activity.active) return;
-    if (!els.activityText || !els.activityType) return;
+    if (!els.activityText) return;
     if (els.activityForm && typeof els.activityForm.reportValidity === "function") {
       if (!els.activityForm.reportValidity()) return;
     }
 
-    const text = String(els.activityText.value || "").trim();
+    const text = normalizeActivityText(els.activityText.value);
     if (!text) {
       toast(t("toast_activity_empty"));
       els.activityText.focus();
       return;
     }
 
-    const type = normalizeActivityType(els.activityType.value);
     const showAuraOnMap = Boolean(els.activityShowAura && els.activityShowAura.checked);
+    const key = activityKeyFromText(text);
+    const colorHex = activityColorHex(key);
 
-    state.activity.prefs.lastType = type;
     state.activity.prefs.showAuraOnMap = showAuraOnMap;
 
     state.activity.active = {
       id: uid(),
       text,
-      type,
+      key,
+      colorHex,
       startedAt: nowMs(),
       showAuraOnMap
     };
@@ -891,7 +1172,8 @@
       state.activity.log.unshift({
         id: active.id,
         text: active.text,
-        type: normalizeActivityType(active.type),
+        key: active.key || activityKeyFromText(active.text),
+        colorHex: active.colorHex || activityColorHex(active.key || active.text),
         startedAt: active.startedAt,
         endedAt
       });
@@ -923,10 +1205,9 @@
     const active = state.activity.active;
 
     if (els.activityText && active) els.activityText.value = active.text;
-    if (els.activityType && active) els.activityType.value = normalizeActivityType(active.type);
-    if (els.activityType && !active) els.activityType.value = normalizeActivityType(state.activity.prefs.lastType);
 
     syncActivityControls();
+    renderActivityAssist();
     const auraHex = renderActivityTimeOnly();
     syncUserAuraOnMap(nowMs(), auraHex);
 
@@ -1280,16 +1561,15 @@
         const onClick = (e) => {
           const llClick = e && e.latlng ? e.latlng : latLng;
           const longTerm = computeLongTermAura(nowMs());
-          const parts = Array.isArray(longTerm.byType) ? longTerm.byType.slice(0, 6) : [];
-          const total = parts.reduce((acc, [, w]) => acc + (Number(w) || 0), 0) || 0;
+          const parts = Array.isArray(longTerm.byActivity) ? longTerm.byActivity.slice(0, 6) : [];
+          const total = parts.reduce((acc, it) => acc + (Number(it && it.weight) || 0), 0) || 0;
 
           const rows = total
             ? parts
-                .map(([type, w]) => {
-                  const cfg = ACTIVITY_TYPES[type];
-                  const color = (cfg && cfg.color) || "#FF6A00";
-                  const name = escapeHtml(typeLabel(type));
-                  const pct = Math.round((Number(w) / total) * 100);
+                .map((it) => {
+                  const color = (it && it.colorHex) || "#FF6A00";
+                  const name = escapeHtml(normalizeActivityText((it && it.label) || "—"));
+                  const pct = Math.round(((Number(it && it.weight) || 0) / total) * 100);
                   return `<div class="auraPop__row"><span class="auraPop__dot" style="background:${color}"></span><span class="auraPop__name">${name}</span><span class="auraPop__val">${pct}%</span></div>`;
                 })
                 .join("")
@@ -2054,12 +2334,44 @@
     els.activityClear.addEventListener("click", clearActivityLog);
   }
 
-  if (els.activityType) {
-    els.activityType.addEventListener("change", () => {
-      // Persist the default type for the next session.
-      state.activity.prefs.lastType = normalizeActivityType(els.activityType.value);
-      saveState();
-      renderActivity(false);
+  if (els.activityText) {
+    const onDraftChange = () => {
+      if (state.activity.active) return;
+      renderActivityAssist();
+    };
+
+    els.activityText.addEventListener("input", onDraftChange);
+    els.activityText.addEventListener("focus", onDraftChange);
+
+    els.activityText.addEventListener("keydown", (e) => {
+      if (!els.activitySuggest || els.activitySuggest.hidden) return;
+      const buttons = Array.from(els.activitySuggest.querySelectorAll("button.activitySuggest__btn"));
+      if (!buttons.length) return;
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        suggestIndex = suggestIndex < 0 ? 0 : Math.min(buttons.length - 1, suggestIndex + 1);
+        syncSuggestSelection();
+        return;
+      }
+
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        suggestIndex = suggestIndex <= 0 ? -1 : suggestIndex - 1;
+        syncSuggestSelection();
+        return;
+      }
+
+      if (e.key === "Enter" && suggestIndex >= 0) {
+        e.preventDefault();
+        buttons[suggestIndex].click();
+        return;
+      }
+
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setSuggestHidden(true);
+      }
     });
   }
 

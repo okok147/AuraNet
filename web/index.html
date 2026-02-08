@@ -107,20 +107,10 @@
                   maxlength="60"
                   required
                 />
-              </label>
-              <label class="field">
-                <span class="field__label" data-i18n="activity_type_label">
-                  Type
-                </span>
-                <select class="input" id="activityType" name="type">
-                  <option value="work">Work</option>
-                  <option value="study">Study</option>
-                  <option value="exercise">Exercise</option>
-                  <option value="social">Social</option>
-                  <option value="travel">Travel</option>
-                  <option value="food">Food</option>
-                  <option value="rest">Rest</option>
-                </select>
+                <div class="activityAssist" aria-label="Activity helpers">
+                  <div class="activityColorPreview" id="activityColorPreview" aria-live="polite"></div>
+                  <div class="activitySuggest" id="activitySuggest" role="listbox" hidden></div>
+                </div>
               </label>
             </div>
 
