@@ -1,20 +1,11 @@
 (() => {
-  const STORAGE_KEY = "auranet:v1";
+  const STORAGE_KEY = "auranet:v2";
 
   const $ = (id) => document.getElementById(id);
 
   const els = {
     storagePill: $("storagePill"),
     clock: $("clock"),
-    stats: $("stats"),
-    addForm: $("addForm"),
-    taskText: $("taskText"),
-    taskDue: $("taskDue"),
-    list: $("list"),
-    empty: $("empty"),
-    search: $("search"),
-    clearDone: $("clearDone"),
-    segButtons: Array.from(document.querySelectorAll("[data-filter]")),
 
     paperMap: $("paperMap"),
     mapStatus: $("mapStatus"),
@@ -36,13 +27,11 @@
     activityClear: $("activityClear"),
     auraSwatch: $("auraSwatch"),
     auraValue: $("auraValue"),
+    auraHex: $("auraHex"),
+    auraChart: $("auraChart"),
+    auraLegend: $("auraLegend"),
     activityList: $("activityList"),
     toast: $("toast"),
-
-    editDialog: $("editDialog"),
-    editForm: $("editForm"),
-    editText: $("editText"),
-    editDue: $("editDue")
   };
 
   const nowMs = () => Date.now();
@@ -98,11 +87,6 @@
 
   const defaultState = () => ({
     version: 1,
-    tasks: [],
-    ui: {
-      filter: "inbox",
-      q: ""
-    },
     activity: {
       active: null,
       log: [],
@@ -123,7 +107,6 @@
       const merged = {
         ...base,
         ...parsed,
-        ui: { ...base.ui, ...(parsed.ui || {}) },
         activity: {
           ...base.activity,
           ...(parsed.activity || {}),
@@ -136,7 +119,6 @@
       // Drop legacy timer state (previous versions).
       delete merged.timer;
       // Normalize shapes.
-      if (!Array.isArray(merged.tasks)) merged.tasks = [];
       if (!Array.isArray(merged.activity.log)) merged.activity.log = [];
       return merged;
     } catch {
@@ -155,202 +137,6 @@
 
   let state = loadState();
   let mapApi = null;
-
-  // --- Tasks ---
-
-  const activeFilter = () => state.ui.filter;
-
-  const setFilter = (filter) => {
-    state.ui.filter = filter;
-    saveState();
-    render();
-  };
-
-  const setSearch = (q) => {
-    state.ui.q = q;
-    saveState();
-    render();
-  };
-
-  const addTask = ({ text, due }) => {
-    const trimmed = String(text || "").trim();
-    if (!trimmed) return;
-
-    state.tasks.unshift({
-      id: uid(),
-      text: trimmed,
-      due: due || null,
-      done: false,
-      createdAt: nowMs(),
-      doneAt: null
-    });
-    saveState();
-    render();
-  };
-
-  const updateTask = (id, patch) => {
-    const idx = state.tasks.findIndex((t) => t.id === id);
-    if (idx === -1) return;
-    state.tasks[idx] = { ...state.tasks[idx], ...patch };
-    saveState();
-    render();
-  };
-
-  const removeTask = (id) => {
-    state.tasks = state.tasks.filter((t) => t.id !== id);
-    saveState();
-    render();
-  };
-
-  const clearDone = () => {
-    const before = state.tasks.length;
-    state.tasks = state.tasks.filter((t) => !t.done);
-    if (state.tasks.length !== before) {
-      toast(`${before - state.tasks.length} completed task(s) cleared.`);
-    }
-    saveState();
-    render();
-  };
-
-  const isDueToday = (task) => Boolean(task.due && task.due === todayISO());
-  const isOverdue = (task) => Boolean(task.due && task.due < todayISO());
-
-  const taskVisible = (task) => {
-    const f = activeFilter();
-    if (f === "inbox" && task.done) return false;
-    if (f === "done" && !task.done) return false;
-    if (f === "today" && (!isDueToday(task) || task.done)) return false;
-
-    const q = String(state.ui.q || "").trim().toLowerCase();
-    if (!q) return true;
-    return task.text.toLowerCase().includes(q);
-  };
-
-  const sortTasks = (a, b) => {
-    if (a.done !== b.done) return a.done ? 1 : -1;
-    if (a.due && b.due && a.due !== b.due) return a.due < b.due ? -1 : 1;
-    if (a.due && !b.due) return -1;
-    if (!a.due && b.due) return 1;
-    return b.createdAt - a.createdAt;
-  };
-
-  let editingId = null;
-
-  const openEdit = (id) => {
-    const task = state.tasks.find((t) => t.id === id);
-    if (!task) return;
-    editingId = id;
-    els.editText.value = task.text;
-    els.editDue.value = task.due || "";
-    els.editDialog.showModal();
-    // Autofocus after modal opens.
-    setTimeout(() => els.editText.focus(), 0);
-  };
-
-  const closeEdit = () => {
-    editingId = null;
-    if (els.editDialog.open) els.editDialog.close();
-  };
-
-  const renderStats = () => {
-    const total = state.tasks.length;
-    const done = state.tasks.filter((t) => t.done).length;
-    const open = total - done;
-    els.stats.textContent = total
-      ? `${open} open • ${done} done`
-      : "No tasks yet";
-  };
-
-  const renderFilters = () => {
-    els.segButtons.forEach((btn) => {
-      const selected = btn.dataset.filter === state.ui.filter;
-      btn.setAttribute("aria-selected", selected ? "true" : "false");
-    });
-  };
-
-  const renderList = () => {
-    const visible = state.tasks.filter(taskVisible).sort(sortTasks);
-    els.list.replaceChildren();
-
-    if (visible.length === 0) {
-      els.empty.hidden = state.tasks.length !== 0 && String(state.ui.q || "").trim() === "";
-      return;
-    }
-    els.empty.hidden = true;
-
-    for (const task of visible) {
-      const li = document.createElement("li");
-      li.className = `item${task.done ? " item--done" : ""}`;
-      li.dataset.id = task.id;
-
-      const check = document.createElement("input");
-      check.type = "checkbox";
-      check.className = "check";
-      check.checked = Boolean(task.done);
-      check.ariaLabel = task.done ? "Mark as not done" : "Mark as done";
-      check.addEventListener("change", () => {
-        updateTask(task.id, {
-          done: check.checked,
-          doneAt: check.checked ? nowMs() : null
-        });
-      });
-
-      const main = document.createElement("div");
-
-      const title = document.createElement("button");
-      title.type = "button";
-      title.className = "titleBtn";
-      title.textContent = task.text;
-      title.addEventListener("click", () => openEdit(task.id));
-
-      const meta = document.createElement("div");
-      meta.className = "meta";
-
-      if (task.due) {
-        const badge = document.createElement("span");
-        const dueLabel = isOverdue(task)
-          ? "Overdue"
-          : isDueToday(task)
-            ? "Due today"
-            : "Due";
-        badge.className = `badge ${
-          isOverdue(task) ? "badge--warn" : "badge--ok"
-        }`;
-        badge.textContent = `${dueLabel}: ${task.due}`;
-        meta.appendChild(badge);
-      }
-
-      const created = document.createElement("span");
-      created.textContent = `Added ${new Date(task.createdAt).toLocaleDateString()}`;
-      meta.appendChild(created);
-
-      main.appendChild(title);
-      main.appendChild(meta);
-
-      const actions = document.createElement("div");
-      actions.className = "rowActions";
-
-      const editBtn = document.createElement("button");
-      editBtn.type = "button";
-      editBtn.className = "iconBtn";
-      editBtn.textContent = "Edit";
-      editBtn.addEventListener("click", () => openEdit(task.id));
-
-      const delBtn = document.createElement("button");
-      delBtn.type = "button";
-      delBtn.className = "iconBtn danger";
-      delBtn.textContent = "Del";
-      delBtn.addEventListener("click", () => removeTask(task.id));
-
-      actions.appendChild(editBtn);
-      actions.appendChild(delBtn);
-
-      li.appendChild(check);
-      li.appendChild(main);
-      li.appendChild(actions);
-      els.list.appendChild(li);
-    }
-  };
 
   // --- Toast ---
 
@@ -496,6 +282,123 @@
     return { hex, byType: byTypeArr };
   };
 
+  const renderAuraComposition = (longTerm) => {
+    if (!els.auraChart || !els.auraLegend) return;
+    const svg = els.auraChart;
+    const legend = els.auraLegend;
+
+    const entries = Array.isArray(longTerm.byType) ? longTerm.byType.slice() : [];
+    const total = entries.reduce((acc, [, w]) => acc + (Number(w) || 0), 0);
+
+    // Clear existing nodes.
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    legend.replaceChildren();
+
+    // SVG ring base.
+    const NS = "http://www.w3.org/2000/svg";
+    const cx = 60;
+    const cy = 60;
+    const r = 44;
+    const strokeW = 12;
+    const circ = 2 * Math.PI * r;
+
+    const mkCircle = (attrs) => {
+      const el = document.createElementNS(NS, "circle");
+      for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, String(v));
+      return el;
+    };
+
+    const base = mkCircle({
+      cx,
+      cy,
+      r,
+      fill: "none",
+      stroke: "rgba(32, 24, 18, 0.10)",
+      "stroke-width": strokeW
+    });
+    svg.appendChild(base);
+
+    if (total <= 0) {
+      const li = document.createElement("li");
+      li.className = "auraLegend__empty";
+      li.textContent = "No history yet. Log a few activities to build your aura.";
+      legend.appendChild(li);
+      return;
+    }
+
+    // Keep the chart readable: show top 6 and bucket the rest into OTHER.
+    const maxSlices = 6;
+    const top = entries.slice(0, maxSlices);
+    const rest = entries.slice(maxSlices);
+    if (rest.length) {
+      const otherW = rest.reduce((acc, [, w]) => acc + (Number(w) || 0), 0);
+      top.push(["other", otherW]);
+    }
+
+    const typeColor = (type) => {
+      if (type === "other") return "rgba(32, 24, 18, 0.28)";
+      return (ACTIVITY_TYPES[type] && ACTIVITY_TYPES[type].color) || "#FF6A00";
+    };
+
+    const typeLabel = (type) => {
+      if (type === "other") return "Other";
+      return (ACTIVITY_TYPES[type] && ACTIVITY_TYPES[type].label) || "Other";
+    };
+
+    // Donut segments using stroke-dasharray.
+    let offset = 0;
+    for (const [type, wRaw] of top) {
+      const w = Number(wRaw) || 0;
+      if (w <= 0) continue;
+      const frac = w / total;
+      const len = Math.max(0, frac * circ);
+      if (len < 1.2) continue;
+
+      const seg = mkCircle({
+        cx,
+        cy,
+        r,
+        fill: "none",
+        stroke: typeColor(type),
+        "stroke-width": strokeW,
+        "stroke-linecap": "butt",
+        "stroke-dasharray": `${len} ${circ - len}`,
+        "stroke-dashoffset": `${-offset}`,
+        transform: `rotate(-90 ${cx} ${cy})`
+      });
+      svg.appendChild(seg);
+      offset += len;
+    }
+
+    // Legend.
+    for (const [type, wRaw] of top) {
+      const w = Number(wRaw) || 0;
+      if (w <= 0) continue;
+      const pct = Math.round((w / total) * 100);
+      if (pct <= 0) continue;
+
+      const li = document.createElement("li");
+      li.className = "auraLegend__item";
+
+      const dot = document.createElement("span");
+      dot.className = "auraLegend__dot";
+      dot.style.background = typeColor(type);
+
+      const name = document.createElement("span");
+      name.className = "auraLegend__name";
+      name.textContent = typeLabel(type);
+
+      const val = document.createElement("span");
+      val.className = "auraLegend__val";
+      val.textContent = `${pct}%`;
+
+      li.appendChild(dot);
+      li.appendChild(name);
+      li.appendChild(val);
+      legend.appendChild(li);
+    }
+  };
+
   const computeCurrentAura = (now) => {
     const longTerm = computeLongTermAura(now);
     const active = state.activity.active;
@@ -535,6 +438,11 @@
         els.auraValue.textContent = `${hex} • ${parts.join(" / ")}`;
       }
     }
+
+    if (els.auraHex) {
+      els.auraHex.textContent = longTerm.hex;
+    }
+    renderAuraComposition(longTerm);
 
     return hex;
   };
@@ -735,9 +643,6 @@
   // --- Render ---
 
   const render = () => {
-    renderStats();
-    renderFilters();
-    renderList();
     renderActivity(true);
   };
 
@@ -1633,26 +1538,6 @@
 
   // --- Events ---
 
-  els.addForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    addTask({
-      text: els.taskText.value,
-      due: els.taskDue.value || null
-    });
-    els.taskText.value = "";
-    els.taskDue.value = "";
-    els.taskText.focus();
-  });
-
-  els.segButtons.forEach((btn) => {
-    btn.addEventListener("click", () => setFilter(btn.dataset.filter));
-  });
-
-  els.search.value = state.ui.q || "";
-  els.search.addEventListener("input", () => setSearch(els.search.value));
-
-  els.clearDone.addEventListener("click", clearDone);
-
   if (els.activityForm) {
     els.activityForm.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -1689,33 +1574,6 @@
       renderActivity(false);
     });
   }
-
-  els.editForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const submitter = e.submitter ? String(e.submitter.value) : "save";
-    if (submitter !== "save") {
-      closeEdit();
-      return;
-    }
-    if (!editingId) return closeEdit();
-
-    const text = String(els.editText.value || "").trim();
-    if (!text) {
-      toast("Task text can’t be empty.");
-      els.editText.focus();
-      return;
-    }
-    updateTask(editingId, {
-      text,
-      due: els.editDue.value || null
-    });
-    closeEdit();
-    toast("Task updated.");
-  });
-
-  els.editDialog.addEventListener("cancel", () => {
-    closeEdit();
-  });
 
   mapApi = initPaperMap();
   renderClock();

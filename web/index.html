@@ -8,7 +8,7 @@
     <title>AuraNet</title>
     <meta
       name="description"
-      content="A tiny offline-first task board and focus timer."
+      content="Activity logger + aura blending + paper sketch map."
     />
 
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
@@ -64,72 +64,6 @@
 
     <main class="shell">
       <div class="grid">
-        <section class="card" aria-labelledby="tasksTitle">
-          <div class="card__head">
-            <h1 class="h1" id="tasksTitle">Task Board</h1>
-            <div class="stats" id="stats"></div>
-          </div>
-
-          <form class="add" id="addForm" autocomplete="off">
-            <label class="field">
-              <span class="field__label">Task</span>
-              <input
-                class="input"
-                id="taskText"
-                name="text"
-                placeholder="Write a clear, tiny next step…"
-                minlength="1"
-                maxlength="120"
-                required
-              />
-            </label>
-            <label class="field field--date">
-              <span class="field__label">Due</span>
-              <input class="input" id="taskDue" name="due" type="date" />
-            </label>
-            <button class="btn btn--primary" type="submit">Add</button>
-          </form>
-
-          <div class="toolbar">
-            <div class="seg" role="tablist" aria-label="Task filters">
-              <button class="seg__btn" type="button" data-filter="inbox">
-                <kbd class="kbd">F1</kbd>
-                <span>INBOX</span>
-              </button>
-              <button class="seg__btn" type="button" data-filter="today">
-                <kbd class="kbd">F2</kbd>
-                <span>TODAY</span>
-              </button>
-              <button class="seg__btn" type="button" data-filter="done">
-                <kbd class="kbd">F3</kbd>
-                <span>DONE</span>
-              </button>
-              <button class="seg__btn" type="button" data-filter="all">
-                <kbd class="kbd">F4</kbd>
-                <span>ALL</span>
-              </button>
-            </div>
-            <label class="search">
-              <span class="sr-only">Search tasks</span>
-              <input
-                class="input input--search"
-                id="search"
-                placeholder="SEARCH…"
-              />
-            </label>
-            <button class="btn btn--ghost" type="button" id="clearDone">
-              Clear done
-            </button>
-          </div>
-
-          <ul class="list" id="list" aria-label="Tasks"></ul>
-
-          <div class="empty" id="empty" hidden>
-            <div class="empty__title">You’re clear.</div>
-            <div class="empty__sub">Add one small task to get moving.</div>
-          </div>
-        </section>
-
         <section class="card card--timer" aria-labelledby="activityTitle">
           <div class="card__head">
             <h2 class="h1" id="activityTitle">Activity Logger</h2>
@@ -197,12 +131,29 @@
             </div>
           </div>
 
+          <div class="auraViz" aria-label="Aura composition breakdown">
+            <div class="auraChart" aria-hidden="true">
+              <svg
+                class="auraChart__svg"
+                id="auraChart"
+                viewBox="0 0 120 120"
+                width="140"
+                height="140"
+              ></svg>
+              <div class="auraChart__center">
+                <div class="auraChart__label">AURA</div>
+                <div class="auraChart__value" id="auraHex">—</div>
+              </div>
+            </div>
+            <ul class="auraLegend" id="auraLegend" aria-label="Aura components"></ul>
+          </div>
+
           <ul class="activityList" id="activityList" aria-label="Recent activities"></ul>
 
           <div class="toast" id="toast" role="status" aria-live="polite"></div>
         </section>
 
-        <section class="card card--wide card--map" aria-labelledby="mapTitle">
+        <section class="card card--map" aria-labelledby="mapTitle">
           <div class="card__head">
             <h2 class="h1" id="mapTitle">Paper Sketch Map</h2>
             <div class="stats" id="mapStatus">Loading map…</div>
@@ -239,35 +190,5 @@
         </section>
       </div>
     </main>
-
-    <dialog class="dialog" id="editDialog">
-      <form class="dialog__panel" method="dialog" id="editForm">
-        <div class="dialog__head">
-          <div class="dialog__title">Edit task</div>
-          <button class="iconBtn" value="cancel" aria-label="Close">
-            ✕
-          </button>
-        </div>
-
-        <label class="field">
-          <span class="field__label">Task</span>
-          <input class="input" id="editText" minlength="1" maxlength="120" />
-        </label>
-
-        <label class="field">
-          <span class="field__label">Due</span>
-          <input class="input" id="editDue" type="date" />
-        </label>
-
-        <div class="dialog__actions">
-          <button class="btn btn--ghost" value="cancel" type="submit">
-            Cancel
-          </button>
-          <button class="btn btn--primary" value="save" type="submit">
-            Save
-          </button>
-        </div>
-      </form>
-    </dialog>
   </body>
 </html>
