@@ -1,6 +1,7 @@
 .DS_Store
 .env
 .env.*
+!.env.example
 
 node_modules/
 npm-debug.log*
@@ -9,6 +10,7 @@ yarn-error.log*
 pnpm-debug.log*
 
 dist/
+coverage/
 .turbo/
 .cache/
 

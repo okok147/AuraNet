@@ -1,6 +1,6 @@
 # AuraNet
 
-A tiny offline-first task board and focus timer, deployed to GitHub Pages.
+A tiny offline-first task board + focus timer (static site). Tasks and timer settings are saved locally in your browser (`localStorage`).
 
 ## Run locally
 
@@ -9,9 +9,12 @@ npm install
 npm run dev
 ```
 
-Then open the printed URL (defaults to `http://localhost:5173`).
+Then open `http://127.0.0.1:5173`.
 
-## Deploy
+## Deploy (GitHub Pages)
 
-Pushing to `main` triggers the included GitHub Pages workflow. Enable GitHub Pages for the repo (Settings -> Pages) and set the source to GitHub Actions.
+Pushing to `main` triggers the GitHub Pages workflow (deploys the `web/` folder).
+
+Expected URL:
+- `https://okok147.github.io/AuraNet/`
 
