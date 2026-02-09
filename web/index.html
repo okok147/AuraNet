@@ -361,117 +361,132 @@
               <div class="pill pill--muted" id="taskFeePill">FEE: 10%</div>
             </div>
 
-            <form class="taskForm" id="taskForm" autocomplete="off">
-              <div class="taskForm__row">
-                <label class="field">
-                  <span class="field__label" data-i18n="task_label">Task</span>
-                  <input
-                    class="input"
-                    id="taskText"
-                    name="task"
-                    placeholder="Pick up coffee, deliver package…"
-                    data-i18n-placeholder="task_placeholder"
-                    minlength="2"
-                    maxlength="72"
-                    required
-                  />
-                </label>
-                <label class="field">
-                  <span class="field__label" data-i18n="task_reward_label">Reward (USD)</span>
-                  <input
-                    class="input"
-                    id="taskReward"
-                    name="reward"
-                    type="number"
-                    inputmode="decimal"
-                    min="1"
-                    max="9999"
-                    step="1"
-                    value="20"
-                    required
-                  />
-                </label>
-              </div>
+            <details class="drop" id="dropTasksPost">
+              <summary class="drop__summary">
+                <span class="drop__label" data-i18n="drop_post_task">Post task</span>
+              </summary>
+              <div class="drop__body">
+                <form class="taskForm" id="taskForm" autocomplete="off">
+                  <div class="taskForm__row">
+                    <label class="field">
+                      <span class="field__label" data-i18n="task_label">Task</span>
+                      <input
+                        class="input"
+                        id="taskText"
+                        name="task"
+                        placeholder="Pick up coffee, deliver package…"
+                        data-i18n-placeholder="task_placeholder"
+                        minlength="2"
+                        maxlength="72"
+                        required
+                      />
+                    </label>
+                    <label class="field">
+                      <span class="field__label" data-i18n="task_reward_label">Reward (USD)</span>
+                      <input
+                        class="input"
+                        id="taskReward"
+                        name="reward"
+                        type="number"
+                        inputmode="decimal"
+                        min="1"
+                        max="9999"
+                        step="1"
+                        value="20"
+                        required
+                      />
+                    </label>
+                  </div>
 
-              <div class="taskForm__row taskForm__row--pick">
-                <div class="taskPick">
-                  <div class="taskPick__actions">
-                    <button class="btn btn--ghost" type="button" id="taskPickStart">
-                      <span data-i18n="task_pick_start">Pick start</span>
+                  <div class="taskForm__row taskForm__row--pick">
+                    <div class="taskPick">
+                      <div class="taskPick__actions">
+                        <button class="btn btn--ghost" type="button" id="taskPickStart">
+                          <span data-i18n="task_pick_start">Pick start</span>
+                        </button>
+                        <button class="btn btn--ghost" type="button" id="taskUseMyStart">
+                          <span data-i18n="task_use_my_area">Use my area</span>
+                        </button>
+                      </div>
+                      <div class="taskPick__meta" id="taskStartMeta" data-i18n="task_start_unset">
+                        Start: not set
+                      </div>
+                    </div>
+                    <div class="taskPick">
+                      <div class="taskPick__actions">
+                        <button class="btn btn--ghost" type="button" id="taskPickDest">
+                          <span data-i18n="task_pick_dest">Pick destination</span>
+                        </button>
+                        <button class="btn btn--ghost" type="button" id="taskClearRoute">
+                          <span data-i18n="task_clear_route">Clear</span>
+                        </button>
+                      </div>
+                      <div class="taskPick__meta" id="taskDestMeta" data-i18n="task_dest_unset">
+                        Destination: not set
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="taskForm__row taskForm__row--ranges">
+                    <label class="field" for="taskTimeLimit">
+                      <span class="field__label" data-i18n="task_time_limit_label">
+                        Time limit
+                      </span>
+                      <input
+                        class="range"
+                        type="range"
+                        id="taskTimeLimit"
+                        min="15"
+                        max="360"
+                        step="15"
+                        value="60"
+                      />
+                      <div class="rangeMeta" aria-live="polite">
+                        <span class="rangeMeta__value" id="taskTimeLimitValue">60m</span>
+                        <span class="rangeMeta__min">15m</span>
+                        <span class="rangeMeta__max">360m</span>
+                      </div>
+                    </label>
+
+                    <label class="field" for="taskDistanceLimit">
+                      <span class="field__label" data-i18n="task_distance_limit_label">
+                        Distance limit
+                      </span>
+                      <input
+                        class="range"
+                        type="range"
+                        id="taskDistanceLimit"
+                        min="50"
+                        max="5000"
+                        step="50"
+                        value="800"
+                      />
+                      <div class="rangeMeta" aria-live="polite">
+                        <span class="rangeMeta__value" id="taskDistanceLimitValue">800m</span>
+                        <span class="rangeMeta__min">50m</span>
+                        <span class="rangeMeta__max">5000m</span>
+                      </div>
+                    </label>
+                  </div>
+
+                  <div class="taskForm__actions">
+                    <button class="btn btn--primary" type="submit" id="taskPost">
+                      <span data-i18n="task_post">Post task</span>
                     </button>
-                    <button class="btn btn--ghost" type="button" id="taskUseMyStart">
-                      <span data-i18n="task_use_my_area">Use my area</span>
-                    </button>
                   </div>
-                  <div class="taskPick__meta" id="taskStartMeta" data-i18n="task_start_unset">
-                    Start: not set
-                  </div>
-                </div>
-                <div class="taskPick">
-                  <div class="taskPick__actions">
-                    <button class="btn btn--ghost" type="button" id="taskPickDest">
-                      <span data-i18n="task_pick_dest">Pick destination</span>
-                    </button>
-                    <button class="btn btn--ghost" type="button" id="taskClearRoute">
-                      <span data-i18n="task_clear_route">Clear</span>
-                    </button>
-                  </div>
-                  <div class="taskPick__meta" id="taskDestMeta" data-i18n="task_dest_unset">
-                    Destination: not set
-                  </div>
-                </div>
+                </form>
               </div>
+            </details>
 
-              <div class="taskForm__row taskForm__row--ranges">
-                <label class="field" for="taskTimeLimit">
-                  <span class="field__label" data-i18n="task_time_limit_label">
-                    Time limit
-                  </span>
-                  <input
-                    class="range"
-                    type="range"
-                    id="taskTimeLimit"
-                    min="15"
-                    max="360"
-                    step="15"
-                    value="60"
-                  />
-                  <div class="rangeMeta" aria-live="polite">
-                    <span class="rangeMeta__value" id="taskTimeLimitValue">60m</span>
-                    <span class="rangeMeta__min">15m</span>
-                    <span class="rangeMeta__max">360m</span>
-                  </div>
-                </label>
-
-                <label class="field" for="taskDistanceLimit">
-                  <span class="field__label" data-i18n="task_distance_limit_label">
-                    Distance limit
-                  </span>
-                  <input
-                    class="range"
-                    type="range"
-                    id="taskDistanceLimit"
-                    min="50"
-                    max="5000"
-                    step="50"
-                    value="800"
-                  />
-                  <div class="rangeMeta" aria-live="polite">
-                    <span class="rangeMeta__value" id="taskDistanceLimitValue">800m</span>
-                    <span class="rangeMeta__min">50m</span>
-                    <span class="rangeMeta__max">5000m</span>
-                  </div>
-                </label>
+            <details class="drop" id="dropTasksList" open>
+              <summary class="drop__summary">
+                <span class="drop__label" data-i18n="drop_task_list">Tasks</span>
+                <span class="drop__count" id="taskListCount">0</span>
+              </summary>
+              <div class="drop__body">
+                <ul class="taskList" id="taskList" aria-label="Tasks"></ul>
               </div>
-
-              <div class="taskForm__actions">
-                <button class="btn btn--primary" type="submit" id="taskPost">
-                  <span data-i18n="task_post">Post task</span>
-                </button>
-              </div>
-            </form>
-
-            <ul class="taskList" id="taskList" aria-label="Tasks"></ul>
+            </details>
           </div>
 
           <div class="marketTab" id="tabMarket" role="tabpanel" aria-labelledby="marketTabMarket" hidden>
@@ -480,118 +495,133 @@
               <div class="pill pill--muted" id="marketPill" data-i18n="market_pill">LOCAL</div>
             </div>
 
-            <form class="marketForm" id="marketForm" autocomplete="off">
-              <div class="marketForm__row">
-                <div class="seg" id="marketKind" role="radiogroup" aria-label="Market kind">
-                  <button class="seg__btn" type="button" data-kind="product" aria-selected="true">
-                    <span data-i18n="market_kind_product">Product</span>
-                  </button>
-                  <button class="seg__btn" type="button" data-kind="service" aria-selected="false">
-                    <span data-i18n="market_kind_service">Service</span>
-                  </button>
-                </div>
-              </div>
+            <details class="drop" id="dropMarketPost">
+              <summary class="drop__summary">
+                <span class="drop__label" data-i18n="drop_post_market">Post product/service</span>
+              </summary>
+              <div class="drop__body">
+                <form class="marketForm" id="marketForm" autocomplete="off">
+                  <div class="marketForm__row">
+                    <div class="seg" id="marketKind" role="radiogroup" aria-label="Market kind">
+                      <button class="seg__btn" type="button" data-kind="product" aria-selected="true">
+                        <span data-i18n="market_kind_product">Product</span>
+                      </button>
+                      <button class="seg__btn" type="button" data-kind="service" aria-selected="false">
+                        <span data-i18n="market_kind_service">Service</span>
+                      </button>
+                    </div>
+                  </div>
 
-              <div class="marketForm__row">
-                <label class="field">
-                  <span class="field__label" data-i18n="market_label">Post</span>
-                  <input
-                    class="input"
-                    id="marketText"
-                    name="market"
-                    placeholder="Sell a bike, offer tutoring…"
-                    data-i18n-placeholder="market_placeholder"
-                    minlength="2"
-                    maxlength="72"
-                    required
-                  />
-                </label>
-                <label class="field">
-                  <span class="field__label" data-i18n="market_price_label">Price (USD)</span>
-                  <input
-                    class="input"
-                    id="marketPrice"
-                    name="price"
-                    type="number"
-                    inputmode="decimal"
-                    min="0"
-                    max="99999"
-                    step="1"
-                    value="25"
-                    required
-                  />
-                </label>
-              </div>
+                  <div class="marketForm__row">
+                    <label class="field">
+                      <span class="field__label" data-i18n="market_label">Post</span>
+                      <input
+                        class="input"
+                        id="marketText"
+                        name="market"
+                        placeholder="Sell a bike, offer tutoring…"
+                        data-i18n-placeholder="market_placeholder"
+                        minlength="2"
+                        maxlength="72"
+                        required
+                      />
+                    </label>
+                    <label class="field">
+                      <span class="field__label" data-i18n="market_price_label">Price (USD)</span>
+                      <input
+                        class="input"
+                        id="marketPrice"
+                        name="price"
+                        type="number"
+                        inputmode="decimal"
+                        min="0"
+                        max="99999"
+                        step="1"
+                        value="25"
+                        required
+                      />
+                    </label>
+                  </div>
 
-              <div class="marketForm__row marketForm__row--pick">
-                <div class="taskPick taskPick--single">
-                  <div class="taskPick__actions">
-                    <button class="btn btn--ghost" type="button" id="marketPickLocation">
-                      <span data-i18n="market_pick_location">Pick location</span>
+                  <div class="marketForm__row marketForm__row--pick">
+                    <div class="taskPick taskPick--single">
+                      <div class="taskPick__actions">
+                        <button class="btn btn--ghost" type="button" id="marketPickLocation">
+                          <span data-i18n="market_pick_location">Pick location</span>
+                        </button>
+                        <button class="btn btn--ghost" type="button" id="marketUseMyLocation">
+                          <span data-i18n="market_use_my_area">Use my area</span>
+                        </button>
+                        <button class="btn btn--ghost" type="button" id="marketClearLocation">
+                          <span data-i18n="market_clear_location">Clear</span>
+                        </button>
+                      </div>
+                      <div class="taskPick__meta" id="marketLocMeta" data-i18n="market_loc_unset">
+                        Location: not set
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="marketForm__row marketForm__row--ranges">
+                    <label class="field" for="marketTimeLimit">
+                      <span class="field__label" data-i18n="market_time_limit_label">
+                        Time limit
+                      </span>
+                      <input
+                        class="range"
+                        type="range"
+                        id="marketTimeLimit"
+                        min="15"
+                        max="360"
+                        step="15"
+                        value="180"
+                      />
+                      <div class="rangeMeta" aria-live="polite">
+                        <span class="rangeMeta__value" id="marketTimeLimitValue">3h</span>
+                        <span class="rangeMeta__min">15m</span>
+                        <span class="rangeMeta__max">360m</span>
+                      </div>
+                    </label>
+
+                    <label class="field" for="marketDistanceLimit">
+                      <span class="field__label" data-i18n="market_distance_limit_label">
+                        Distance limit
+                      </span>
+                      <input
+                        class="range"
+                        type="range"
+                        id="marketDistanceLimit"
+                        min="50"
+                        max="5000"
+                        step="50"
+                        value="1200"
+                      />
+                      <div class="rangeMeta" aria-live="polite">
+                        <span class="rangeMeta__value" id="marketDistanceLimitValue">1200m</span>
+                        <span class="rangeMeta__min">50m</span>
+                        <span class="rangeMeta__max">5000m</span>
+                      </div>
+                    </label>
+                  </div>
+
+                  <div class="taskForm__actions">
+                    <button class="btn btn--primary" type="submit" id="marketPost">
+                      <span data-i18n="market_post">Post</span>
                     </button>
-                    <button class="btn btn--ghost" type="button" id="marketUseMyLocation">
-                      <span data-i18n="market_use_my_area">Use my area</span>
-                    </button>
-                    <button class="btn btn--ghost" type="button" id="marketClearLocation">
-                      <span data-i18n="market_clear_location">Clear</span>
-                    </button>
                   </div>
-                  <div class="taskPick__meta" id="marketLocMeta" data-i18n="market_loc_unset">
-                    Location: not set
-                  </div>
-                </div>
+                </form>
               </div>
+            </details>
 
-              <div class="marketForm__row marketForm__row--ranges">
-                <label class="field" for="marketTimeLimit">
-                  <span class="field__label" data-i18n="market_time_limit_label">
-                    Time limit
-                  </span>
-                  <input
-                    class="range"
-                    type="range"
-                    id="marketTimeLimit"
-                    min="15"
-                    max="360"
-                    step="15"
-                    value="180"
-                  />
-                  <div class="rangeMeta" aria-live="polite">
-                    <span class="rangeMeta__value" id="marketTimeLimitValue">3h</span>
-                    <span class="rangeMeta__min">15m</span>
-                    <span class="rangeMeta__max">360m</span>
-                  </div>
-                </label>
-
-                <label class="field" for="marketDistanceLimit">
-                  <span class="field__label" data-i18n="market_distance_limit_label">
-                    Distance limit
-                  </span>
-                  <input
-                    class="range"
-                    type="range"
-                    id="marketDistanceLimit"
-                    min="50"
-                    max="5000"
-                    step="50"
-                    value="1200"
-                  />
-                  <div class="rangeMeta" aria-live="polite">
-                    <span class="rangeMeta__value" id="marketDistanceLimitValue">1200m</span>
-                    <span class="rangeMeta__min">50m</span>
-                    <span class="rangeMeta__max">5000m</span>
-                  </div>
-                </label>
+            <details class="drop" id="dropMarketList" open>
+              <summary class="drop__summary">
+                <span class="drop__label" data-i18n="drop_market_list">Market posts</span>
+                <span class="drop__count" id="marketListCount">0</span>
+              </summary>
+              <div class="drop__body">
+                <ul class="marketList" id="marketList" aria-label="Market posts"></ul>
               </div>
-
-              <div class="taskForm__actions">
-                <button class="btn btn--primary" type="submit" id="marketPost">
-                  <span data-i18n="market_post">Post</span>
-                </button>
-              </div>
-            </form>
-
-            <ul class="marketList" id="marketList" aria-label="Market posts"></ul>
+            </details>
           </div>
 
           <div class="marketTab" id="tabEvents" role="tabpanel" aria-labelledby="marketTabEvents" hidden>
@@ -600,92 +630,107 @@
               <div class="pill pill--muted" id="eventsPill" data-i18n="events_pill">AURAS</div>
             </div>
 
-            <form class="eventsForm" id="eventsForm" autocomplete="off">
-              <div class="eventsForm__row">
-                <label class="field">
-                  <span class="field__label" data-i18n="events_label">Activity</span>
-                  <input
-                    class="input"
-                    id="eventsText"
-                    name="event"
-                    placeholder="Group coffee, sketch walk…"
-                    data-i18n-placeholder="events_placeholder"
-                    minlength="2"
-                    maxlength="60"
-                    required
-                  />
-                </label>
-              </div>
+            <details class="drop" id="dropEventsPost">
+              <summary class="drop__summary">
+                <span class="drop__label" data-i18n="drop_post_events">Schedule activity</span>
+              </summary>
+              <div class="drop__body">
+                <form class="eventsForm" id="eventsForm" autocomplete="off">
+                  <div class="eventsForm__row">
+                    <label class="field">
+                      <span class="field__label" data-i18n="events_label">Activity</span>
+                      <input
+                        class="input"
+                        id="eventsText"
+                        name="event"
+                        placeholder="Group coffee, sketch walk…"
+                        data-i18n-placeholder="events_placeholder"
+                        minlength="2"
+                        maxlength="60"
+                        required
+                      />
+                    </label>
+                  </div>
 
-              <div class="eventsForm__row eventsForm__row--pick">
-                <div class="taskPick taskPick--single">
-                  <div class="taskPick__actions">
-                    <button class="btn btn--ghost" type="button" id="eventsPickLocation">
-                      <span data-i18n="events_pick_location">Pick location</span>
+                  <div class="eventsForm__row eventsForm__row--pick">
+                    <div class="taskPick taskPick--single">
+                      <div class="taskPick__actions">
+                        <button class="btn btn--ghost" type="button" id="eventsPickLocation">
+                          <span data-i18n="events_pick_location">Pick location</span>
+                        </button>
+                        <button class="btn btn--ghost" type="button" id="eventsUseMyLocation">
+                          <span data-i18n="events_use_my_area">Use my area</span>
+                        </button>
+                        <button class="btn btn--ghost" type="button" id="eventsClearLocation">
+                          <span data-i18n="events_clear_location">Clear</span>
+                        </button>
+                      </div>
+                      <div class="taskPick__meta" id="eventsLocMeta" data-i18n="events_loc_unset">
+                        Location: not set
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="eventsForm__row eventsForm__row--ranges">
+                    <label class="field" for="eventsStartsIn">
+                      <span class="field__label" data-i18n="events_starts_in_label">
+                        Starts in
+                      </span>
+                      <input
+                        class="range"
+                        type="range"
+                        id="eventsStartsIn"
+                        min="0"
+                        max="360"
+                        step="15"
+                        value="30"
+                      />
+                      <div class="rangeMeta" aria-live="polite">
+                        <span class="rangeMeta__value" id="eventsStartsInValue">30m</span>
+                        <span class="rangeMeta__min">0m</span>
+                        <span class="rangeMeta__max">360m</span>
+                      </div>
+                    </label>
+
+                    <label class="field" for="eventsDuration">
+                      <span class="field__label" data-i18n="events_duration_label">
+                        Duration
+                      </span>
+                      <input
+                        class="range"
+                        type="range"
+                        id="eventsDuration"
+                        min="15"
+                        max="180"
+                        step="15"
+                        value="60"
+                      />
+                      <div class="rangeMeta" aria-live="polite">
+                        <span class="rangeMeta__value" id="eventsDurationValue">60m</span>
+                        <span class="rangeMeta__min">15m</span>
+                        <span class="rangeMeta__max">180m</span>
+                      </div>
+                    </label>
+                  </div>
+
+                  <div class="taskForm__actions">
+                    <button class="btn btn--primary" type="submit" id="eventsPost">
+                      <span data-i18n="events_post">Schedule</span>
                     </button>
-                    <button class="btn btn--ghost" type="button" id="eventsUseMyLocation">
-                      <span data-i18n="events_use_my_area">Use my area</span>
-                    </button>
-                    <button class="btn btn--ghost" type="button" id="eventsClearLocation">
-                      <span data-i18n="events_clear_location">Clear</span>
-                    </button>
                   </div>
-                  <div class="taskPick__meta" id="eventsLocMeta" data-i18n="events_loc_unset">
-                    Location: not set
-                  </div>
-                </div>
+                </form>
               </div>
+            </details>
 
-              <div class="eventsForm__row eventsForm__row--ranges">
-                <label class="field" for="eventsStartsIn">
-                  <span class="field__label" data-i18n="events_starts_in_label">
-                    Starts in
-                  </span>
-                  <input
-                    class="range"
-                    type="range"
-                    id="eventsStartsIn"
-                    min="0"
-                    max="360"
-                    step="15"
-                    value="30"
-                  />
-                  <div class="rangeMeta" aria-live="polite">
-                    <span class="rangeMeta__value" id="eventsStartsInValue">30m</span>
-                    <span class="rangeMeta__min">0m</span>
-                    <span class="rangeMeta__max">360m</span>
-                  </div>
-                </label>
-
-                <label class="field" for="eventsDuration">
-                  <span class="field__label" data-i18n="events_duration_label">
-                    Duration
-                  </span>
-                  <input
-                    class="range"
-                    type="range"
-                    id="eventsDuration"
-                    min="15"
-                    max="180"
-                    step="15"
-                    value="60"
-                  />
-                  <div class="rangeMeta" aria-live="polite">
-                    <span class="rangeMeta__value" id="eventsDurationValue">60m</span>
-                    <span class="rangeMeta__min">15m</span>
-                    <span class="rangeMeta__max">180m</span>
-                  </div>
-                </label>
+            <details class="drop" id="dropEventsList" open>
+              <summary class="drop__summary">
+                <span class="drop__label" data-i18n="drop_events_list">Scheduled activities</span>
+                <span class="drop__count" id="eventsListCount">0</span>
+              </summary>
+              <div class="drop__body">
+                <ul class="eventsList" id="eventsList" aria-label="Scheduled activities"></ul>
               </div>
-
-              <div class="taskForm__actions">
-                <button class="btn btn--primary" type="submit" id="eventsPost">
-                  <span data-i18n="events_post">Schedule</span>
-                </button>
-              </div>
-            </form>
-
-            <ul class="eventsList" id="eventsList" aria-label="Scheduled activities"></ul>
+            </details>
           </div>
 
         </section>

@@ -58,6 +58,9 @@
     tabTasks: $("tabTasks"),
     tabMarket: $("tabMarket"),
     tabEvents: $("tabEvents"),
+    dropTasksPost: $("dropTasksPost"),
+    dropTasksList: $("dropTasksList"),
+    taskListCount: $("taskListCount"),
     taskForm: $("taskForm"),
     taskText: $("taskText"),
     taskReward: $("taskReward"),
@@ -74,6 +77,9 @@
     taskList: $("taskList"),
 
     marketPill: $("marketPill"),
+    dropMarketPost: $("dropMarketPost"),
+    dropMarketList: $("dropMarketList"),
+    marketListCount: $("marketListCount"),
     marketForm: $("marketForm"),
     marketKind: $("marketKind"),
     marketText: $("marketText"),
@@ -89,6 +95,9 @@
     marketList: $("marketList"),
 
     eventsPill: $("eventsPill"),
+    dropEventsPost: $("dropEventsPost"),
+    dropEventsList: $("dropEventsList"),
+    eventsListCount: $("eventsListCount"),
     eventsForm: $("eventsForm"),
     eventsText: $("eventsText"),
     eventsPickLocation: $("eventsPickLocation"),
@@ -296,6 +305,12 @@
       tab_tasks: "Tasks",
       tab_market: "Market",
       tab_events: "Scheduled",
+      drop_post_task: "Post task",
+      drop_task_list: "Tasks",
+      drop_post_market: "Post product/service",
+      drop_market_list: "Market posts",
+      drop_post_events: "Schedule activity",
+      drop_events_list: "Scheduled activities",
 
       tasks_title: "Tasks",
       task_label: "Task",
@@ -512,6 +527,12 @@
       tab_tasks: "任務",
       tab_market: "市集",
       tab_events: "排程",
+      drop_post_task: "發布任務",
+      drop_task_list: "任務列表",
+      drop_post_market: "發布商品/服務",
+      drop_market_list: "市集列表",
+      drop_post_events: "排程活動",
+      drop_events_list: "排程列表",
 
       tasks_title: "任務",
       task_label: "任務",
@@ -728,6 +749,12 @@
       tab_tasks: "タスク",
       tab_market: "マーケット",
       tab_events: "予定",
+      drop_post_task: "タスクを投稿",
+      drop_task_list: "タスク一覧",
+      drop_post_market: "商品/サービスを投稿",
+      drop_market_list: "マーケット一覧",
+      drop_post_events: "予定を作成",
+      drop_events_list: "予定一覧",
 
       tasks_title: "タスク",
       task_label: "タスク",
@@ -885,7 +912,15 @@
   const defaultState = () => ({
     version: 1,
     ui: {
-      marketTab: "tasks"
+      marketTab: "tasks",
+      drops: {
+        tasksPost: false,
+        tasksList: true,
+        marketPost: false,
+        marketList: true,
+        eventsPost: false,
+        eventsList: true
+      }
     },
     activity: {
       active: null,
@@ -2278,6 +2313,30 @@
     return MARKET_TABS.includes(v) ? v : "tasks";
   };
 
+  const ensureUiPrefs = () => {
+    const base = defaultState().ui;
+    if (!state.ui || typeof state.ui !== "object") state.ui = { ...base };
+    if (!state.ui.drops || typeof state.ui.drops !== "object") state.ui.drops = { ...base.drops };
+    state.ui.drops = { ...base.drops, ...state.ui.drops };
+  };
+
+  const setDetailsOpen = (el, open) => {
+    if (!el) return;
+    const want = Boolean(open);
+    if (el.open === want) return;
+    el.open = want;
+  };
+
+  const applyDropStates = () => {
+    ensureUiPrefs();
+    setDetailsOpen(els.dropTasksPost, state.ui.drops.tasksPost);
+    setDetailsOpen(els.dropTasksList, state.ui.drops.tasksList);
+    setDetailsOpen(els.dropMarketPost, state.ui.drops.marketPost);
+    setDetailsOpen(els.dropMarketList, state.ui.drops.marketList);
+    setDetailsOpen(els.dropEventsPost, state.ui.drops.eventsPost);
+    setDetailsOpen(els.dropEventsList, state.ui.drops.eventsList);
+  };
+
   const setMarketTabSelected = (tab) => {
     const next = normalizeMarketTab(tab);
     if (els.marketTabs) {
@@ -2294,7 +2353,7 @@
   };
 
   const renderMarketplaceTabs = () => {
-    if (!state.ui) state.ui = defaultState().ui;
+    ensureUiPrefs();
     state.ui.marketTab = normalizeMarketTab(state.ui.marketTab);
     setMarketTabSelected(state.ui.marketTab);
   };
@@ -3181,6 +3240,10 @@
   const renderTasks = () => {
     renderTaskForm();
     renderTaskList();
+    if (els.taskListCount) {
+      const n = state.tasks && Array.isArray(state.tasks.list) ? state.tasks.list.length : 0;
+      els.taskListCount.textContent = String(n);
+    }
     syncTasksOnMap();
     renderTaskRoom();
   };
@@ -4150,6 +4213,10 @@
   const renderMarket = () => {
     renderMarketForm();
     renderMarketList();
+    if (els.marketListCount) {
+      const n = state.market && Array.isArray(state.market.list) ? state.market.list.length : 0;
+      els.marketListCount.textContent = String(n);
+    }
     syncMarketOnMap();
   };
 
@@ -4454,6 +4521,10 @@
   const renderEvents = () => {
     renderEventsForm();
     renderEventsList();
+    if (els.eventsListCount) {
+      const n = state.events && Array.isArray(state.events.list) ? state.events.list.length : 0;
+      els.eventsListCount.textContent = String(n);
+    }
     syncEventsOnMap();
   };
 
@@ -4550,6 +4621,7 @@
   const render = () => {
     renderActivity(true);
     renderMarketplaceTabs();
+    applyDropStates();
     renderTasks();
     renderMarket();
     renderEvents();
@@ -6730,6 +6802,28 @@
       e.preventDefault();
     });
   }
+
+  const bindDropToggle = (el, key) => {
+    if (!el) return;
+    el.addEventListener("toggle", () => {
+      ensureUiPrefs();
+      const k = String(key || "");
+      if (!k) return;
+      const next = Boolean(el.open);
+      if (Boolean(state.ui.drops[k]) === next) return;
+      state.ui.drops[k] = next;
+      saveState();
+    });
+  };
+
+  // Apply persisted dropdown state before binding toggle listeners.
+  applyDropStates();
+  bindDropToggle(els.dropTasksPost, "tasksPost");
+  bindDropToggle(els.dropTasksList, "tasksList");
+  bindDropToggle(els.dropMarketPost, "marketPost");
+  bindDropToggle(els.dropMarketList, "marketList");
+  bindDropToggle(els.dropEventsPost, "eventsPost");
+  bindDropToggle(els.dropEventsList, "eventsList");
 
   if (els.taskPickStart) els.taskPickStart.addEventListener("click", pickTaskStart);
   if (els.taskUseMyStart) els.taskUseMyStart.addEventListener("click", useMyAreaForTaskStart);
