@@ -51,19 +51,59 @@
     visAreaNote: $("visAreaNote"),
 
     taskFeePill: $("taskFeePill"),
+    marketTabs: $("marketTabs"),
+    tabTasks: $("tabTasks"),
+    tabMarket: $("tabMarket"),
+    tabEvents: $("tabEvents"),
     taskForm: $("taskForm"),
     taskText: $("taskText"),
     taskReward: $("taskReward"),
+    taskPickStart: $("taskPickStart"),
+    taskUseMyStart: $("taskUseMyStart"),
+    taskPickDest: $("taskPickDest"),
+    taskClearRoute: $("taskClearRoute"),
+    taskStartMeta: $("taskStartMeta"),
+    taskDestMeta: $("taskDestMeta"),
     taskTimeLimit: $("taskTimeLimit"),
     taskTimeLimitValue: $("taskTimeLimitValue"),
     taskDistanceLimit: $("taskDistanceLimit"),
     taskDistanceLimitValue: $("taskDistanceLimitValue"),
     taskList: $("taskList"),
 
+    marketPill: $("marketPill"),
+    marketForm: $("marketForm"),
+    marketKind: $("marketKind"),
+    marketText: $("marketText"),
+    marketPrice: $("marketPrice"),
+    marketPickLocation: $("marketPickLocation"),
+    marketUseMyLocation: $("marketUseMyLocation"),
+    marketClearLocation: $("marketClearLocation"),
+    marketLocMeta: $("marketLocMeta"),
+    marketTimeLimit: $("marketTimeLimit"),
+    marketTimeLimitValue: $("marketTimeLimitValue"),
+    marketDistanceLimit: $("marketDistanceLimit"),
+    marketDistanceLimitValue: $("marketDistanceLimitValue"),
+    marketList: $("marketList"),
+
+    eventsPill: $("eventsPill"),
+    eventsForm: $("eventsForm"),
+    eventsText: $("eventsText"),
+    eventsPickLocation: $("eventsPickLocation"),
+    eventsUseMyLocation: $("eventsUseMyLocation"),
+    eventsClearLocation: $("eventsClearLocation"),
+    eventsLocMeta: $("eventsLocMeta"),
+    eventsStartsIn: $("eventsStartsIn"),
+    eventsStartsInValue: $("eventsStartsInValue"),
+    eventsDuration: $("eventsDuration"),
+    eventsDurationValue: $("eventsDurationValue"),
+    eventsList: $("eventsList"),
+
     roomModal: $("roomModal"),
     roomClose: $("roomClose"),
     roomTitle: $("roomTitle"),
     roomMeta: $("roomMeta"),
+    roomControls: $("roomControls"),
+    roomVisibility: $("roomVisibility"),
     roomBody: $("roomBody"),
     roomForm: $("roomForm"),
     roomMessage: $("roomMessage"),
@@ -71,6 +111,14 @@
     roomPhotoBtn: $("roomPhotoBtn"),
     roomLocBtn: $("roomLocBtn"),
     roomSend: $("roomSend"),
+
+    reviewModal: $("reviewModal"),
+    reviewClose: $("reviewClose"),
+    reviewMeta: $("reviewMeta"),
+    reviewForm: $("reviewForm"),
+    reviewStars: $("reviewStars"),
+    reviewNote: $("reviewNote"),
+    reviewSubmit: $("reviewSubmit"),
   };
 
   const nowMs = () => Date.now();
@@ -235,12 +283,26 @@
       sim_doing_transit: "Transit",
       sim_doing_resting: "Resting",
 
+      marketplace_title: "Marketplace",
+      marketplace_sub: "Tasks, market posts, and scheduled activities.",
+      tab_tasks: "Tasks",
+      tab_market: "Market",
+      tab_events: "Scheduled",
+
       tasks_title: "Tasks",
       task_label: "Task",
       task_placeholder: "Pick up coffee, deliver package…",
       task_reward_label: "Reward (USD)",
       task_time_limit_label: "Time limit",
       task_distance_limit_label: "Distance limit",
+      task_pick_start: "Pick start",
+      task_pick_dest: "Pick destination",
+      task_use_my_area: "Use my area",
+      task_clear_route: "Clear",
+      task_start_unset: "Start: not set",
+      task_dest_unset: "Destination: not set",
+      task_start_set: "Start: set",
+      task_dest_set: "Destination: set",
       task_time_left: "{t} left",
       task_post: "Post task",
       task_list_empty: "No tasks yet.",
@@ -269,6 +331,67 @@
       toast_task_not_verified: "Verified worker required.",
       toast_task_need_gps: "Enable GPS to accept tasks.",
       toast_task_too_far: "Too far for this task.",
+      toast_task_pick_route: "Pick start and destination first.",
+      toast_task_pick_on_map: "Click the map to pick a location.",
+      toast_task_worker_unavailable: "Worker location unavailable. Zoom in or wait for street activity.",
+      toast_task_poster_unavailable: "Task location unavailable. Tap My location first.",
+
+      market_title: "Market",
+      market_pill: "LOCAL",
+      market_kind_product: "Product",
+      market_kind_service: "Service",
+      market_label: "Post",
+      market_placeholder: "Sell a bike, offer tutoring…",
+      market_price_label: "Price (USD)",
+      market_pick_location: "Pick location",
+      market_use_my_area: "Use my area",
+      market_clear_location: "Clear",
+      market_loc_unset: "Location: not set",
+      market_loc_set: "Location: set",
+      market_time_limit_label: "Time limit",
+      market_distance_limit_label: "Distance limit",
+      market_post: "Post",
+      market_list_empty: "No market posts yet.",
+      toast_market_posted: "Market post published.",
+      toast_market_need_location: "Pick a location first.",
+
+      events_title: "Scheduled",
+      events_pill: "AURAS",
+      events_label: "Activity",
+      events_placeholder: "Group coffee, sketch walk…",
+      events_pick_location: "Pick location",
+      events_use_my_area: "Use my area",
+      events_clear_location: "Clear",
+      events_loc_unset: "Location: not set",
+      events_loc_set: "Location: set",
+      events_starts_in_label: "Starts in",
+      events_duration_label: "Duration",
+      events_post: "Schedule",
+      events_list_empty: "No scheduled activities yet.",
+      events_join: "Book",
+      events_leave: "Leave",
+      events_cancel: "Cancel",
+      events_state_scheduled: "Scheduled",
+      events_state_live: "Live",
+      events_state_ended: "Ended",
+      events_state_cancelled: "Cancelled",
+      toast_events_posted: "Scheduled.",
+      toast_events_need_location: "Pick a location first.",
+      toast_events_joined: "Booked.",
+      toast_events_left: "Left.",
+
+      review_title: "Review",
+      review_note_label: "Note",
+      review_submit: "Submit",
+      review_open: "Review",
+      toast_review_pick_rating: "Select a rating.",
+      toast_review_submitted: "Review submitted.",
+      toast_review_already: "Already reviewed.",
+
+      room_visibility_label: "Room visibility",
+      room_vis_participants: "Participants",
+      room_vis_public: "Public",
+
       room_title: "Task room",
       room_close: "Close",
       room_message_placeholder: "Message…",
@@ -371,12 +494,26 @@
       sim_doing_transit: "移動中",
       sim_doing_resting: "休息中",
 
+      marketplace_title: "市集",
+      marketplace_sub: "任務、商品服務、以及排程活動。",
+      tab_tasks: "任務",
+      tab_market: "市集",
+      tab_events: "排程",
+
       tasks_title: "任務",
       task_label: "任務",
       task_placeholder: "取咖啡、送包裹…",
       task_reward_label: "報酬（美元）",
       task_time_limit_label: "時限",
       task_distance_limit_label: "距離限制",
+      task_pick_start: "選起點",
+      task_pick_dest: "選終點",
+      task_use_my_area: "用我的範圍",
+      task_clear_route: "清除",
+      task_start_unset: "起點：尚未設定",
+      task_dest_unset: "終點：尚未設定",
+      task_start_set: "起點：已設定",
+      task_dest_set: "終點：已設定",
       task_time_left: "剩餘 {t}",
       task_post: "發布任務",
       task_list_empty: "目前沒有任務。",
@@ -405,6 +542,67 @@
       toast_task_not_verified: "需要已驗證的接單者。",
       toast_task_need_gps: "請開啟 GPS 才能接單。",
       toast_task_too_far: "距離超過此任務限制。",
+      toast_task_pick_route: "請先設定起點與終點。",
+      toast_task_pick_on_map: "請在地圖點選位置。",
+      toast_task_worker_unavailable: "無法取得接單者位置，請縮放到街道活動或稍後再試。",
+      toast_task_poster_unavailable: "無法取得任務位置，請先按「我的位置」。",
+
+      market_title: "市集",
+      market_pill: "本機",
+      market_kind_product: "商品",
+      market_kind_service: "服務",
+      market_label: "發布",
+      market_placeholder: "賣腳踏車、提供家教…",
+      market_price_label: "價格（美元）",
+      market_pick_location: "選位置",
+      market_use_my_area: "用我的範圍",
+      market_clear_location: "清除",
+      market_loc_unset: "位置：尚未設定",
+      market_loc_set: "位置：已設定",
+      market_time_limit_label: "時限",
+      market_distance_limit_label: "距離限制",
+      market_post: "發布",
+      market_list_empty: "目前沒有市集貼文。",
+      toast_market_posted: "市集貼文已發布。",
+      toast_market_need_location: "請先選擇位置。",
+
+      events_title: "排程活動",
+      events_pill: "氣場",
+      events_label: "活動",
+      events_placeholder: "揪咖啡、素描散步…",
+      events_pick_location: "選位置",
+      events_use_my_area: "用我的範圍",
+      events_clear_location: "清除",
+      events_loc_unset: "位置：尚未設定",
+      events_loc_set: "位置：已設定",
+      events_starts_in_label: "多久後開始",
+      events_duration_label: "持續時間",
+      events_post: "排程",
+      events_list_empty: "目前沒有排程活動。",
+      events_join: "預約",
+      events_leave: "退出",
+      events_cancel: "取消",
+      events_state_scheduled: "排程",
+      events_state_live: "進行中",
+      events_state_ended: "已結束",
+      events_state_cancelled: "已取消",
+      toast_events_posted: "已排程。",
+      toast_events_need_location: "請先選擇位置。",
+      toast_events_joined: "已預約。",
+      toast_events_left: "已退出。",
+
+      review_title: "評價",
+      review_note_label: "備註",
+      review_submit: "送出",
+      review_open: "評價",
+      toast_review_pick_rating: "請選擇星等。",
+      toast_review_submitted: "評價已送出。",
+      toast_review_already: "已評價過。",
+
+      room_visibility_label: "房間可見性",
+      room_vis_participants: "僅參與者",
+      room_vis_public: "公開",
+
       room_title: "任務房間",
       room_close: "關閉",
       room_message_placeholder: "輸入訊息…",
@@ -507,12 +705,26 @@
       sim_doing_transit: "移動中",
       sim_doing_resting: "休憩中",
 
+      marketplace_title: "マーケット",
+      marketplace_sub: "タスク、投稿、スケジュール。",
+      tab_tasks: "タスク",
+      tab_market: "マーケット",
+      tab_events: "予定",
+
       tasks_title: "タスク",
       task_label: "タスク",
       task_placeholder: "コーヒー受取、荷物配達…",
       task_reward_label: "報酬（USD）",
       task_time_limit_label: "制限時間",
       task_distance_limit_label: "距離制限",
+      task_pick_start: "開始地点",
+      task_pick_dest: "目的地",
+      task_use_my_area: "自分の範囲",
+      task_clear_route: "クリア",
+      task_start_unset: "開始: 未設定",
+      task_dest_unset: "目的地: 未設定",
+      task_start_set: "開始: 設定済み",
+      task_dest_set: "目的地: 設定済み",
       task_time_left: "残り {t}",
       task_post: "投稿",
       task_list_empty: "タスクはまだありません。",
@@ -541,6 +753,67 @@
       toast_task_not_verified: "認証済みユーザーが必要です。",
       toast_task_need_gps: "GPS を有効にしてください。",
       toast_task_too_far: "距離制限を超えています。",
+      toast_task_pick_route: "開始と目的地を設定してください。",
+      toast_task_pick_on_map: "地図をクリックして選択してください。",
+      toast_task_worker_unavailable: "受諾者の位置を取得できません。ズームインするか、少し待ってください。",
+      toast_task_poster_unavailable: "タスク位置を取得できません。先に「現在地」を押してください。",
+
+      market_title: "マーケット",
+      market_pill: "ローカル",
+      market_kind_product: "商品",
+      market_kind_service: "サービス",
+      market_label: "投稿",
+      market_placeholder: "自転車を売る、家庭教師…",
+      market_price_label: "価格（USD）",
+      market_pick_location: "場所を選ぶ",
+      market_use_my_area: "自分の範囲",
+      market_clear_location: "クリア",
+      market_loc_unset: "場所: 未設定",
+      market_loc_set: "場所: 設定済み",
+      market_time_limit_label: "制限時間",
+      market_distance_limit_label: "距離制限",
+      market_post: "投稿",
+      market_list_empty: "投稿はまだありません。",
+      toast_market_posted: "投稿しました。",
+      toast_market_need_location: "場所を選んでください。",
+
+      events_title: "予定",
+      events_pill: "オーラ",
+      events_label: "アクティビティ",
+      events_placeholder: "コーヒー会、スケッチ散歩…",
+      events_pick_location: "場所を選ぶ",
+      events_use_my_area: "自分の範囲",
+      events_clear_location: "クリア",
+      events_loc_unset: "場所: 未設定",
+      events_loc_set: "場所: 設定済み",
+      events_starts_in_label: "開始まで",
+      events_duration_label: "時間",
+      events_post: "予約",
+      events_list_empty: "予定はまだありません。",
+      events_join: "参加",
+      events_leave: "退出",
+      events_cancel: "キャンセル",
+      events_state_scheduled: "予定",
+      events_state_live: "開催中",
+      events_state_ended: "終了",
+      events_state_cancelled: "キャンセル",
+      toast_events_posted: "予定を追加しました。",
+      toast_events_need_location: "場所を選んでください。",
+      toast_events_joined: "参加しました。",
+      toast_events_left: "退出しました。",
+
+      review_title: "レビュー",
+      review_note_label: "メモ",
+      review_submit: "送信",
+      review_open: "レビュー",
+      toast_review_pick_rating: "評価を選択してください。",
+      toast_review_submitted: "レビューを送信しました。",
+      toast_review_already: "すでに評価済みです。",
+
+      room_visibility_label: "ルーム公開範囲",
+      room_vis_participants: "参加者のみ",
+      room_vis_public: "公開",
+
       room_title: "タスクルーム",
       room_close: "閉じる",
       room_message_placeholder: "メッセージ…",
@@ -584,12 +857,18 @@
 
     // Update any draft helpers that include translated labels.
     if (typeof renderActivityAssist === "function") renderActivityAssist();
+    if (typeof renderMarketplaceTabs === "function") renderMarketplaceTabs();
     if (typeof renderTasks === "function") renderTasks();
+    if (typeof renderMarket === "function") renderMarket();
+    if (typeof renderEvents === "function") renderEvents();
     if (typeof renderTaskRoom === "function") renderTaskRoom();
   };
 
   const defaultState = () => ({
     version: 1,
+    ui: {
+      marketTab: "tasks"
+    },
     activity: {
       active: null,
       log: [],
@@ -609,7 +888,28 @@
       rooms: {},
       prefs: {
         feeBps: 1000,
-        userVerified: true
+        userVerified: true,
+        routeDraft: {
+          from: null,
+          to: null,
+          gridM: 0
+        }
+      },
+      reputation: {}
+    },
+    market: {
+      list: [],
+      prefs: {
+        kind: "product",
+        draftLoc: null,
+        draftGridM: 0
+      }
+    },
+    events: {
+      list: [],
+      prefs: {
+        draftLoc: null,
+        draftGridM: 0
       }
     }
   });
@@ -624,6 +924,10 @@
       const merged = {
         ...base,
         ...parsed,
+        ui: {
+          ...base.ui,
+          ...((parsed.ui && typeof parsed.ui === "object") ? parsed.ui : {})
+        },
         activity: {
           ...base.activity,
           ...(parsed.activity || {}),
@@ -638,6 +942,22 @@
           prefs: {
             ...base.tasks.prefs,
             ...((parsed.tasks && parsed.tasks.prefs) || {})
+          }
+        },
+        market: {
+          ...base.market,
+          ...(parsed.market || {}),
+          prefs: {
+            ...base.market.prefs,
+            ...((parsed.market && parsed.market.prefs) || {})
+          }
+        },
+        events: {
+          ...base.events,
+          ...(parsed.events || {}),
+          prefs: {
+            ...base.events.prefs,
+            ...((parsed.events && parsed.events.prefs) || {})
           }
         }
       };
@@ -682,6 +1002,83 @@
       merged.tasks.prefs.feeBps = clampInt(merged.tasks.prefs.feeBps, 0, 5000, 1000);
       merged.tasks.prefs.userVerified = Boolean(merged.tasks.prefs.userVerified);
 
+      // UI prefs.
+      if (!merged.ui || typeof merged.ui !== "object") merged.ui = defaultState().ui;
+      merged.ui.marketTab = ["tasks", "market", "events"].includes(String(merged.ui.marketTab || ""))
+        ? String(merged.ui.marketTab || "")
+        : "tasks";
+
+      // Task draft route (stored as blurred area anchors).
+      {
+        const draft = merged.tasks.prefs.routeDraft;
+        const normPt = (pt) => {
+          if (!pt || typeof pt !== "object") return null;
+          const lat = Number(pt.lat);
+          const lng = Number(pt.lng);
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+          return { lat, lng };
+        };
+        if (!draft || typeof draft !== "object") {
+          merged.tasks.prefs.routeDraft = { from: null, to: null, gridM: 0 };
+        } else {
+          merged.tasks.prefs.routeDraft = {
+            from: normPt(draft.from),
+            to: normPt(draft.to),
+            gridM: clampInt(draft.gridM, 50, 2000, 0)
+          };
+        }
+      }
+
+      // Reputation map from reviews.
+      if (!merged.tasks.reputation || typeof merged.tasks.reputation !== "object") merged.tasks.reputation = {};
+      {
+        const out = {};
+        for (const [kRaw, v] of Object.entries(merged.tasks.reputation || {})) {
+          const k = String(kRaw || "").trim();
+          if (!k) continue;
+          const sum = Number(v && v.sum);
+          const count = Number(v && v.count);
+          if (!Number.isFinite(sum) || !Number.isFinite(count)) continue;
+          out[k] = { sum: Math.max(0, sum), count: clampInt(count, 0, 99999, 0) };
+        }
+        merged.tasks.reputation = out;
+      }
+
+      // Market posts.
+      if (!merged.market || typeof merged.market !== "object") merged.market = defaultState().market;
+      if (!Array.isArray(merged.market.list)) merged.market.list = [];
+      if (!merged.market.prefs || typeof merged.market.prefs !== "object") merged.market.prefs = defaultState().market.prefs;
+      merged.market.prefs.kind = ["product", "service"].includes(String(merged.market.prefs.kind || ""))
+        ? String(merged.market.prefs.kind || "")
+        : "product";
+      merged.market.prefs.draftGridM = clampInt(merged.market.prefs.draftGridM, 50, 2000, 0);
+      {
+        const pt = merged.market.prefs.draftLoc;
+        if (!pt || typeof pt !== "object") merged.market.prefs.draftLoc = null;
+        else {
+          const lat = Number(pt.lat);
+          const lng = Number(pt.lng);
+          merged.market.prefs.draftLoc =
+            Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+        }
+      }
+
+      // Scheduled activities.
+      if (!merged.events || typeof merged.events !== "object") merged.events = defaultState().events;
+      if (!Array.isArray(merged.events.list)) merged.events.list = [];
+      if (!merged.events.prefs || typeof merged.events.prefs !== "object") merged.events.prefs = defaultState().events.prefs;
+      merged.events.prefs.draftGridM = clampInt(merged.events.prefs.draftGridM, 50, 2000, 0);
+      {
+        const pt = merged.events.prefs.draftLoc;
+        if (!pt || typeof pt !== "object") merged.events.prefs.draftLoc = null;
+        else {
+          const lat = Number(pt.lat);
+          const lng = Number(pt.lng);
+          merged.events.prefs.draftLoc =
+            Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+        }
+      }
+
       // Normalize task rooms (messages).
       {
         const roomsIn = merged.tasks.rooms;
@@ -706,7 +1103,13 @@
             }))
             .filter((m) => m.id && m.from && m.from.kind && m.from.id)
             .slice(-200);
-          roomsOut[taskId] = { messages: norm };
+          const visibility = String(room.visibility || "participants");
+          const ownerKey = String(room.ownerKey || "").trim();
+          roomsOut[taskId] = {
+            messages: norm,
+            visibility: visibility === "public" ? "public" : "participants",
+            ownerKey
+          };
         }
         merged.tasks.rooms = roomsOut;
       }
@@ -733,6 +1136,15 @@
           workerVerified: Boolean(x.workerVerified),
           acceptedAt: Number(x.acceptedAt) || 0,
           completedAt: Number(x.completedAt) || 0,
+          review:
+            x.review && typeof x.review === "object"
+              ? {
+                  rating: clampInt(x.review.rating, 0, 5, 0),
+                  note: String(x.review.note || "").slice(0, 240),
+                  by: x.review.by && typeof x.review.by === "object" ? { kind: String(x.review.by.kind || ""), id: String(x.review.by.id || "") } : null,
+                  at: Number(x.review.at) || 0
+                }
+              : null,
           applicants: Array.isArray(x.applicants)
             ? x.applicants
                 .filter((a) => a && typeof a === "object")
@@ -746,6 +1158,10 @@
                   appliedAt: Number(a.appliedAt) || 0,
                   distanceM: Math.max(0, Math.round(Number(a.distanceM) || 0)),
                   etaMin: clampInt(a.etaMin, 1, 999, 10),
+                  anchor:
+                    a.anchor && typeof a.anchor === "object"
+                      ? { lat: Number(a.anchor.lat), lng: Number(a.anchor.lng) }
+                      : null,
                   skills: Array.isArray(a.skills)
                     ? a.skills
                         .map((s) => String(s || "").trim())
@@ -771,6 +1187,52 @@
         .filter((x) => x.id && x.title && x.poster && x.poster.kind && x.poster.id);
 
       merged.tasks.list = merged.tasks.list.slice(0, 50);
+
+      // Normalize market posts.
+      merged.market.list = (Array.isArray(merged.market.list) ? merged.market.list : [])
+        .filter((x) => x && typeof x === "object")
+        .map((x) => ({
+          id: String(x.id || ""),
+          kind: String(x.kind || "product"),
+          title: String(x.title || "").slice(0, 72),
+          priceCents: clampInt(x.priceCents, 0, 9_999_900, 0),
+          distanceLimitM: clampInt(x.distanceLimitM, 50, 5000, 1200),
+          createdAt: Number(x.createdAt) || 0,
+          expiresAt: Number(x.expiresAt) || 0,
+          status: String(x.status || "open"),
+          seller: x.seller && typeof x.seller === "object" ? { kind: String(x.seller.kind || ""), id: String(x.seller.id || "") } : null,
+          sellerLabel: String(x.sellerLabel || "").slice(0, 32),
+          sellerVerified: Boolean(x.sellerVerified),
+          loc: x.loc && typeof x.loc === "object" ? { lat: Number(x.loc.lat), lng: Number(x.loc.lng) } : null,
+          gridM: clampInt(x.gridM, 50, 2000, 0)
+        }))
+        .filter((x) => x.id && x.title && x.seller && x.seller.kind && x.seller.id)
+        .slice(0, 50);
+
+      // Normalize scheduled activities.
+      merged.events.list = (Array.isArray(merged.events.list) ? merged.events.list : [])
+        .filter((x) => x && typeof x === "object")
+        .map((x) => ({
+          id: String(x.id || ""),
+          title: String(x.title || "").slice(0, 72),
+          createdAt: Number(x.createdAt) || 0,
+          startAt: Number(x.startAt) || 0,
+          endsAt: Number(x.endsAt) || 0,
+          status: String(x.status || "scheduled"),
+          host: x.host && typeof x.host === "object" ? { kind: String(x.host.kind || ""), id: String(x.host.id || "") } : null,
+          hostLabel: String(x.hostLabel || "").slice(0, 32),
+          loc: x.loc && typeof x.loc === "object" ? { lat: Number(x.loc.lat), lng: Number(x.loc.lng) } : null,
+          joinCount: clampInt(x.joinCount, 0, 99999, 0),
+          joinedBy: Array.isArray(x.joinedBy)
+            ? x.joinedBy
+                .map((s) => String(s || "").trim())
+                .filter((s) => s)
+                .slice(0, 500)
+            : []
+        }))
+        .filter((x) => x.id && x.title && x.host && x.host.kind && x.host.id)
+        .slice(0, 50);
+
       // Drop legacy "area room" model (area visibility is now proximity-based).
       if (merged.activity.prefs && "areaRoom" in merged.activity.prefs) {
         delete merged.activity.prefs.areaRoom;
@@ -1768,6 +2230,34 @@
 
   // --- Tasks (Local-Only Marketplace Prototype) ---
 
+  // --- Marketplace Tabs (Tasks / Market / Scheduled) ---
+
+  const MARKET_TABS = ["tasks", "market", "events"];
+
+  const normalizeMarketTab = (value) => {
+    const v = String(value || "").trim().toLowerCase();
+    return MARKET_TABS.includes(v) ? v : "tasks";
+  };
+
+  const setMarketTabSelected = (tab) => {
+    const next = normalizeMarketTab(tab);
+    if (els.marketTabs) {
+      for (const btn of Array.from(els.marketTabs.querySelectorAll("button[data-tab]"))) {
+        const tKey = String(btn.getAttribute("data-tab") || "");
+        btn.setAttribute("aria-selected", tKey === next ? "true" : "false");
+      }
+    }
+    if (els.tabTasks) els.tabTasks.hidden = next !== "tasks";
+    if (els.tabMarket) els.tabMarket.hidden = next !== "market";
+    if (els.tabEvents) els.tabEvents.hidden = next !== "events";
+  };
+
+  const renderMarketplaceTabs = () => {
+    if (!state.ui) state.ui = defaultState().ui;
+    state.ui.marketTab = normalizeMarketTab(state.ui.marketTab);
+    setMarketTabSelected(state.ui.marketTab);
+  };
+
   const USER_ACTOR = { kind: "user", id: "you" };
   const TASK_STATUS = ["open", "accepted", "completed", "expired", "cancelled"];
 
@@ -1882,6 +2372,40 @@
 
   const userKey = actorKeyLocal(USER_ACTOR);
 
+  const reputationStatsForKey = (key) => {
+    const k = String(key || "").trim();
+    const repMap =
+      state && state.tasks && state.tasks.reputation && typeof state.tasks.reputation === "object"
+        ? state.tasks.reputation
+        : null;
+    const rec = repMap && k ? repMap[k] : null;
+    const sum = rec && Number.isFinite(Number(rec.sum)) ? Number(rec.sum) : 0;
+    const count = rec && Number.isFinite(Number(rec.count)) ? Number(rec.count) : 0;
+    const safeCount = Math.max(0, Math.round(count));
+    const avg = safeCount > 0 ? sum / safeCount : 0;
+    return { sum: Math.max(0, sum), count: safeCount, avg };
+  };
+
+  const reputationFactorForKey = (key) => {
+    const { avg, count } = reputationStatsForKey(key);
+    if (count <= 0 || avg <= 0) return 1;
+    const avgClamped = clamp(avg, 1, 5);
+    const base = clamp(1 + (avgClamped - 3) * 0.08, 0.84, 1.16);
+    const conf = clamp(Math.log10(1 + count) / 1.1, 0, 1);
+    return 1 + (base - 1) * conf;
+  };
+
+  const bumpReputation = (key, rating) => {
+    ensureTaskPrefs();
+    const k = String(key || "").trim();
+    const r = clampIntSafe(rating, 1, 5, 0);
+    if (!k || !r) return;
+    const prev = state.tasks.reputation[k] || { sum: 0, count: 0 };
+    const sum = (Number(prev.sum) || 0) + r;
+    const count = (Number(prev.count) || 0) + 1;
+    state.tasks.reputation[k] = { sum, count };
+  };
+
   const isUserVerified = () => Boolean(state.tasks && state.tasks.prefs && state.tasks.prefs.userVerified);
 
   const getActorInfoSafe = (actor) => {
@@ -1911,8 +2435,10 @@
     ensureTaskPrefs();
     const id = String(taskId || "");
     if (!id) return null;
-    if (!state.tasks.rooms[id]) state.tasks.rooms[id] = { messages: [] };
+    if (!state.tasks.rooms[id]) state.tasks.rooms[id] = { messages: [], visibility: "participants", ownerKey: "" };
     if (!Array.isArray(state.tasks.rooms[id].messages)) state.tasks.rooms[id].messages = [];
+    if (!state.tasks.rooms[id].visibility) state.tasks.rooms[id].visibility = "participants";
+    if (!state.tasks.rooms[id].ownerKey) state.tasks.rooms[id].ownerKey = "";
     return state.tasks.rooms[id];
   };
 
@@ -1931,7 +2457,7 @@
     if (!openRoomTaskId) return;
     ensureTaskPrefs();
     const task = state.tasks.list.find((x) => x && x.id === openRoomTaskId) || null;
-    const room = state.tasks.rooms[openRoomTaskId] || { messages: [] };
+    const room = state.tasks.rooms[openRoomTaskId] || { messages: [], visibility: "participants", ownerKey: "" };
 
     const posterInfo = task ? getActorInfoSafe(task.poster) : { label: "—", verified: false };
     const workerInfo = task && task.acceptedBy ? getActorInfoSafe(task.acceptedBy) : { label: "—", verified: false };
@@ -1941,6 +2467,17 @@
 
     if (els.roomTitle) els.roomTitle.textContent = t("room_title");
     els.roomMeta.textContent = title ? `${posterLabel} ↔ ${workerLabel} • ${title}` : `${posterLabel} ↔ ${workerLabel}`;
+
+    const vis = room && room.visibility === "public" ? "public" : "participants";
+    const ownerKey = room && typeof room.ownerKey === "string" ? room.ownerKey : "";
+    const isOwner = ownerKey && ownerKey === userKey;
+    if (els.roomControls) els.roomControls.hidden = !isOwner;
+    if (els.roomVisibility) {
+      for (const btn of Array.from(els.roomVisibility.querySelectorAll("button[data-room-vis]"))) {
+        const v = String(btn.getAttribute("data-room-vis") || "");
+        btn.setAttribute("aria-selected", v === vis ? "true" : "false");
+      }
+    }
 
     els.roomBody.replaceChildren();
     const msgs = Array.isArray(room.messages) ? room.messages.slice(-200) : [];
@@ -2027,7 +2564,11 @@
     const id = String(taskId || "");
     if (!id) return;
     openRoomTaskId = id;
-    ensureRoom(id);
+    const room = ensureRoom(id);
+    if (room && !room.ownerKey) {
+      room.ownerKey = userKey;
+      saveState();
+    }
     els.roomModal.hidden = false;
     renderTaskRoom();
     if (els.roomMessage) els.roomMessage.focus();
@@ -2046,6 +2587,97 @@
     room.messages = room.messages.slice(-200);
     saveState();
     if (openRoomTaskId === String(taskId || "")) renderTaskRoom();
+  };
+
+  // --- Reviews (after task completion) ---
+
+  let openReviewTaskId = "";
+  let reviewRating = 0;
+
+  const renderReviewStars = () => {
+    if (!els.reviewStars) return;
+    els.reviewStars.replaceChildren();
+    for (let i = 1; i <= 5; i++) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "reviewStar";
+      b.setAttribute("role", "radio");
+      b.setAttribute("aria-checked", i === reviewRating ? "true" : "false");
+      b.textContent = `${i}★`;
+      b.addEventListener("click", () => {
+        reviewRating = i;
+        renderReviewStars();
+      });
+      els.reviewStars.appendChild(b);
+    }
+  };
+
+  const renderReviewModal = () => {
+    if (!els.reviewModal || !els.reviewMeta) return;
+    if (!openReviewTaskId) return;
+    ensureTaskPrefs();
+    const task = state.tasks.list.find((x) => x && x.id === openReviewTaskId) || null;
+    if (!task) return;
+    const title = normalizeTaskTitle(task.title || "");
+    const worker = task.acceptedBy;
+    const workerInfo = worker ? getActorInfoSafe(worker) : null;
+    const workerLabel = workerInfo ? String(task.workerLabel || workerInfo.label || "—") : "—";
+    els.reviewMeta.textContent = `${workerLabel} • ${title}`;
+    renderReviewStars();
+  };
+
+  const openReviewModal = (taskId) => {
+    if (!els.reviewModal) return;
+    const id = String(taskId || "");
+    if (!id) return;
+    ensureTaskPrefs();
+    const task = state.tasks.list.find((x) => x && x.id === id) || null;
+    if (!task) return;
+    if (normalizeTaskStatus(task.status) !== "completed") return;
+    if (actorKeyLocal(task.poster) !== userKey) return;
+    if (task.review && task.review.rating) {
+      toast(t("toast_review_already"));
+      return;
+    }
+    openReviewTaskId = id;
+    reviewRating = 0;
+    if (els.reviewNote) els.reviewNote.value = "";
+    els.reviewModal.hidden = false;
+    renderReviewModal();
+  };
+
+  const closeReviewModal = () => {
+    if (!els.reviewModal) return;
+    openReviewTaskId = "";
+    els.reviewModal.hidden = true;
+  };
+
+  const submitReview = () => {
+    if (!openReviewTaskId) return;
+    ensureTaskPrefs();
+    const task = state.tasks.list.find((x) => x && x.id === openReviewTaskId) || null;
+    if (!task) return;
+    if (actorKeyLocal(task.poster) !== userKey) return;
+    if (task.review && task.review.rating) {
+      toast(t("toast_review_already"));
+      closeReviewModal();
+      return;
+    }
+    const rating = clampIntSafe(reviewRating, 1, 5, 0);
+    if (!rating) {
+      toast(t("toast_review_pick_rating"));
+      return;
+    }
+    const note = normalizeActivityText(els.reviewNote && els.reviewNote.value).slice(0, 240);
+    const now = nowMs();
+    task.review = { rating, note, by: USER_ACTOR, at: now };
+    const workerKey = task.acceptedBy ? actorKeyLocal(task.acceptedBy) : "";
+    if (workerKey) bumpReputation(workerKey, rating);
+    saveState();
+    closeReviewModal();
+    renderTasks();
+    if (mapApi && typeof mapApi.refreshReputation === "function") mapApi.refreshReputation();
+    toast(t("toast_review_submitted"));
   };
 
   const readFileAsDataUrl = (file) => {
@@ -2167,16 +2799,77 @@
   };
 
   const renderTaskForm = () => {
+    ensureTaskPrefs();
     if (els.taskFeePill) {
       const pct = (taskFeeBps() / 100).toFixed(taskFeeBps() % 100 ? 2 : 0);
       els.taskFeePill.textContent = `${t("task_fee").toUpperCase()}: ${pct}%`;
     }
     if (els.taskTimeLimit && els.taskTimeLimitValue) {
-      els.taskTimeLimitValue.textContent = `${clampIntSafe(els.taskTimeLimit.value, 15, 240, 60)}m`;
+      const min = clampIntSafe(els.taskTimeLimit.value, 15, 360, 60);
+      els.taskTimeLimitValue.textContent = fmtMinutes(min * 60_000);
     }
     if (els.taskDistanceLimit && els.taskDistanceLimitValue) {
       els.taskDistanceLimitValue.textContent = `${clampIntSafe(els.taskDistanceLimit.value, 50, 5000, 800)}m`;
     }
+
+    const draft = state.tasks.prefs.routeDraft || { from: null, to: null };
+    if (els.taskStartMeta) els.taskStartMeta.textContent = draft.from ? t("task_start_set") : t("task_start_unset");
+    if (els.taskDestMeta) els.taskDestMeta.textContent = draft.to ? t("task_dest_set") : t("task_dest_unset");
+
+    if (mapApi && typeof mapApi.setDraftRoute === "function") {
+      mapApi.setDraftRoute({ from: draft.from, to: draft.to });
+    }
+  };
+
+  const taskDraftGridMFromForm = () => {
+    const dist = els.taskDistanceLimit ? clampIntSafe(els.taskDistanceLimit.value, 50, 5000, 800) : 800;
+    return taskTetherGridMFor(dist);
+  };
+
+  const setTaskDraftPoint = (which, latLng) => {
+    ensureTaskPrefs();
+    const w = which === "to" ? "to" : "from";
+    const gridM = taskDraftGridMFromForm();
+    const seed = `draft:route:${w}`;
+    const anchor = taskAreaAnchor(latLng, gridM, seed);
+    if (!anchor) return;
+    state.tasks.prefs.routeDraft.gridM = gridM;
+    state.tasks.prefs.routeDraft[w] = anchor;
+    saveState();
+    renderTaskForm();
+  };
+
+  const clearTaskDraftRoute = () => {
+    ensureTaskPrefs();
+    state.tasks.prefs.routeDraft = { from: null, to: null, gridM: 0 };
+    saveState();
+    renderTaskForm();
+  };
+
+  const beginPickOnMap = (onPick) => {
+    if (!mapApi || typeof mapApi.beginPick !== "function") {
+      toast(t("toast_task_pick_on_map"));
+      return;
+    }
+    mapApi.beginPick(onPick);
+    toast(t("toast_task_pick_on_map"));
+  };
+
+  const pickTaskStart = () => {
+    beginPickOnMap((ll) => setTaskDraftPoint("from", ll));
+  };
+
+  const pickTaskDest = () => {
+    beginPickOnMap((ll) => setTaskDraftPoint("to", ll));
+  };
+
+  const useMyAreaForTaskStart = () => {
+    const ll = getActorLatLngSafe(USER_ACTOR);
+    if (!ll) {
+      toast(t("toast_task_poster_unavailable"));
+      return;
+    }
+    setTaskDraftPoint("from", ll);
   };
 
   const renderTaskList = () => {
@@ -2261,14 +2954,6 @@
       distChip.textContent = `<= ${clampIntSafe(task.distanceLimitM, 50, 5000, 800)}m`;
       badges.appendChild(distChip);
 
-      const timeChip = document.createElement("span");
-      timeChip.className = "taskChip";
-      timeChip.textContent =
-        status === "open" || status === "accepted"
-          ? t("task_time_left", { t: fmtMinutes(leftMs) })
-          : t(statusKey);
-      badges.appendChild(timeChip);
-
       if (workerInfo) {
         const v = document.createElement("span");
         const verified = typeof task.workerVerified === "boolean" ? task.workerVerified : Boolean(workerInfo.verified);
@@ -2311,15 +2996,37 @@
           }
         }
       } else if (status === "accepted") {
-        if (isPosterMe || isWorkerMe) {
+        const room = state.tasks && state.tasks.rooms ? state.tasks.rooms[task.id] : null;
+        const roomVis = room && room.visibility === "public" ? "public" : "participants";
+        if (isPosterMe || isWorkerMe || roomVis === "public") {
           addBtn(t("task_room"), "ghost", () => openTaskRoom(task.id));
+        }
+        if (isPosterMe || isWorkerMe) {
           addBtn(t("task_finish"), "primary", () => finishTask(task.id));
+        }
+      } else if (status === "completed") {
+        if (isPosterMe && worker && !(task.review && task.review.rating)) {
+          addBtn(t("review_open"), "primary", () => openReviewModal(task.id));
         }
       }
 
       li.appendChild(top);
       li.appendChild(meta);
       li.appendChild(badges);
+
+      // Time remaining bar (instead of a numeric counter).
+      if (status === "open" || status === "accepted") {
+        const totalMs = Math.max(1, (Number(task.expiresAt) || 0) - (Number(task.createdAt) || 0));
+        const frac = clamp(leftMs / totalMs, 0, 1);
+        const bar = document.createElement("div");
+        bar.className = "timeBar";
+        bar.title = t("task_time_left", { t: fmtMinutes(leftMs) });
+        const fill = document.createElement("div");
+        fill.className = "timeBar__fill";
+        fill.style.width = `${Math.round(frac * 100)}%`;
+        bar.appendChild(fill);
+        li.appendChild(bar);
+      }
       if (actions.childNodes.length) li.appendChild(actions);
 
       // Poster view: show applicants (offers) with skills and attributes.
@@ -2427,8 +3134,23 @@
     if (!Array.isArray(state.tasks.list)) state.tasks.list = [];
     if (!state.tasks.rooms || typeof state.tasks.rooms !== "object") state.tasks.rooms = {};
     if (!state.tasks.prefs || typeof state.tasks.prefs !== "object") state.tasks.prefs = defaultState().tasks.prefs;
+    if (!state.tasks.reputation || typeof state.tasks.reputation !== "object") state.tasks.reputation = {};
     state.tasks.prefs.feeBps = taskFeeBps();
     state.tasks.prefs.userVerified = Boolean(state.tasks.prefs.userVerified);
+    const draft = state.tasks.prefs.routeDraft;
+    if (!draft || typeof draft !== "object") {
+      state.tasks.prefs.routeDraft = { from: null, to: null, gridM: 0 };
+    } else {
+      state.tasks.prefs.routeDraft = {
+        from: draft.from && typeof draft.from === "object" ? { lat: Number(draft.from.lat), lng: Number(draft.from.lng) } : null,
+        to: draft.to && typeof draft.to === "object" ? { lat: Number(draft.to.lat), lng: Number(draft.to.lng) } : null,
+        gridM: clampIntSafe(draft.gridM, 50, 2000, 0)
+      };
+      if (!Number.isFinite(Number(state.tasks.prefs.routeDraft.from && state.tasks.prefs.routeDraft.from.lat))) state.tasks.prefs.routeDraft.from = null;
+      if (!Number.isFinite(Number(state.tasks.prefs.routeDraft.from && state.tasks.prefs.routeDraft.from.lng))) state.tasks.prefs.routeDraft.from = null;
+      if (!Number.isFinite(Number(state.tasks.prefs.routeDraft.to && state.tasks.prefs.routeDraft.to.lat))) state.tasks.prefs.routeDraft.to = null;
+      if (!Number.isFinite(Number(state.tasks.prefs.routeDraft.to && state.tasks.prefs.routeDraft.to.lng))) state.tasks.prefs.routeDraft.to = null;
+    }
   };
 
   const postTaskFromForm = () => {
@@ -2438,10 +3160,15 @@
     if (!title) return;
 
     const rewardCents = usdToCents(els.taskReward.value);
-    const timeLimitMin = clampIntSafe(els.taskTimeLimit.value, 15, 240, 60);
+    const timeLimitMin = clampIntSafe(els.taskTimeLimit.value, 15, 360, 60);
     const distanceLimitM = clampIntSafe(els.taskDistanceLimit.value, 50, 5000, 800);
 
     const now = nowMs();
+    const draft = state.tasks.prefs.routeDraft || { from: null, to: null, gridM: 0 };
+    if (!draft.from || !draft.to) {
+      toast(t("toast_task_pick_route"));
+      return;
+    }
     const task = {
       id: uid(),
       title,
@@ -2465,13 +3192,14 @@
       tetherGridM: 0
     };
 
-    // Store only an area anchor (not precise GPS) for task posting + later tethers.
-    const gridM = taskTetherGridMFor(distanceLimitM);
+    // Store only blurred task endpoints (pickup -> destination), not exact coordinates.
+    const gridM = clampIntSafe(draft.gridM || taskTetherGridMFor(distanceLimitM), 80, 500, taskTetherGridMFor(distanceLimitM));
     task.tetherGridM = gridM;
-    const llPoster = getActorLatLngSafe(USER_ACTOR);
-    if (llPoster) {
-      task.tetherFrom = taskAreaAnchor(llPoster, gridM, `task:${task.id}:from`);
-    }
+    task.tetherFrom = { lat: Number(draft.from.lat), lng: Number(draft.from.lng) };
+    task.tetherTo = { lat: Number(draft.to.lat), lng: Number(draft.to.lng) };
+
+    // Clear draft route after posting.
+    state.tasks.prefs.routeDraft = { from: null, to: null, gridM: 0 };
 
     state.tasks.list.unshift(task);
     state.tasks.list = state.tasks.list.slice(0, 50);
@@ -2527,22 +3255,27 @@
     const gridM = clampIntSafe(task.tetherGridM || taskTetherGridMFor(task.distanceLimitM), 80, 500, 250);
     task.tetherGridM = gridM;
 
-    // Use the stored poster area anchor when available.
-    let posterArea = task && task.tetherFrom ? task.tetherFrom : null;
-    if (!posterArea || !Number.isFinite(Number(posterArea.lat)) || !Number.isFinite(Number(posterArea.lng))) {
+    // Start endpoint (pickup). Store only an area anchor.
+    let startArea = task && task.tetherFrom ? task.tetherFrom : null;
+    if (!startArea || !Number.isFinite(Number(startArea.lat)) || !Number.isFinite(Number(startArea.lng))) {
+      // Legacy fallback: use poster area as pickup when route wasn't defined.
       const llPoster = getActorLatLngSafe(task.poster);
       if (llPoster) {
-        posterArea = taskAreaAnchor(llPoster, gridM, `task:${task.id}:from`);
-        task.tetherFrom = posterArea;
+        startArea = taskAreaAnchor(llPoster, gridM, `task:${task.id}:from`);
+        task.tetherFrom = startArea;
       }
     }
 
-    if (!llActor || !posterArea) {
+    if (!llActor) {
       toast(t("toast_task_need_gps"));
       return;
     }
+    if (!startArea) {
+      toast(t("toast_task_poster_unavailable"));
+      return;
+    }
 
-    const d = haversineM(llActor, posterArea);
+    const d = haversineM(llActor, startArea);
     if (d > (Number(task.distanceLimitM) || 0)) {
       toast(t("toast_task_too_far"));
       return;
@@ -2558,6 +3291,8 @@
     const prof = actor && actor.kind === "user" ? userOfferProfile() : { skills: [], rating: 0, tasksDone: 0, onTimePct: 0 };
     const speedMps = actor && actor.kind === "user" ? 1.9 : 1.6;
     const etaMin = Math.max(1, Math.round((d / Math.max(0.8, speedMps)) / 60));
+    const aKey = actorKeyLocal(actor) || String(info && info.label) || "actor";
+    const anchor = taskAreaAnchor(llActor, gridM, `task:${task.id}:app:${aKey}`);
 
     const ok = upsertApplicant(task, {
       id: uid(),
@@ -2566,6 +3301,7 @@
       appliedAt: now,
       distanceM: Math.max(0, Math.round(d)),
       etaMin,
+      anchor,
       skills: Array.isArray(prof.skills) ? prof.skills.slice(0, 8) : [],
       rating: Number(prof.rating) || 0,
       tasksDone: Number(prof.tasksDone) || 0,
@@ -2601,26 +3337,42 @@
       return;
     }
 
-    const llWorker = getActorLatLngSafe(actor);
     const gridM = clampIntSafe(task.tetherGridM || taskTetherGridMFor(task.distanceLimitM), 80, 500, 250);
     task.tetherGridM = gridM;
 
-    // Poster area anchor (kept stable for privacy and to avoid pinpointing).
-    let posterArea = task && task.tetherFrom ? task.tetherFrom : null;
-    if (!posterArea || !Number.isFinite(Number(posterArea.lat)) || !Number.isFinite(Number(posterArea.lng))) {
+    // Start endpoint (pickup).
+    let startArea = task && task.tetherFrom ? task.tetherFrom : null;
+    if (!startArea || !Number.isFinite(Number(startArea.lat)) || !Number.isFinite(Number(startArea.lng))) {
       const llPoster = getActorLatLngSafe(task.poster);
       if (llPoster) {
-        posterArea = taskAreaAnchor(llPoster, gridM, `task:${task.id}:from`);
-        task.tetherFrom = posterArea;
+        startArea = taskAreaAnchor(llPoster, gridM, `task:${task.id}:from`);
+        task.tetherFrom = startArea;
       }
     }
 
-    if (!llWorker || !posterArea) {
-      toast(t("toast_task_need_gps"));
+    // Worker location: prefer live position, otherwise use the stored offer anchor.
+    let llWorker = getActorLatLngSafe(actor);
+    if (!llWorker) {
+      const off = Array.isArray(task.applicants)
+        ? task.applicants.find((a) => actorKeyLocal(a && a.actor) === actorKeyLocal(actor))
+        : null;
+      if (off && off.anchor && typeof off.anchor === "object") {
+        const lat = Number(off.anchor.lat);
+        const lng = Number(off.anchor.lng);
+        if (Number.isFinite(lat) && Number.isFinite(lng)) llWorker = { lat, lng };
+      }
+    }
+
+    if (!startArea) {
+      toast(t("toast_task_poster_unavailable"));
+      return;
+    }
+    if (!llWorker) {
+      toast(t("toast_task_worker_unavailable"));
       return;
     }
 
-    const d = haversineM(llWorker, posterArea);
+    const d = haversineM(llWorker, startArea);
     if (d > (Number(task.distanceLimitM) || 0)) {
       toast(t("toast_task_too_far"));
       return;
@@ -2632,11 +3384,19 @@
     task.workerVerified = Boolean(info && info.verified);
     task.acceptedAt = now;
 
-    // Worker area anchor for the tether line (visible to everyone, not pinpointing).
-    task.tetherTo = taskAreaAnchor(llWorker, gridM, `task:${task.id}:to`);
-
     // Ensure a conversation room exists for handoff.
-    if (!state.tasks.rooms[task.id]) state.tasks.rooms[task.id] = { messages: [] };
+    if (!state.tasks.rooms[task.id]) {
+      state.tasks.rooms[task.id] = {
+        messages: [],
+        visibility: "participants",
+        ownerKey: actorKeyLocal(task.poster) || actorKeyLocal(USER_ACTOR)
+      };
+    } else {
+      const room = state.tasks.rooms[task.id];
+      if (!room.ownerKey) room.ownerKey = actorKeyLocal(task.poster) || actorKeyLocal(USER_ACTOR);
+      if (!room.visibility) room.visibility = "participants";
+      if (!Array.isArray(room.messages)) room.messages = [];
+    }
 
     saveState();
     renderTasks();
@@ -2809,6 +3569,7 @@
           appliedAt: now - Math.round(randBetween(10_000, 70_000)),
           distanceM: Math.max(0, Math.round(d)),
           etaMin,
+          anchor: taskAreaAnchor({ lat: a.lat, lng: a.lng }, gridM, `task:${task.id}:app:agent:${String(a.id)}`),
           skills: Array.isArray(a.skills) ? a.skills.slice(0, 8) : [],
           rating: Math.max(0, Math.min(5, Number(a.rating) || 0)),
           tasksDone: clampIntSafe(a.tasksDone, 0, 9999, 0),
@@ -2876,6 +3637,7 @@
         appliedAt: now - Math.round(randBetween(10_000, 60_000)),
         distanceM: Math.max(0, Math.round(d)),
         etaMin,
+        anchor: taskAreaAnchor({ lat: a.lat, lng: a.lng }, gridM, `task:${task.id}:app:agent:${String(a.id)}`),
         skills: Array.isArray(a.skills) ? a.skills.slice(0, 8) : [],
         rating: Math.max(0, Math.min(5, Number(a.rating) || 0)),
         tasksDone: clampIntSafe(a.tasksDone, 0, 9999, 0),
@@ -2966,7 +3728,12 @@
 
     const id = uid();
     const gridM = taskTetherGridMFor(distanceLimitM);
-    const tetherFrom = taskAreaAnchor({ lat: poster.lat, lng: poster.lng }, gridM, `task:${id}:from`);
+    const startRaw = { lat: Number(poster.lat), lng: Number(poster.lng) };
+    const tetherFrom = taskAreaAnchor(startRaw, gridM, `task:${id}:from`);
+    const routeM = randBetween(350, Math.min(6200, distanceLimitM * 3));
+    const ang = Math.random() * Math.PI * 2;
+    const destRaw = offsetLatLngMeters(startRaw, Math.cos(ang) * routeM, Math.sin(ang) * routeM);
+    const tetherTo = taskAreaAnchor(destRaw, gridM, `task:${id}:to`);
 
     state.tasks.list.unshift({
       id,
@@ -2987,7 +3754,7 @@
       completedAt: 0,
       applicants: [],
       tetherFrom,
-      tetherTo: null,
+      tetherTo,
       tetherGridM: gridM
     });
 
@@ -3002,12 +3769,633 @@
     if (taskEngineTimer) return;
     taskEngineTimer = window.setInterval(() => {
       sweepExpiredTasks();
+      sweepExpiredMarket();
       seedOffersForUserTasks();
       seedOffersForSimTasks();
       simPosterDecide();
+      seedEventBookings();
+      spawnSimMarketPost();
+      spawnSimEvent();
       const openSim = state.tasks.list.filter((x) => x && normalizeTaskStatus(x.status) === "open" && actorKeyLocal(x.poster) !== userKey);
       if (openSim.length < 3) spawnSimTask();
     }, 2_500);
+  };
+
+  // --- Market (Product / Service Posts) ---
+
+  const MARKET_KINDS = ["product", "service"];
+  const MARKET_STATUS = ["open", "sold", "expired", "cancelled"];
+
+  const normalizeMarketKind = (value) => {
+    const v = String(value || "").trim().toLowerCase();
+    return MARKET_KINDS.includes(v) ? v : "product";
+  };
+
+  const normalizeMarketStatus = (value) => {
+    const v = String(value || "").trim().toLowerCase();
+    return MARKET_STATUS.includes(v) ? v : "open";
+  };
+
+  const ensureMarketPrefs = () => {
+    if (!state.market || typeof state.market !== "object") state.market = defaultState().market;
+    if (!Array.isArray(state.market.list)) state.market.list = [];
+    if (!state.market.prefs || typeof state.market.prefs !== "object") state.market.prefs = defaultState().market.prefs;
+    state.market.prefs.kind = normalizeMarketKind(state.market.prefs.kind);
+    state.market.prefs.draftGridM = clampIntSafe(state.market.prefs.draftGridM, 50, 2000, 0);
+    const pt = state.market.prefs.draftLoc;
+    if (!pt || typeof pt !== "object") state.market.prefs.draftLoc = null;
+    else {
+      const lat = Number(pt.lat);
+      const lng = Number(pt.lng);
+      state.market.prefs.draftLoc = Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+    }
+  };
+
+  const setMarketKindSelected = (kind) => {
+    ensureMarketPrefs();
+    const next = normalizeMarketKind(kind);
+    state.market.prefs.kind = next;
+    if (els.marketKind) {
+      for (const btn of Array.from(els.marketKind.querySelectorAll("button[data-kind]"))) {
+        const k = String(btn.getAttribute("data-kind") || "");
+        btn.setAttribute("aria-selected", k === next ? "true" : "false");
+      }
+    }
+  };
+
+  const marketDraftGridMFromForm = () => {
+    const dist = els.marketDistanceLimit ? clampIntSafe(els.marketDistanceLimit.value, 50, 5000, 1200) : 1200;
+    return taskTetherGridMFor(dist);
+  };
+
+  const setMarketDraftLoc = (latLng) => {
+    ensureMarketPrefs();
+    const gridM = marketDraftGridMFromForm();
+    const anchor = taskAreaAnchor(latLng, gridM, "draft:market:loc");
+    if (!anchor) return;
+    state.market.prefs.draftGridM = gridM;
+    state.market.prefs.draftLoc = anchor;
+    saveState();
+    renderMarket();
+  };
+
+  const clearMarketDraftLoc = () => {
+    ensureMarketPrefs();
+    state.market.prefs.draftLoc = null;
+    state.market.prefs.draftGridM = 0;
+    saveState();
+    renderMarket();
+  };
+
+  const useMyAreaForMarket = () => {
+    const ll = getActorLatLngSafe(USER_ACTOR);
+    if (!ll) {
+      toast(t("toast_task_poster_unavailable"));
+      return;
+    }
+    setMarketDraftLoc(ll);
+  };
+
+  const renderMarketForm = () => {
+    ensureMarketPrefs();
+    setMarketKindSelected(state.market.prefs.kind);
+    if (els.marketPill) els.marketPill.textContent = t("market_pill");
+
+    if (els.marketTimeLimit && els.marketTimeLimitValue) {
+      const min = clampIntSafe(els.marketTimeLimit.value, 15, 360, 180);
+      els.marketTimeLimitValue.textContent = fmtMinutes(min * 60_000);
+    }
+    if (els.marketDistanceLimit && els.marketDistanceLimitValue) {
+      els.marketDistanceLimitValue.textContent = `${clampIntSafe(els.marketDistanceLimit.value, 50, 5000, 1200)}m`;
+    }
+
+    if (els.marketLocMeta) {
+      els.marketLocMeta.textContent = state.market.prefs.draftLoc ? t("market_loc_set") : t("market_loc_unset");
+    }
+  };
+
+  const sweepExpiredMarket = () => {
+    ensureMarketPrefs();
+    const now = nowMs();
+    let changed = false;
+    for (const it of state.market.list) {
+      if (!it) continue;
+      const st = normalizeMarketStatus(it.status);
+      if (st !== "open") continue;
+      if (it.expiresAt && now > it.expiresAt) {
+        it.status = "expired";
+        changed = true;
+      }
+    }
+    if (!changed) return;
+    saveState();
+    renderMarket();
+  };
+
+  const postMarketFromForm = () => {
+    ensureMarketPrefs();
+    if (!els.marketText || !els.marketPrice || !els.marketTimeLimit || !els.marketDistanceLimit) return;
+    const title = normalizeTaskTitle(els.marketText.value);
+    if (!title) return;
+    const loc = state.market.prefs.draftLoc;
+    if (!loc) {
+      toast(t("toast_market_need_location"));
+      return;
+    }
+
+    const kind = normalizeMarketKind(state.market.prefs.kind);
+    const priceCents = usdToCents(els.marketPrice.value);
+    const timeLimitMin = clampIntSafe(els.marketTimeLimit.value, 15, 360, 180);
+    const distanceLimitM = clampIntSafe(els.marketDistanceLimit.value, 50, 5000, 1200);
+    const now = nowMs();
+    const gridM = clampIntSafe(state.market.prefs.draftGridM || taskTetherGridMFor(distanceLimitM), 80, 500, taskTetherGridMFor(distanceLimitM));
+
+    state.market.list.unshift({
+      id: uid(),
+      kind,
+      title,
+      priceCents,
+      distanceLimitM,
+      createdAt: now,
+      expiresAt: now + timeLimitMin * 60_000,
+      status: "open",
+      seller: USER_ACTOR,
+      sellerLabel: "@you",
+      sellerVerified: isUserVerified(),
+      loc: { lat: Number(loc.lat), lng: Number(loc.lng) },
+      gridM
+    });
+
+    state.market.list = state.market.list.slice(0, 50);
+    els.marketText.value = "";
+    saveState();
+    renderMarket();
+    toast(t("toast_market_posted"));
+  };
+
+  const cancelMarketPost = (postId) => {
+    ensureMarketPrefs();
+    const id = String(postId || "");
+    const it = state.market.list.find((x) => x && x.id === id);
+    if (!it) return;
+    if (normalizeMarketStatus(it.status) !== "open") return;
+    if (actorKeyLocal(it.seller) !== userKey) return;
+    it.status = "cancelled";
+    saveState();
+    renderMarket();
+  };
+
+  const spawnSimMarketPost = () => {
+    if (!mapApi || typeof mapApi.listAgents !== "function") return;
+    ensureMarketPrefs();
+    const agents = mapApi.listAgents().filter((a) => a && a.id);
+    if (!agents.length) return;
+    const openSim = state.market.list.filter((x) => x && normalizeMarketStatus(x.status) === "open" && actorKeyLocal(x.seller) !== userKey);
+    if (openSim.length >= 4) return;
+    if (Math.random() > 0.33) return;
+
+    const seller = agents[Math.floor(Math.random() * agents.length)];
+    const kind = Math.random() < 0.55 ? "service" : "product";
+    const ideas =
+      kind === "service"
+        ? ["Tutoring", "Photo help", "Delivery help", "Repair assist", "Language swap"]
+        : ["Used bike", "Headphones", "Umbrella", "Sketchbook", "Phone charger"];
+    const title = normalizeTaskTitle(ideas[Math.floor(Math.random() * ideas.length)]);
+    const now = nowMs();
+    const timeLimitMin = [45, 60, 90, 120, 180, 240, 360][Math.floor(Math.random() * 7)];
+    const distanceLimitM = [300, 500, 800, 1200, 2000, 3500][Math.floor(Math.random() * 6)];
+    const priceUsd = kind === "service" ? [10, 15, 20, 25, 30][Math.floor(Math.random() * 5)] : [8, 12, 18, 24, 40][Math.floor(Math.random() * 5)];
+    const gridM = taskTetherGridMFor(distanceLimitM);
+    const loc = taskAreaAnchor({ lat: seller.lat, lng: seller.lng }, gridM, `market:${uid()}:loc`);
+
+    state.market.list.unshift({
+      id: uid(),
+      kind,
+      title,
+      priceCents: priceUsd * 100,
+      distanceLimitM,
+      createdAt: now,
+      expiresAt: now + timeLimitMin * 60_000,
+      status: "open",
+      seller: { kind: "agent", id: String(seller.id) },
+      sellerLabel: String(seller.handle || "@sim"),
+      sellerVerified: Boolean(seller.verified),
+      loc,
+      gridM
+    });
+    state.market.list = state.market.list.slice(0, 50);
+    saveState();
+    renderMarket();
+  };
+
+  const renderMarketList = () => {
+    if (!els.marketList) return;
+    ensureMarketPrefs();
+    els.marketList.replaceChildren();
+
+    const now = nowMs();
+    const items = state.market.list
+      .slice()
+      .sort((a, b) => (Number(b && b.createdAt) || 0) - (Number(a && a.createdAt) || 0))
+      .slice(0, 14);
+
+    if (!items.length) {
+      const li = document.createElement("li");
+      li.className = "marketItem marketItem--empty";
+      li.textContent = t("market_list_empty");
+      els.marketList.appendChild(li);
+      return;
+    }
+
+    for (const it of items) {
+      if (!it || !it.id) continue;
+      const kind = normalizeMarketKind(it.kind);
+      const status = normalizeMarketStatus(it.status);
+      const sellerKey = actorKeyLocal(it.seller);
+      const isMine = sellerKey === userKey;
+      const title = normalizeTaskTitle(it.title || "");
+      const leftMs = Math.max(0, (Number(it.expiresAt) || 0) - now);
+
+      const li = document.createElement("li");
+      li.className = "marketItem";
+
+      const top = document.createElement("div");
+      top.className = "marketItem__top";
+
+      const titleEl = document.createElement("div");
+      titleEl.className = "marketItem__title";
+      titleEl.textContent = `${kind === "service" ? t("market_kind_service") : t("market_kind_product")} • ${title}`;
+
+      const priceEl = document.createElement("div");
+      priceEl.className = "marketItem__meta";
+      priceEl.textContent = fmtUsd(Number(it.priceCents) || 0);
+
+      top.appendChild(titleEl);
+      top.appendChild(priceEl);
+
+      const meta = document.createElement("div");
+      meta.className = "marketItem__meta";
+      meta.textContent = `${String(it.sellerLabel || getActorInfoSafe(it.seller).label || "@").trim()} • <= ${clampIntSafe(it.distanceLimitM, 50, 5000, 1200)}m`;
+
+      const actions = document.createElement("div");
+      actions.className = "marketItem__actions";
+
+      const viewBtn = document.createElement("button");
+      viewBtn.type = "button";
+      viewBtn.className = "btn btn--ghost";
+      viewBtn.textContent = t("room_view_on_map");
+      viewBtn.addEventListener("click", () => {
+        if (!mapApi || typeof mapApi.focusLatLng !== "function") return;
+        const ll = it.loc;
+        if (!ll) return;
+        mapApi.focusLatLng({ lat: ll.lat, lng: ll.lng, zoom: 16 });
+      });
+      actions.appendChild(viewBtn);
+
+      if (status === "open" && isMine) {
+        const cancelBtn = document.createElement("button");
+        cancelBtn.type = "button";
+        cancelBtn.className = "btn btn--ghost";
+        cancelBtn.textContent = t("task_cancel");
+        cancelBtn.addEventListener("click", () => cancelMarketPost(it.id));
+        actions.appendChild(cancelBtn);
+      }
+
+      li.appendChild(top);
+      li.appendChild(meta);
+
+      if (status === "open") {
+        const totalMs = Math.max(1, (Number(it.expiresAt) || 0) - (Number(it.createdAt) || 0));
+        const frac = clamp(leftMs / totalMs, 0, 1);
+        const bar = document.createElement("div");
+        bar.className = "timeBar";
+        bar.title = fmtMinutes(leftMs);
+        const fill = document.createElement("div");
+        fill.className = "timeBar__fill";
+        fill.style.width = `${Math.round(frac * 100)}%`;
+        bar.appendChild(fill);
+        li.appendChild(bar);
+      }
+
+      li.appendChild(actions);
+      els.marketList.appendChild(li);
+    }
+  };
+
+  const syncMarketOnMap = () => {
+    if (!mapApi || typeof mapApi.setMarketPosts !== "function") return;
+    ensureMarketPrefs();
+    mapApi.setMarketPosts(state.market.list.slice());
+  };
+
+  const renderMarket = () => {
+    renderMarketForm();
+    renderMarketList();
+    syncMarketOnMap();
+  };
+
+  // --- Scheduled Activities (Event Auras) ---
+
+  const ensureEventsPrefs = () => {
+    if (!state.events || typeof state.events !== "object") state.events = defaultState().events;
+    if (!Array.isArray(state.events.list)) state.events.list = [];
+    if (!state.events.prefs || typeof state.events.prefs !== "object") state.events.prefs = defaultState().events.prefs;
+    state.events.prefs.draftGridM = clampIntSafe(state.events.prefs.draftGridM, 50, 2000, 0);
+    const pt = state.events.prefs.draftLoc;
+    if (!pt || typeof pt !== "object") state.events.prefs.draftLoc = null;
+    else {
+      const lat = Number(pt.lat);
+      const lng = Number(pt.lng);
+      state.events.prefs.draftLoc = Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+    }
+  };
+
+  const eventsGridMFromDraft = () => 120;
+
+  const setEventsDraftLoc = (latLng) => {
+    ensureEventsPrefs();
+    const gridM = eventsGridMFromDraft();
+    const anchor = taskAreaAnchor(latLng, gridM, "draft:events:loc");
+    if (!anchor) return;
+    state.events.prefs.draftGridM = gridM;
+    state.events.prefs.draftLoc = anchor;
+    saveState();
+    renderEvents();
+  };
+
+  const clearEventsDraftLoc = () => {
+    ensureEventsPrefs();
+    state.events.prefs.draftLoc = null;
+    state.events.prefs.draftGridM = 0;
+    saveState();
+    renderEvents();
+  };
+
+  const useMyAreaForEvents = () => {
+    const ll = getActorLatLngSafe(USER_ACTOR);
+    if (!ll) {
+      toast(t("toast_task_poster_unavailable"));
+      return;
+    }
+    setEventsDraftLoc(ll);
+  };
+
+  const renderEventsForm = () => {
+    ensureEventsPrefs();
+    if (els.eventsPill) els.eventsPill.textContent = t("events_pill");
+    if (els.eventsStartsIn && els.eventsStartsInValue) {
+      const min = clampIntSafe(els.eventsStartsIn.value, 0, 360, 30);
+      els.eventsStartsInValue.textContent = fmtMinutes(min * 60_000);
+    }
+    if (els.eventsDuration && els.eventsDurationValue) {
+      const min = clampIntSafe(els.eventsDuration.value, 15, 180, 60);
+      els.eventsDurationValue.textContent = fmtMinutes(min * 60_000);
+    }
+    if (els.eventsLocMeta) {
+      els.eventsLocMeta.textContent = state.events.prefs.draftLoc ? t("events_loc_set") : t("events_loc_unset");
+    }
+  };
+
+  const computeEventState = (ev, now) => {
+    const statusRaw = String(ev && ev.status ? ev.status : "");
+    if (statusRaw === "cancelled") return "cancelled";
+    const startAt = Number(ev && ev.startAt) || 0;
+    const endsAt = Number(ev && ev.endsAt) || 0;
+    if (startAt && now < startAt) return "scheduled";
+    if (startAt && endsAt && now >= startAt && now <= endsAt) return "live";
+    if (endsAt && now > endsAt) return "ended";
+    return "scheduled";
+  };
+
+  const postEventFromForm = () => {
+    ensureEventsPrefs();
+    if (!els.eventsText || !els.eventsStartsIn || !els.eventsDuration) return;
+    const title = normalizeActivityText(els.eventsText.value).slice(0, 60);
+    if (!title) return;
+    const loc = state.events.prefs.draftLoc;
+    if (!loc) {
+      toast(t("toast_events_need_location"));
+      return;
+    }
+
+    const startsInMin = clampIntSafe(els.eventsStartsIn.value, 0, 360, 30);
+    const durMin = clampIntSafe(els.eventsDuration.value, 15, 180, 60);
+    const now = nowMs();
+    const startAt = now + startsInMin * 60_000;
+    const endsAt = startAt + durMin * 60_000;
+
+    state.events.list.unshift({
+      id: uid(),
+      title,
+      createdAt: now,
+      startAt,
+      endsAt,
+      status: "scheduled",
+      host: USER_ACTOR,
+      hostLabel: "@you",
+      loc: { lat: Number(loc.lat), lng: Number(loc.lng) },
+      joinCount: 0,
+      joinedBy: []
+    });
+    state.events.list = state.events.list.slice(0, 50);
+    els.eventsText.value = "";
+    saveState();
+    renderEvents();
+    toast(t("toast_events_posted"));
+  };
+
+  const toggleJoinEvent = (eventId) => {
+    ensureEventsPrefs();
+    const id = String(eventId || "");
+    const ev = state.events.list.find((x) => x && x.id === id);
+    if (!ev) return;
+    const now = nowMs();
+    const st = computeEventState(ev, now);
+    if (st !== "scheduled" && st !== "live") return;
+    if (!Array.isArray(ev.joinedBy)) ev.joinedBy = [];
+    const has = ev.joinedBy.includes(userKey);
+    if (has) {
+      ev.joinedBy = ev.joinedBy.filter((k) => k !== userKey);
+      ev.joinCount = Math.max(0, clampIntSafe(ev.joinCount, 0, 99999, 0) - 1);
+      saveState();
+      renderEvents();
+      toast(t("toast_events_left"));
+      return;
+    }
+    ev.joinedBy.unshift(userKey);
+    ev.joinCount = Math.max(0, clampIntSafe(ev.joinCount, 0, 99999, 0) + 1);
+    saveState();
+    renderEvents();
+    toast(t("toast_events_joined"));
+  };
+
+  const cancelEvent = (eventId) => {
+    ensureEventsPrefs();
+    const id = String(eventId || "");
+    const ev = state.events.list.find((x) => x && x.id === id);
+    if (!ev) return;
+    if (actorKeyLocal(ev.host) !== userKey) return;
+    if (String(ev.status || "") === "cancelled") return;
+    ev.status = "cancelled";
+    saveState();
+    renderEvents();
+  };
+
+  const seedEventBookings = () => {
+    if (!mapApi || typeof mapApi.listAgents !== "function") return;
+    ensureEventsPrefs();
+    const now = nowMs();
+    let changed = false;
+    for (const ev of state.events.list) {
+      if (!ev) continue;
+      const st = computeEventState(ev, now);
+      if (st !== "scheduled" && st !== "live") continue;
+      const joinCount = clampIntSafe(ev.joinCount, 0, 99999, 0);
+      if (joinCount >= 28) continue;
+      // Gradually fill. Live events are more active.
+      const p = st === "live" ? 0.35 : 0.22;
+      if (Math.random() > p) continue;
+      ev.joinCount = joinCount + 1;
+      changed = true;
+    }
+    if (!changed) return;
+    saveState();
+    renderEvents();
+  };
+
+  const spawnSimEvent = () => {
+    if (!mapApi || typeof mapApi.listAgents !== "function") return;
+    ensureEventsPrefs();
+    const open = state.events.list.filter((x) => x && String(x.status || "") !== "cancelled");
+    if (open.length >= 4) return;
+    if (Math.random() > 0.25) return;
+
+    const agents = mapApi.listAgents().filter((a) => a && a.id);
+    if (!agents.length) return;
+    const host = agents[Math.floor(Math.random() * agents.length)];
+    const ideas = ["Coffee club", "Sketch walk", "Lunch meetup", "Night ride", "Study sprint"];
+    const title = String(ideas[Math.floor(Math.random() * ideas.length)]);
+    const now = nowMs();
+    const startsInMin = [0, 15, 30, 45, 60, 90, 120][Math.floor(Math.random() * 7)];
+    const durMin = [30, 45, 60, 90, 120][Math.floor(Math.random() * 5)];
+    const startAt = now + startsInMin * 60_000;
+    const endsAt = startAt + durMin * 60_000;
+    const gridM = eventsGridMFromDraft();
+    const loc = taskAreaAnchor({ lat: host.lat, lng: host.lng }, gridM, `event:${uid()}:loc`);
+    state.events.list.unshift({
+      id: uid(),
+      title,
+      createdAt: now,
+      startAt,
+      endsAt,
+      status: "scheduled",
+      host: { kind: "agent", id: String(host.id) },
+      hostLabel: String(host.handle || "@sim"),
+      loc,
+      joinCount: clampIntSafe(Math.round(randBetween(0, 8)), 0, 28, 0),
+      joinedBy: []
+    });
+    state.events.list = state.events.list.slice(0, 50);
+    saveState();
+    renderEvents();
+  };
+
+  const renderEventsList = () => {
+    if (!els.eventsList) return;
+    ensureEventsPrefs();
+    els.eventsList.replaceChildren();
+
+    const now = nowMs();
+    const items = state.events.list
+      .slice()
+      .sort((a, b) => (Number(b && b.createdAt) || 0) - (Number(a && a.createdAt) || 0))
+      .slice(0, 14);
+
+    if (!items.length) {
+      const li = document.createElement("li");
+      li.className = "eventItem eventItem--empty";
+      li.textContent = t("events_list_empty");
+      els.eventsList.appendChild(li);
+      return;
+    }
+
+    for (const ev of items) {
+      if (!ev || !ev.id) continue;
+      const st = computeEventState(ev, now);
+      const title = normalizeActivityText(ev.title || "").slice(0, 60);
+      const hostLabel = String(ev.hostLabel || getActorInfoSafe(ev.host).label || "@").trim();
+      const joined = Array.isArray(ev.joinedBy) && ev.joinedBy.includes(userKey);
+      const joinCount = clampIntSafe(ev.joinCount, 0, 99999, 0);
+
+      const li = document.createElement("li");
+      li.className = "eventItem";
+
+      const top = document.createElement("div");
+      top.className = "eventItem__top";
+      const titleEl = document.createElement("div");
+      titleEl.className = "eventItem__title";
+      titleEl.textContent = title;
+      const chip = document.createElement("div");
+      chip.className = "eventItem__meta";
+      const stKey = st === "live" ? "events_state_live" : st === "ended" ? "events_state_ended" : st === "cancelled" ? "events_state_cancelled" : "events_state_scheduled";
+      chip.textContent = t(stKey);
+      top.appendChild(titleEl);
+      top.appendChild(chip);
+
+      const meta = document.createElement("div");
+      meta.className = "eventItem__meta";
+      meta.textContent = `${hostLabel} • ${fmtHm(ev.startAt)} • ${fmtMinutes(Math.max(0, (Number(ev.endsAt) || 0) - (Number(ev.startAt) || 0)))} • ${joinCount}`;
+
+      const actions = document.createElement("div");
+      actions.className = "eventItem__actions";
+
+      const viewBtn = document.createElement("button");
+      viewBtn.type = "button";
+      viewBtn.className = "btn btn--ghost";
+      viewBtn.textContent = t("room_view_on_map");
+      viewBtn.addEventListener("click", () => {
+        if (!mapApi || typeof mapApi.focusLatLng !== "function") return;
+        const ll = ev.loc;
+        if (!ll) return;
+        mapApi.focusLatLng({ lat: ll.lat, lng: ll.lng, zoom: 16 });
+      });
+      actions.appendChild(viewBtn);
+
+      if (st === "scheduled" || st === "live") {
+        const joinBtn = document.createElement("button");
+        joinBtn.type = "button";
+        joinBtn.className = joined ? "btn btn--ghost" : "btn btn--primary";
+        joinBtn.textContent = joined ? t("events_leave") : t("events_join");
+        joinBtn.addEventListener("click", () => toggleJoinEvent(ev.id));
+        actions.appendChild(joinBtn);
+      }
+
+      if (st === "scheduled" && actorKeyLocal(ev.host) === userKey) {
+        const cancelBtn = document.createElement("button");
+        cancelBtn.type = "button";
+        cancelBtn.className = "btn btn--ghost";
+        cancelBtn.textContent = t("events_cancel");
+        cancelBtn.addEventListener("click", () => cancelEvent(ev.id));
+        actions.appendChild(cancelBtn);
+      }
+
+      li.appendChild(top);
+      li.appendChild(meta);
+      li.appendChild(actions);
+      els.eventsList.appendChild(li);
+    }
+  };
+
+  const syncEventsOnMap = () => {
+    if (!mapApi || typeof mapApi.setEvents !== "function") return;
+    ensureEventsPrefs();
+    mapApi.setEvents(state.events.list.slice());
+  };
+
+  const renderEvents = () => {
+    renderEventsForm();
+    renderEventsList();
+    syncEventsOnMap();
   };
 
   const startActivity = () => {
@@ -3102,7 +4490,10 @@
 
   const render = () => {
     renderActivity(true);
+    renderMarketplaceTabs();
     renderTasks();
+    renderMarket();
+    renderEvents();
     startTaskEngine();
   };
 
@@ -3397,14 +4788,8 @@
       for (const task of tasksForLines) {
         const status = String(task && task.status ? task.status : "");
         if (status !== "accepted") continue;
-        const fromStored = asLatLng(task && task.tetherFrom);
-        const toStored = asLatLng(task && task.tetherTo);
-        const from =
-          fromStored ||
-          anchorForTask(task, actorLatLngFor(task.poster), "from");
-        const to =
-          toStored ||
-          anchorForTask(task, actorLatLngFor(task.acceptedBy), "to");
+        const from = asLatLng(task && task.tetherFrom);
+        const to = asLatLng(task && task.tetherTo);
         if (!from || !to) continue;
         wantIds.add(String(task.id));
         const line = ensureTaskLine(task);
@@ -3760,6 +5145,9 @@
       const radiusScale = radiusScaleFromDecay(decay);
       const strengthScale = 0.84 + 0.58 * strength;
       const strengthOpacity = 0.65 + 0.95 * strength;
+      const rep = reputationFactorForKey(userKey);
+      const repScale = clamp(rep, 0.86, 1.16);
+      const repOpacity = clamp(1 + (repScale - 1) * 0.6, 0.86, 1.12);
       // Self view: opacity stays, only size decays.
       const opacityAgeFactor = selfPreciseMode ? 1 : decay;
       // No center dot: layered haze only.
@@ -3776,9 +5164,9 @@
           weight: showBound ? 1.7 : 0,
           opacity: showBound ? (selfPreciseMode ? 0.72 : clamp(0.65 * opacityAgeFactor, 0.22, 0.78)) : 0,
           fillColor: fill,
-          fillOpacity: clamp(o * strengthOpacity * opacityAgeFactor, 0.012, 0.26)
+          fillOpacity: clamp(o * strengthOpacity * opacityAgeFactor * repOpacity, 0.012, 0.28)
         });
-        userAuraLayers[i].setRadius(Math.max(10, r * strengthScale * radiusScale));
+        userAuraLayers[i].setRadius(Math.max(10, r * strengthScale * radiusScale * repScale));
       }
     };
 
@@ -4104,6 +5492,10 @@
       fill = mixHex(fill, AURA_GRAY_HEX, grayT);
       const bound = mixHex(fill, BOUND_MIX_HEX, 0.28);
       const opacityScale = decay * opacityBoost;
+      const repKey = `agent:${String(agent && agent.id ? agent.id : "")}`;
+      const rep = reputationFactorForKey(repKey);
+      const repScale = clamp(rep, 0.86, 1.16);
+      const repOpacity = clamp(1 + (repScale - 1) * 0.6, 0.86, 1.12);
 
       const layers = Array.isArray(agent.layers) && agent.layers.length ? agent.layers : [agent.outer].filter(Boolean);
       const baseRadii = Array.isArray(agent.baseRadii) && agent.baseRadii.length
@@ -4126,9 +5518,9 @@
           weight: showBound ? 1.7 : 0,
           opacity: showBound ? clamp(0.65 * opacityScale, 0.18, 0.85) : 0,
           fillColor: fill,
-          fillOpacity: clamp(baseO * opacityScale, 0.012, 0.32)
+          fillOpacity: clamp(baseO * opacityScale * repOpacity, 0.012, 0.34)
         });
-        layer.setRadius(Math.max(10, baseR * radiusScale));
+        layer.setRadius(Math.max(10, baseR * radiusScale * repScale));
       }
     };
 
@@ -4674,9 +6066,278 @@
     });
 
     map.on("zoomend", () => {
-      if (!sim.enabled) return;
-      refreshAgentDialogs();
+      if (sim.enabled) refreshAgentDialogs();
+      syncMarketPosts();
+      syncEvents();
     });
+
+    // --- Map picking + marketplace overlays (tasks route draft, market posts, scheduled auras) ---
+
+    let pickCb = null;
+    const setPickCursor = (on) => {
+      try {
+        map.getContainer().style.cursor = on ? "crosshair" : "";
+      } catch {
+        // ignore
+      }
+    };
+    const cancelPick = ({ resetStatus = true } = {}) => {
+      pickCb = null;
+      setPickCursor(false);
+      if (resetStatus) setMapStatus(t("map_status_ready"));
+    };
+    map.on("click", (e) => {
+      if (!pickCb) return;
+      const cb = pickCb;
+      cancelPick({ resetStatus: true });
+      const ll = e && e.latlng ? e.latlng : null;
+      if (!ll) return;
+      try {
+        cb({ lat: ll.lat, lng: ll.lng });
+      } catch {
+        // ignore
+      }
+    });
+    window.addEventListener("keydown", (e) => {
+      if (e && e.key === "Escape") cancelPick({ resetStatus: true });
+    });
+
+    const toLatLngSafe = (pt) => {
+      if (!pt || typeof pt !== "object") return null;
+      const lat = Number(pt.lat);
+      const lng = Number(pt.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+      return L.latLng(clamp(lat, -85, 85), wrapLng(lng));
+    };
+
+    let draftRouteLine = null;
+    let draftFromMarker = null;
+    let draftToMarker = null;
+    const ensureDraftRouteLayers = () => {
+      if (!draftRouteLine) {
+        draftRouteLine = L.polyline([], {
+          pane: "taskPane",
+          color: "rgba(255, 106, 0, 0.35)",
+          weight: 1.8,
+          opacity: 0.85,
+          dashArray: "2 10",
+          lineCap: "round"
+        }).addTo(map);
+      }
+      if (!draftFromMarker) {
+        draftFromMarker = L.circleMarker([0, 0], {
+          pane: "taskPane",
+          renderer: simRenderer,
+          radius: 5.5,
+          stroke: true,
+          color: "rgba(32, 24, 18, 0.30)",
+          weight: 1,
+          fillColor: "rgba(255, 106, 0, 0.85)",
+          fillOpacity: 0.6
+        }).addTo(map);
+      }
+      if (!draftToMarker) {
+        draftToMarker = L.circleMarker([0, 0], {
+          pane: "taskPane",
+          renderer: simRenderer,
+          radius: 5.5,
+          stroke: true,
+          color: "rgba(32, 24, 18, 0.30)",
+          weight: 1,
+          fillColor: "rgba(10, 122, 82, 0.85)",
+          fillOpacity: 0.55
+        }).addTo(map);
+      }
+    };
+
+    const setDraftRoute = ({ from = null, to = null } = {}) => {
+      const a = toLatLngSafe(from);
+      const b = toLatLngSafe(to);
+      if (!a && !b) {
+        if (draftRouteLine) draftRouteLine.setLatLngs([]);
+        if (draftFromMarker) draftFromMarker.setStyle({ opacity: 0, fillOpacity: 0 });
+        if (draftToMarker) draftToMarker.setStyle({ opacity: 0, fillOpacity: 0 });
+        return;
+      }
+      ensureDraftRouteLayers();
+      if (draftFromMarker) {
+        if (a) {
+          draftFromMarker.setLatLng(a);
+          draftFromMarker.setStyle({ opacity: 1, fillOpacity: 0.6 });
+        } else {
+          draftFromMarker.setStyle({ opacity: 0, fillOpacity: 0 });
+        }
+      }
+      if (draftToMarker) {
+        if (b) {
+          draftToMarker.setLatLng(b);
+          draftToMarker.setStyle({ opacity: 1, fillOpacity: 0.55 });
+        } else {
+          draftToMarker.setStyle({ opacity: 0, fillOpacity: 0 });
+        }
+      }
+      if (draftRouteLine) {
+        draftRouteLine.setLatLngs(a && b ? [a, b] : a ? [a] : b ? [b] : []);
+      }
+    };
+
+    const marketLayers = new Map(); // id -> { layers: [l0,l1], tooltipBound: bool }
+    let marketForMap = [];
+
+    const syncMarketPosts = () => {
+      const want = new Set();
+      const zoomOk = map.getZoom() >= DIALOG_MIN_ZOOM;
+      for (const post of marketForMap) {
+        if (!post || !post.id) continue;
+        const ll = toLatLngSafe(post.loc);
+        if (!ll) continue;
+        const id = String(post.id);
+        want.add(id);
+        const kind = String(post.kind || "product") === "service" ? "service" : "product";
+        const fill = activityColorHex(`${kind}:${String(post.title || "")}`);
+        let rec = marketLayers.get(id) || null;
+        if (!rec) {
+          const layers = [
+            createAuraLayer(ll, fill, 18, 0.06),
+            createAuraLayer(ll, fill, 12, 0.09)
+          ];
+          rec = { layers, tooltipBound: false };
+          marketLayers.set(id, rec);
+        }
+        for (const l of rec.layers) l.setLatLng(ll);
+        rec.layers[0].setStyle({ fillColor: fill, fillOpacity: 0.06 });
+        if (rec.layers[1]) rec.layers[1].setStyle({ fillColor: fill, fillOpacity: 0.09 });
+
+        const label = `${kind === "service" ? t("market_kind_service") : t("market_kind_product")} • ${String(post.title || "").slice(0, 20)}`;
+        if (zoomOk) {
+          if (!rec.tooltipBound) {
+            rec.layers[0].bindTooltip(label, {
+              permanent: true,
+              direction: "top",
+              offset: [0, -28],
+              className: "auraDialog",
+              opacity: 0.9
+            });
+            rec.layers[0].openTooltip();
+            rec.tooltipBound = true;
+          } else {
+            const tt = rec.layers[0].getTooltip && rec.layers[0].getTooltip();
+            if (tt) tt.setContent(label);
+          }
+        } else if (rec.tooltipBound) {
+          try {
+            rec.layers[0].unbindTooltip();
+          } catch {
+            // ignore
+          }
+          rec.tooltipBound = false;
+        }
+      }
+
+      for (const [id, rec] of marketLayers.entries()) {
+        if (want.has(id)) continue;
+        for (const l of rec.layers || []) {
+          try {
+            l.remove();
+          } catch {
+            // ignore
+          }
+        }
+        marketLayers.delete(id);
+      }
+    };
+
+    const eventLayers = new Map(); // id -> { circles: [c0,c1], tooltipBound: bool }
+    let eventsForMap = [];
+
+    const eventRadiusM = (joinCount) => {
+      const j = Math.max(0, Number(joinCount) || 0);
+      const inc = Math.min(55, Math.log1p(j) * 14);
+      return clamp(55 + inc, 45, 120);
+    };
+
+    const syncEvents = () => {
+      const want = new Set();
+      const zoomOk = map.getZoom() >= DIALOG_MIN_ZOOM;
+      const now = nowMs();
+      for (const ev of eventsForMap) {
+        if (!ev || !ev.id) continue;
+        const ll = toLatLngSafe(ev.loc);
+        if (!ll) continue;
+        const id = String(ev.id);
+        want.add(id);
+        const startAt = Number(ev.startAt) || 0;
+        const endsAt = Number(ev.endsAt) || 0;
+        const cancelled = String(ev.status || "") === "cancelled";
+        const live = startAt && endsAt ? now >= startAt && now <= endsAt : false;
+        const ended = endsAt ? now > endsAt : false;
+        const fill = activityColorHex(String(ev.title || ""));
+        let grayT = ended ? 0.8 : 0.0;
+        const rM = eventRadiusM(ev.joinCount);
+        let op0 = live ? 0.06 : 0.04;
+        let op1 = live ? 0.09 : 0.06;
+        if (cancelled) {
+          grayT = 0.92;
+          op0 = 0.02;
+          op1 = 0.03;
+        }
+        const color = mixHex(fill, AURA_GRAY_HEX, grayT);
+
+        let rec = eventLayers.get(id) || null;
+        if (!rec) {
+          const c0 = L.circle(ll, { pane: "overlayPane", renderer: simRenderer, radius: rM * 1.22, stroke: false, fillColor: color, fillOpacity: op0 }).addTo(map);
+          const c1 = L.circle(ll, { pane: "overlayPane", renderer: simRenderer, radius: rM * 0.86, stroke: false, fillColor: color, fillOpacity: op1 }).addTo(map);
+          rec = { circles: [c0, c1], tooltipBound: false };
+          eventLayers.set(id, rec);
+        }
+        for (const c of rec.circles) c.setLatLng(ll);
+        if (rec.circles[0]) {
+          rec.circles[0].setRadius(rM * 1.22);
+          rec.circles[0].setStyle({ fillColor: color, fillOpacity: op0 });
+        }
+        if (rec.circles[1]) {
+          rec.circles[1].setRadius(rM * 0.86);
+          rec.circles[1].setStyle({ fillColor: color, fillOpacity: op1 });
+        }
+
+        const label = String(ev.title || "").slice(0, 22);
+        if (zoomOk && label) {
+          if (!rec.tooltipBound) {
+            rec.circles[1].bindTooltip(label, {
+              permanent: true,
+              direction: "top",
+              offset: [0, -18],
+              className: "auraDialog",
+              opacity: 0.9
+            });
+            rec.circles[1].openTooltip();
+            rec.tooltipBound = true;
+          } else {
+            const tt = rec.circles[1].getTooltip && rec.circles[1].getTooltip();
+            if (tt) tt.setContent(label);
+          }
+        } else if (rec.tooltipBound) {
+          try {
+            rec.circles[1].unbindTooltip();
+          } catch {
+            // ignore
+          }
+          rec.tooltipBound = false;
+        }
+      }
+
+      for (const [id, rec] of eventLayers.entries()) {
+        if (want.has(id)) continue;
+        for (const c of rec.circles || []) {
+          try {
+            c.remove();
+          } catch {
+            // ignore
+          }
+        }
+        eventLayers.delete(id);
+      }
+    };
 
     setGpsBadge(t("map_gps_off"), "off");
     setMapStatus(t("map_status_ready"));
@@ -4747,6 +6408,23 @@
       setTasks: (tasks) => {
         tasksForLines = Array.isArray(tasks) ? tasks.slice() : [];
         syncTaskLines(simNow());
+      },
+      setDraftRoute: ({ from = null, to = null } = {}) => {
+        setDraftRoute({ from, to });
+      },
+      beginPick: (cb) => {
+        if (typeof cb !== "function") return;
+        pickCb = cb;
+        setPickCursor(true);
+        setMapStatus(t("toast_task_pick_on_map"));
+      },
+      setMarketPosts: (posts) => {
+        marketForMap = Array.isArray(posts) ? posts.slice() : [];
+        syncMarketPosts();
+      },
+      setEvents: (events) => {
+        eventsForMap = Array.isArray(events) ? events.slice() : [];
+        syncEvents();
       },
       getActorInfo: (actor) => {
         if (!actor || typeof actor !== "object") return { label: "—", verified: false };
@@ -4823,6 +6501,15 @@
         if (!Number.isFinite(la) || !Number.isFinite(ln)) return;
         map.flyTo([clamp(la, -85, 85), wrapLng(ln)], clamp(zoom, 2, 18), { duration: 0.8 });
       },
+      refreshReputation: () => {
+        applyUserAuraStyle();
+        for (const a of sim.agents) {
+          if (!a) continue;
+          a.needsStyle = true;
+          applyAgentStyle(a, simNow());
+          syncAgentDialog(a);
+        }
+      },
       refreshI18n: () => {
         setSimUi();
         setVisBadge(userVisibilityMode, "ok");
@@ -4833,6 +6520,8 @@
         } else {
           setGpsBadge(t("map_gps_off"), "off");
         }
+        syncMarketPosts();
+        syncEvents();
       }
     };
 
@@ -4873,6 +6562,132 @@
     const onTaskDist = () => renderTaskForm();
     els.taskDistanceLimit.addEventListener("input", onTaskDist);
     els.taskDistanceLimit.addEventListener("change", onTaskDist);
+  }
+
+  if (els.marketTabs) {
+    els.marketTabs.addEventListener("click", (e) => {
+      const btn = e && e.target ? e.target.closest("button[data-tab]") : null;
+      if (!btn) return;
+      const tab = normalizeMarketTab(btn.getAttribute("data-tab"));
+      state.ui.marketTab = tab;
+      saveState();
+      renderMarketplaceTabs();
+    });
+  }
+
+  if (els.taskPickStart) els.taskPickStart.addEventListener("click", pickTaskStart);
+  if (els.taskUseMyStart) els.taskUseMyStart.addEventListener("click", useMyAreaForTaskStart);
+  if (els.taskPickDest) els.taskPickDest.addEventListener("click", pickTaskDest);
+  if (els.taskClearRoute) els.taskClearRoute.addEventListener("click", clearTaskDraftRoute);
+
+  if (els.marketForm) {
+    els.marketForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      postMarketFromForm();
+    });
+  }
+
+  if (els.marketKind) {
+    els.marketKind.addEventListener("click", (e) => {
+      const btn = e && e.target ? e.target.closest("button[data-kind]") : null;
+      if (!btn) return;
+      const kind = normalizeMarketKind(btn.getAttribute("data-kind"));
+      state.market.prefs.kind = kind;
+      saveState();
+      renderMarket();
+    });
+  }
+
+  if (els.marketTimeLimit) {
+    const onChange = () => renderMarketForm();
+    els.marketTimeLimit.addEventListener("input", onChange);
+    els.marketTimeLimit.addEventListener("change", onChange);
+  }
+
+  if (els.marketDistanceLimit) {
+    const onChange = () => renderMarketForm();
+    els.marketDistanceLimit.addEventListener("input", onChange);
+    els.marketDistanceLimit.addEventListener("change", onChange);
+  }
+
+  if (els.marketPickLocation) {
+    els.marketPickLocation.addEventListener("click", () => {
+      beginPickOnMap((ll) => setMarketDraftLoc(ll));
+    });
+  }
+  if (els.marketUseMyLocation) {
+    els.marketUseMyLocation.addEventListener("click", useMyAreaForMarket);
+  }
+  if (els.marketClearLocation) {
+    els.marketClearLocation.addEventListener("click", clearMarketDraftLoc);
+  }
+
+  if (els.eventsForm) {
+    els.eventsForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      postEventFromForm();
+    });
+  }
+
+  if (els.eventsStartsIn) {
+    const onChange = () => renderEventsForm();
+    els.eventsStartsIn.addEventListener("input", onChange);
+    els.eventsStartsIn.addEventListener("change", onChange);
+  }
+
+  if (els.eventsDuration) {
+    const onChange = () => renderEventsForm();
+    els.eventsDuration.addEventListener("input", onChange);
+    els.eventsDuration.addEventListener("change", onChange);
+  }
+
+  if (els.eventsPickLocation) {
+    els.eventsPickLocation.addEventListener("click", () => {
+      beginPickOnMap((ll) => setEventsDraftLoc(ll));
+    });
+  }
+  if (els.eventsUseMyLocation) {
+    els.eventsUseMyLocation.addEventListener("click", useMyAreaForEvents);
+  }
+  if (els.eventsClearLocation) {
+    els.eventsClearLocation.addEventListener("click", clearEventsDraftLoc);
+  }
+
+  if (els.roomVisibility) {
+    els.roomVisibility.addEventListener("click", (e) => {
+      const btn = e && e.target ? e.target.closest("button[data-room-vis]") : null;
+      if (!btn) return;
+      if (!openRoomTaskId) return;
+      const vis = String(btn.getAttribute("data-room-vis") || "");
+      const room = ensureRoom(openRoomTaskId);
+      if (!room) return;
+      if (room.ownerKey !== userKey) return;
+      room.visibility = vis === "public" ? "public" : "participants";
+      saveState();
+      renderTaskRoom();
+      renderTasks();
+    });
+  }
+
+  if (els.reviewClose) {
+    els.reviewClose.addEventListener("click", closeReviewModal);
+  }
+
+  if (els.reviewModal) {
+    els.reviewModal.addEventListener("click", (e) => {
+      const target = e && e.target ? e.target : null;
+      if (!target) return;
+      if (target && target.getAttribute && target.getAttribute("data-review-close") === "1") {
+        closeReviewModal();
+      }
+    });
+  }
+
+  if (els.reviewForm) {
+    els.reviewForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      submitReview();
+    });
   }
 
   if (els.roomClose) {
