@@ -1704,7 +1704,8 @@
       top.push({
         key: "other",
         label: i18nLang === "zh-Hant" ? "其他" : i18nLang === "ja" ? "その他" : "Other",
-        colorHex: "rgba(32, 24, 18, 0.28)",
+        colorHex: "#201812",
+        strokeOpacity: 0.28,
         weight: otherW
       });
     }
@@ -1724,6 +1725,7 @@
         r,
         fill: "none",
         stroke: (entry && entry.colorHex) || "#FF6A00",
+        "stroke-opacity": Number.isFinite(Number(entry && entry.strokeOpacity)) ? Number(entry.strokeOpacity) : 1,
         "stroke-width": strokeW,
         "stroke-linecap": "butt",
         "stroke-dasharray": `${len} ${circ - len}`,
@@ -1743,6 +1745,10 @@
 
       const li = document.createElement("li");
       li.className = "auraLegend__item";
+      const raw = String((entry && entry.colorHex) || "#FF6A00").trim();
+      const rgb = hexToRgb(raw);
+      const tint = rgb ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.12)` : raw;
+      li.style.setProperty("--auraTint", tint);
 
       const dot = document.createElement("span");
       dot.className = "auraLegend__dot";

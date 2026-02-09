@@ -388,6 +388,26 @@ body {
   border-radius: 12px;
   border: 1px dashed rgba(32, 24, 18, 0.14);
   background: rgba(255, 255, 255, 0.34);
+  position: relative;
+  overflow: hidden;
+}
+
+.auraLegend__item::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    var(--auraTint, rgba(255, 106, 0, 0.10)) 0%,
+    transparent 72%
+  );
+  pointer-events: none;
+}
+
+.auraLegend__item > * {
+  position: relative;
+  z-index: 1;
 }
 
 .auraLegend__dot {
@@ -406,6 +426,10 @@ body {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgba(32, 24, 18, 0.84);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .auraLegend__val {
@@ -413,6 +437,7 @@ body {
   font-size: 12px;
   letter-spacing: 0.04em;
   color: rgba(32, 24, 18, 0.86);
+  white-space: nowrap;
 }
 
 @keyframes up {
@@ -1143,6 +1168,7 @@ body {
   font-size: 12px;
   letter-spacing: 0.04em;
   color: rgba(32, 24, 18, 0.88);
+  overflow-wrap: anywhere;
 }
 
 .activityList {
@@ -1689,12 +1715,17 @@ body {
   font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .auraPop__val {
   font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 .auraPop__empty {
