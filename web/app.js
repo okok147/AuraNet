@@ -58,6 +58,9 @@
     tabTasks: $("tabTasks"),
     tabMarket: $("tabMarket"),
     tabEvents: $("tabEvents"),
+    marketTabTasksCount: $("marketTabTasksCount"),
+    marketTabMarketCount: $("marketTabMarketCount"),
+    marketTabEventsCount: $("marketTabEventsCount"),
     dropTasksPost: $("dropTasksPost"),
     dropTasksList: $("dropTasksList"),
     taskListCount: $("taskListCount"),
@@ -3240,9 +3243,11 @@
   const renderTasks = () => {
     renderTaskForm();
     renderTaskList();
-    if (els.taskListCount) {
-      const n = state.tasks && Array.isArray(state.tasks.list) ? state.tasks.list.length : 0;
-      els.taskListCount.textContent = String(n);
+    const n = state.tasks && Array.isArray(state.tasks.list) ? state.tasks.list.length : 0;
+    if (els.taskListCount) els.taskListCount.textContent = String(n);
+    if (els.marketTabTasksCount) {
+      els.marketTabTasksCount.textContent = String(n);
+      els.marketTabTasksCount.hidden = n <= 0;
     }
     syncTasksOnMap();
     renderTaskRoom();
@@ -4213,9 +4218,11 @@
   const renderMarket = () => {
     renderMarketForm();
     renderMarketList();
-    if (els.marketListCount) {
-      const n = state.market && Array.isArray(state.market.list) ? state.market.list.length : 0;
-      els.marketListCount.textContent = String(n);
+    const n = state.market && Array.isArray(state.market.list) ? state.market.list.length : 0;
+    if (els.marketListCount) els.marketListCount.textContent = String(n);
+    if (els.marketTabMarketCount) {
+      els.marketTabMarketCount.textContent = String(n);
+      els.marketTabMarketCount.hidden = n <= 0;
     }
     syncMarketOnMap();
   };
@@ -4521,9 +4528,11 @@
   const renderEvents = () => {
     renderEventsForm();
     renderEventsList();
-    if (els.eventsListCount) {
-      const n = state.events && Array.isArray(state.events.list) ? state.events.list.length : 0;
-      els.eventsListCount.textContent = String(n);
+    const n = state.events && Array.isArray(state.events.list) ? state.events.list.length : 0;
+    if (els.eventsListCount) els.eventsListCount.textContent = String(n);
+    if (els.marketTabEventsCount) {
+      els.marketTabEventsCount.textContent = String(n);
+      els.marketTabEventsCount.hidden = n <= 0;
     }
     syncEventsOnMap();
   };

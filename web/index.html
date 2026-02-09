@@ -317,9 +317,9 @@
             </div>
           </div>
 
-          <div class="marketTabs seg" id="marketTabs" role="tablist" aria-label="Marketplace tabs">
+          <div class="marketTabs" id="marketTabs" role="tablist" aria-label="Marketplace tabs">
             <button
-              class="seg__btn"
+              class="tabBtn"
               type="button"
               data-tab="tasks"
               id="marketTabTasks"
@@ -327,10 +327,11 @@
               aria-controls="tabTasks"
               aria-selected="true"
             >
-              <span data-i18n="tab_tasks">Tasks</span>
+              <span class="tabBtn__label" data-i18n="tab_tasks">Tasks</span>
+              <span class="tabBtn__count" id="marketTabTasksCount" aria-hidden="true" hidden>0</span>
             </button>
             <button
-              class="seg__btn"
+              class="tabBtn"
               type="button"
               data-tab="market"
               id="marketTabMarket"
@@ -339,10 +340,11 @@
               aria-selected="false"
               tabindex="-1"
             >
-              <span data-i18n="tab_market">Market</span>
+              <span class="tabBtn__label" data-i18n="tab_market">Market</span>
+              <span class="tabBtn__count" id="marketTabMarketCount" aria-hidden="true" hidden>0</span>
             </button>
             <button
-              class="seg__btn"
+              class="tabBtn"
               type="button"
               data-tab="events"
               id="marketTabEvents"
@@ -351,7 +353,8 @@
               aria-selected="false"
               tabindex="-1"
             >
-              <span data-i18n="tab_events">Scheduled</span>
+              <span class="tabBtn__label" data-i18n="tab_events">Scheduled</span>
+              <span class="tabBtn__count" id="marketTabEventsCount" aria-hidden="true" hidden>0</span>
             </button>
           </div>
 
