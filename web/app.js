@@ -14,6 +14,9 @@
     mapGps: $("mapGps"),
     mapVis: $("mapVis"),
     mapAuraCount: $("mapAuraCount"),
+    mapHud: $("mapHud"),
+    mapHudText: $("mapHudText"),
+    mapHudCancel: $("mapHudCancel"),
 
     auraPill: $("auraPill"),
     activityForm: $("activityForm"),
@@ -260,6 +263,11 @@
       map_loading: "Loading map…",
       map_locate: "My location",
       map_reset: "Reset view",
+      map_pick_cancel: "Cancel",
+      map_pick_hud_start: "Tap map: start area",
+      map_pick_hud_dest: "Tap map: destination area",
+      map_pick_hud_market: "Tap map: market location",
+      map_pick_hud_events: "Tap map: scheduled location",
       map_auras_prefix: "AURAS",
       map_auras_off: "AURAS: OFF",
       map_auras_loading: "AURAS: LOADING",
@@ -471,6 +479,11 @@
       map_loading: "載入地圖中…",
       map_locate: "我的位置",
       map_reset: "重置視角",
+      map_pick_cancel: "取消",
+      map_pick_hud_start: "點選地圖：起點範圍",
+      map_pick_hud_dest: "點選地圖：目的地範圍",
+      map_pick_hud_market: "點選地圖：市集位置",
+      map_pick_hud_events: "點選地圖：活動位置",
       map_auras_prefix: "氣場",
       map_auras_off: "氣場：關",
       map_auras_loading: "氣場：載入中",
@@ -682,6 +695,11 @@
       map_loading: "地図を読み込み中…",
       map_locate: "現在地",
       map_reset: "表示を戻す",
+      map_pick_cancel: "キャンセル",
+      map_pick_hud_start: "地図をタップ: 出発エリア",
+      map_pick_hud_dest: "地図をタップ: 目的地エリア",
+      map_pick_hud_market: "地図をタップ: マーケット位置",
+      map_pick_hud_events: "地図をタップ: 予定の場所",
       map_auras_prefix: "オーラ",
       map_auras_off: "オーラ: OFF",
       map_auras_loading: "オーラ: 読み込み中",
@@ -1261,14 +1279,29 @@
   let lastToastAt = 0;
 
   const toast = (msg) => {
-    const t = nowMs();
-    if (t - lastToastAt < 250) return;
-    lastToastAt = t;
-    els.toast.textContent = msg;
+    if (!els.toast) return;
+    const text = String(msg || "").trim();
+    if (!text) return;
+
+    const tNow = nowMs();
+    if (tNow - lastToastAt < 180 && els.toast.textContent === text) return;
+    lastToastAt = tNow;
+
+    els.toast.hidden = false;
+    els.toast.textContent = text;
+    els.toast.classList.add("toast--show");
+
     window.clearTimeout(toast._t);
+    window.clearTimeout(toast._h);
     toast._t = window.setTimeout(() => {
-      if (els.toast.textContent === msg) els.toast.textContent = "";
-    }, 4200);
+      if (!els.toast) return;
+      els.toast.classList.remove("toast--show");
+      toast._h = window.setTimeout(() => {
+        if (!els.toast) return;
+        els.toast.hidden = true;
+        if (els.toast.textContent === text) els.toast.textContent = "";
+      }, 220);
+    }, 3400);
   };
 
   // --- Activity Logger ---
@@ -2244,7 +2277,9 @@
     if (els.marketTabs) {
       for (const btn of Array.from(els.marketTabs.querySelectorAll("button[data-tab]"))) {
         const tKey = String(btn.getAttribute("data-tab") || "");
-        btn.setAttribute("aria-selected", tKey === next ? "true" : "false");
+        const selected = tKey === next;
+        btn.setAttribute("aria-selected", selected ? "true" : "false");
+        btn.tabIndex = selected ? 0 : -1;
       }
     }
     if (els.tabTasks) els.tabTasks.hidden = next !== "tasks";
@@ -2420,6 +2455,20 @@
   const getActorLatLngSafe = (actor) => {
     if (mapApi && typeof mapApi.getActorLatLng === "function") return mapApi.getActorLatLng(actor);
     return null;
+  };
+
+  const ensureUserLatLngSafe = async () => {
+    let ll = getActorLatLngSafe(USER_ACTOR);
+    if (ll) return ll;
+    if (mapApi && typeof mapApi.requestGpsOnce === "function") {
+      try {
+        await mapApi.requestGpsOnce();
+      } catch {
+        // ignore
+      }
+    }
+    ll = getActorLatLngSafe(USER_ACTOR);
+    return ll || null;
   };
 
   const syncTasksOnMap = () => {
@@ -2846,25 +2895,26 @@
     renderTaskForm();
   };
 
-  const beginPickOnMap = (onPick) => {
+  const beginPickOnMap = (onPick, { hudKey = "" } = {}) => {
     if (!mapApi || typeof mapApi.beginPick !== "function") {
       toast(t("toast_task_pick_on_map"));
       return;
     }
-    mapApi.beginPick(onPick);
+    const hudText = hudKey ? t(hudKey) : t("toast_task_pick_on_map");
+    mapApi.beginPick(onPick, { hudText });
     toast(t("toast_task_pick_on_map"));
   };
 
   const pickTaskStart = () => {
-    beginPickOnMap((ll) => setTaskDraftPoint("from", ll));
+    beginPickOnMap((ll) => setTaskDraftPoint("from", ll), { hudKey: "map_pick_hud_start" });
   };
 
   const pickTaskDest = () => {
-    beginPickOnMap((ll) => setTaskDraftPoint("to", ll));
+    beginPickOnMap((ll) => setTaskDraftPoint("to", ll), { hudKey: "map_pick_hud_dest" });
   };
 
-  const useMyAreaForTaskStart = () => {
-    const ll = getActorLatLngSafe(USER_ACTOR);
+  const useMyAreaForTaskStart = async () => {
+    const ll = await ensureUserLatLngSafe();
     if (!ll) {
       toast(t("toast_task_poster_unavailable"));
       return;
@@ -3235,7 +3285,7 @@
     };
   };
 
-  const applyToTask = (taskId, actor) => {
+  const applyToTask = async (taskId, actor) => {
     ensureTaskPrefs();
     const id = String(taskId || "");
     const task = state.tasks.list.find((x) => x && x.id === id);
@@ -3251,7 +3301,10 @@
       return;
     }
 
-    const llActor = getActorLatLngSafe(actor);
+    let llActor = getActorLatLngSafe(actor);
+    if (!llActor && actor && actor.kind === "user") {
+      llActor = await ensureUserLatLngSafe();
+    }
     const gridM = clampIntSafe(task.tetherGridM || taskTetherGridMFor(task.distanceLimitM), 80, 500, 250);
     task.tetherGridM = gridM;
 
@@ -3847,8 +3900,8 @@
     renderMarket();
   };
 
-  const useMyAreaForMarket = () => {
-    const ll = getActorLatLngSafe(USER_ACTOR);
+  const useMyAreaForMarket = async () => {
+    const ll = await ensureUserLatLngSafe();
     if (!ll) {
       toast(t("toast_task_poster_unavailable"));
       return;
@@ -4131,8 +4184,8 @@
     renderEvents();
   };
 
-  const useMyAreaForEvents = () => {
-    const ll = getActorLatLngSafe(USER_ACTOR);
+  const useMyAreaForEvents = async () => {
+    const ll = await ensureUserLatLngSafe();
     if (!ll) {
       toast(t("toast_task_poster_unavailable"));
       return;
@@ -5041,10 +5094,11 @@
           typeof agent.outer.getRadius === "function"
             ? agent.outer.getRadius()
             : Number(agent.baseOuterRadius) || 18;
+        const offsetY = -Math.round(Math.max(16, r + 12));
         agent.outer.bindTooltip(text, {
           permanent: true,
           direction: "top",
-          offset: [0, -Math.round(Math.max(16, r + 12))],
+          offset: [0, offsetY],
           className: "auraDialog",
           opacity: 0.95
         });
@@ -5055,7 +5109,20 @@
 
       try {
         const tt = typeof agent.outer.getTooltip === "function" ? agent.outer.getTooltip() : null;
-        if (tt) tt.setContent(text);
+        if (tt) {
+          tt.setContent(text);
+          const r =
+            typeof agent.outer.getRadius === "function"
+              ? agent.outer.getRadius()
+              : Number(agent.baseOuterRadius) || 18;
+          const wantY = -Math.round(Math.max(16, r + 12));
+          const off = tt.options && tt.options.offset ? tt.options.offset : null;
+          const prevY = Array.isArray(off) ? Number(off[1]) : off && typeof off === "object" ? Number(off.y) : NaN;
+          if (!Number.isFinite(prevY) || Math.abs(prevY - wantY) > 1) {
+            if (tt.options) tt.options.offset = [0, wantY];
+            if (typeof tt.update === "function") tt.update();
+          }
+        }
       } catch {
         // ignore
       }
@@ -6081,11 +6148,25 @@
         // ignore
       }
     };
+    const setPickHud = (on, text = "") => {
+      if (!els.mapHud || !els.mapHudText) return;
+      if (!on) {
+        els.mapHud.hidden = true;
+        els.mapHudText.textContent = "";
+        return;
+      }
+      els.mapHud.hidden = false;
+      els.mapHudText.textContent = String(text || "").trim();
+    };
     const cancelPick = ({ resetStatus = true } = {}) => {
       pickCb = null;
       setPickCursor(false);
+      setPickHud(false);
       if (resetStatus) setMapStatus(t("map_status_ready"));
     };
+    if (els.mapHudCancel) {
+      els.mapHudCancel.addEventListener("click", () => cancelPick({ resetStatus: true }));
+    }
     map.on("click", (e) => {
       if (!pickCb) return;
       const cb = pickCb;
@@ -6405,6 +6486,45 @@
         }
         startUserWatch();
       },
+      requestGpsOnce: () => {
+        return new Promise((resolve, reject) => {
+          if (!navigator.geolocation) {
+            setGpsBadge(t("map_gps_unsupported"), "warn");
+            reject(new Error("geolocation unsupported"));
+            return;
+          }
+
+          setGpsBadge(t("map_gps_request"), "off");
+          setMapStatus(t("map_status_requesting_gps"));
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              const lat = pos.coords.latitude;
+              const lng = pos.coords.longitude;
+              const accuracy = Number(pos.coords.accuracy) || 0;
+              setUserLatLng(lat, lng, accuracy, { ensureRing: false });
+              maybeSaveHomeFromRaw(lastUserLatLngRaw);
+              setGpsBadge(t("map_gps_on"), "ok");
+              setMapStatus(t("map_status_ready"));
+              resolve({ lat, lng, accuracy });
+            },
+            (err) => {
+              const code = err && typeof err.code === "number" ? err.code : 0;
+              let msg = t("gps_error");
+              if (code === 1) msg = t("gps_denied");
+              if (code === 2) msg = t("gps_unavailable");
+              if (code === 3) msg = t("gps_timeout");
+              setGpsBadge(t("map_gps_off"), "warn");
+              setMapStatus(msg, true);
+              reject(new Error(msg));
+            },
+            {
+              enableHighAccuracy: true,
+              timeout: 10_000,
+              maximumAge: 60_000
+            }
+          );
+        });
+      },
       setTasks: (tasks) => {
         tasksForLines = Array.isArray(tasks) ? tasks.slice() : [];
         syncTaskLines(simNow());
@@ -6412,11 +6532,13 @@
       setDraftRoute: ({ from = null, to = null } = {}) => {
         setDraftRoute({ from, to });
       },
-      beginPick: (cb) => {
+      beginPick: (cb, { hudText = "" } = {}) => {
         if (typeof cb !== "function") return;
         pickCb = cb;
         setPickCursor(true);
-        setMapStatus(t("toast_task_pick_on_map"));
+        const label = String(hudText || "").trim() || t("toast_task_pick_on_map");
+        setPickHud(true, label);
+        setMapStatus(label);
       },
       setMarketPosts: (posts) => {
         marketForMap = Array.isArray(posts) ? posts.slice() : [];
@@ -6573,6 +6695,34 @@
       saveState();
       renderMarketplaceTabs();
     });
+
+    els.marketTabs.addEventListener("keydown", (e) => {
+      if (!e) return;
+      const key = String(e.key || "");
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(key)) return;
+
+      const buttons = Array.from(els.marketTabs.querySelectorAll("button[data-tab]"));
+      if (!buttons.length) return;
+      const selectedIdx = Math.max(
+        0,
+        buttons.findIndex((b) => String(b.getAttribute("aria-selected") || "") === "true")
+      );
+
+      let nextIdx = selectedIdx;
+      if (key === "ArrowLeft") nextIdx = (selectedIdx - 1 + buttons.length) % buttons.length;
+      if (key === "ArrowRight") nextIdx = (selectedIdx + 1) % buttons.length;
+      if (key === "Home") nextIdx = 0;
+      if (key === "End") nextIdx = buttons.length - 1;
+
+      const nextBtn = buttons[nextIdx];
+      if (!nextBtn) return;
+      const tab = normalizeMarketTab(nextBtn.getAttribute("data-tab"));
+      state.ui.marketTab = tab;
+      saveState();
+      renderMarketplaceTabs();
+      nextBtn.focus();
+      e.preventDefault();
+    });
   }
 
   if (els.taskPickStart) els.taskPickStart.addEventListener("click", pickTaskStart);
@@ -6612,7 +6762,7 @@
 
   if (els.marketPickLocation) {
     els.marketPickLocation.addEventListener("click", () => {
-      beginPickOnMap((ll) => setMarketDraftLoc(ll));
+      beginPickOnMap((ll) => setMarketDraftLoc(ll), { hudKey: "map_pick_hud_market" });
     });
   }
   if (els.marketUseMyLocation) {
@@ -6643,7 +6793,7 @@
 
   if (els.eventsPickLocation) {
     els.eventsPickLocation.addEventListener("click", () => {
-      beginPickOnMap((ll) => setEventsDraftLoc(ll));
+      beginPickOnMap((ll) => setEventsDraftLoc(ll), { hudKey: "map_pick_hud_events" });
     });
   }
   if (els.eventsUseMyLocation) {

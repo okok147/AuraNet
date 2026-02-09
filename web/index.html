@@ -282,6 +282,12 @@
               <div class="mapPaper" aria-hidden="true"></div>
               <div class="mapVignette" aria-hidden="true"></div>
             </div>
+            <div class="mapHud" id="mapHud" hidden>
+              <div class="mapHud__text" id="mapHudText" aria-live="polite"></div>
+              <button class="btn btn--ghost mapHud__cancel" type="button" id="mapHudCancel">
+                <span data-i18n="map_pick_cancel">Cancel</span>
+              </button>
+            </div>
           </div>
 
           <div class="mapBar">
@@ -312,18 +318,44 @@
           </div>
 
           <div class="marketTabs seg" id="marketTabs" role="tablist" aria-label="Marketplace tabs">
-            <button class="seg__btn" type="button" data-tab="tasks" aria-selected="true">
+            <button
+              class="seg__btn"
+              type="button"
+              data-tab="tasks"
+              id="marketTabTasks"
+              role="tab"
+              aria-controls="tabTasks"
+              aria-selected="true"
+            >
               <span data-i18n="tab_tasks">Tasks</span>
             </button>
-            <button class="seg__btn" type="button" data-tab="market" aria-selected="false">
+            <button
+              class="seg__btn"
+              type="button"
+              data-tab="market"
+              id="marketTabMarket"
+              role="tab"
+              aria-controls="tabMarket"
+              aria-selected="false"
+              tabindex="-1"
+            >
               <span data-i18n="tab_market">Market</span>
             </button>
-            <button class="seg__btn" type="button" data-tab="events" aria-selected="false">
+            <button
+              class="seg__btn"
+              type="button"
+              data-tab="events"
+              id="marketTabEvents"
+              role="tab"
+              aria-controls="tabEvents"
+              aria-selected="false"
+              tabindex="-1"
+            >
               <span data-i18n="tab_events">Scheduled</span>
             </button>
           </div>
 
-          <div class="marketTab" id="tabTasks">
+          <div class="marketTab" id="tabTasks" role="tabpanel" aria-labelledby="marketTabTasks">
             <div class="panelHead">
               <div class="panelHead__title" data-i18n="tasks_title">Tasks</div>
               <div class="pill pill--muted" id="taskFeePill">FEE: 10%</div>
@@ -442,7 +474,7 @@
             <ul class="taskList" id="taskList" aria-label="Tasks"></ul>
           </div>
 
-          <div class="marketTab" id="tabMarket" hidden>
+          <div class="marketTab" id="tabMarket" role="tabpanel" aria-labelledby="marketTabMarket" hidden>
             <div class="panelHead">
               <div class="panelHead__title" data-i18n="market_title">Market</div>
               <div class="pill pill--muted" id="marketPill" data-i18n="market_pill">LOCAL</div>
@@ -562,7 +594,7 @@
             <ul class="marketList" id="marketList" aria-label="Market posts"></ul>
           </div>
 
-          <div class="marketTab" id="tabEvents" hidden>
+          <div class="marketTab" id="tabEvents" role="tabpanel" aria-labelledby="marketTabEvents" hidden>
             <div class="panelHead">
               <div class="panelHead__title" data-i18n="events_title">Scheduled</div>
               <div class="pill pill--muted" id="eventsPill" data-i18n="events_pill">AURAS</div>
@@ -656,10 +688,11 @@
             <ul class="eventsList" id="eventsList" aria-label="Scheduled activities"></ul>
           </div>
 
-          <div class="toast" id="toast" role="status" aria-live="polite"></div>
         </section>
       </div>
     </main>
+
+    <div class="toast toast--global" id="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
 
     <div class="modal" id="roomModal" hidden>
       <div class="modal__backdrop" data-room-close="1" aria-hidden="true"></div>
