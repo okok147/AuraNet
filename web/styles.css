@@ -276,6 +276,12 @@ body {
 .card--timer {
   position: sticky;
   top: 18px;
+  /* The left panel is sticky on desktop; keep it scrollable so the aura legend is always reachable. */
+  max-height: calc(100vh - 36px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
 }
 
 .card--wide {
@@ -2146,6 +2152,8 @@ body {
 
   .card--timer {
     position: static;
+    max-height: none;
+    overflow: visible;
   }
 }
 
