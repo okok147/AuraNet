@@ -4,8 +4,18 @@
   const $ = (id) => document.getElementById(id);
 
   const els = {
+    mainContent: $("mainContent"),
     storagePill: $("storagePill"),
+    netPill: $("netPill"),
     clock: $("clock"),
+    sectionTabs: $("sectionTabs"),
+    sectionTabActivity: $("sectionTabActivity"),
+    sectionTabMap: $("sectionTabMap"),
+    sectionTabMarket: $("sectionTabMarket"),
+    appInstallBtn: $("appInstallBtn"),
+    dataExportBtn: $("dataExportBtn"),
+    dataImportBtn: $("dataImportBtn"),
+    dataImportInput: $("dataImportInput"),
 
     paperMap: $("paperMap"),
     mapStatus: $("mapStatus"),
@@ -207,6 +217,15 @@
   const I18N = {
     en: {
       ui_language: "Language",
+      skip_main: "Skip to main content",
+      section_activity: "Activity",
+      section_map: "Map",
+      section_marketplace: "Marketplace",
+      net_online: "ONLINE",
+      net_offline: "OFFLINE",
+      install_app: "Install app",
+      data_export: "Export data",
+      data_import: "Import data",
       activity_title: "Activity Logger",
       activity_hint_idle: "Log what you’re doing. Each activity generates a unique color over time.",
       activity_tracking: "Tracking: {text}",
@@ -425,10 +444,25 @@
       room_location: "Location",
       room_send: "Send",
       room_view_on_map: "View",
-      toast_room_photo_too_large: "Photo too large. Try a smaller image."
+      toast_room_photo_too_large: "Photo too large. Try a smaller image.",
+      toast_export_ready: "Backup exported.",
+      toast_import_done: "Backup imported.",
+      toast_import_invalid: "Invalid backup file.",
+      toast_import_failed: "Could not import backup.",
+      toast_app_installed: "App installed.",
+      toast_pwa_unavailable: "Install prompt is not available right now."
     },
     "zh-Hant": {
       ui_language: "語言",
+      skip_main: "跳到主要內容",
+      section_activity: "活動",
+      section_map: "地圖",
+      section_marketplace: "市集",
+      net_online: "連線中",
+      net_offline: "離線",
+      install_app: "安裝 App",
+      data_export: "匯出資料",
+      data_import: "匯入資料",
       activity_title: "活動紀錄",
       activity_hint_idle: "紀錄你正在做的事，每個活動都會生成獨特的顏色並隨時間混合。",
       activity_tracking: "追蹤中：{text}",
@@ -647,10 +681,25 @@
       room_location: "位置",
       room_send: "送出",
       room_view_on_map: "查看",
-      toast_room_photo_too_large: "照片太大，請改用較小的圖片。"
+      toast_room_photo_too_large: "照片太大，請改用較小的圖片。",
+      toast_export_ready: "已匯出備份。",
+      toast_import_done: "已匯入備份。",
+      toast_import_invalid: "備份檔格式無效。",
+      toast_import_failed: "無法匯入備份。",
+      toast_app_installed: "App 已安裝。",
+      toast_pwa_unavailable: "目前無法顯示安裝提示。"
     },
     ja: {
       ui_language: "言語",
+      skip_main: "メインコンテンツへスキップ",
+      section_activity: "アクティビティ",
+      section_map: "マップ",
+      section_marketplace: "マーケット",
+      net_online: "オンライン",
+      net_offline: "オフライン",
+      install_app: "アプリをインストール",
+      data_export: "データをエクスポート",
+      data_import: "データをインポート",
       activity_title: "アクティビティ記録",
       activity_hint_idle: "いまの行動を記録。各アクティビティが固有の色を作り、時間で混ざります。",
       activity_tracking: "追跡中: {text}",
@@ -869,7 +918,13 @@
       room_location: "位置情報",
       room_send: "送信",
       room_view_on_map: "見る",
-      toast_room_photo_too_large: "写真が大きすぎます。小さい画像で試してください。"
+      toast_room_photo_too_large: "写真が大きすぎます。小さい画像で試してください。",
+      toast_export_ready: "バックアップを出力しました。",
+      toast_import_done: "バックアップを読み込みました。",
+      toast_import_invalid: "バックアップファイルの形式が無効です。",
+      toast_import_failed: "バックアップを読み込めませんでした。",
+      toast_app_installed: "アプリをインストールしました。",
+      toast_pwa_unavailable: "今はインストールできません。"
     }
   };
 
@@ -910,6 +965,8 @@
     if (typeof renderMarket === "function") renderMarket();
     if (typeof renderEvents === "function") renderEvents();
     if (typeof renderTaskRoom === "function") renderTaskRoom();
+    if (typeof renderNetworkPill === "function") renderNetworkPill();
+    if (typeof syncInstallButton === "function") syncInstallButton();
   };
 
   const defaultState = () => ({
@@ -4637,6 +4694,267 @@
     startTaskEngine();
   };
 
+  // --- App Shell (section nav, backup, PWA, online state) ---
+
+  const SECTION_TARGETS = ["activitySection", "mapSection", "marketplaceSection"];
+
+  const sectionTabElements = () =>
+    [
+      { id: "activitySection", el: els.sectionTabActivity },
+      { id: "mapSection", el: els.sectionTabMap },
+      { id: "marketplaceSection", el: els.sectionTabMarket }
+    ].filter((x) => x.el);
+
+  const setSectionTabSelected = (sectionId) => {
+    const active = String(sectionId || "");
+    for (const { id, el } of sectionTabElements()) {
+      const on = id === active;
+      el.setAttribute("aria-pressed", on ? "true" : "false");
+    }
+  };
+
+  const scrollToSection = (sectionId) => {
+    const id = String(sectionId || "");
+    if (!SECTION_TARGETS.includes(id)) return;
+    const target = document.getElementById(id);
+    if (!target) return;
+    setSectionTabSelected(id);
+    try {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      target.focus({ preventScroll: true });
+    } catch {
+      target.scrollIntoView(true);
+      target.focus();
+    }
+  };
+
+  const bindSectionTabs = () => {
+    if (!els.sectionTabs) return;
+
+    setSectionTabSelected("activitySection");
+
+    els.sectionTabs.addEventListener("click", (e) => {
+      const btn = e && e.target ? e.target.closest("button[data-section-target]") : null;
+      if (!btn) return;
+      const sectionId = String(btn.getAttribute("data-section-target") || "");
+      scrollToSection(sectionId);
+    });
+
+    els.sectionTabs.addEventListener("keydown", (e) => {
+      if (!e) return;
+      const key = String(e.key || "");
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(key)) return;
+      const tabs = sectionTabElements().map((x) => x.el).filter(Boolean);
+      if (!tabs.length) return;
+      const currentIdx = Math.max(
+        0,
+        tabs.findIndex((x) => String(x.getAttribute("aria-pressed") || "") === "true")
+      );
+
+      let nextIdx = currentIdx;
+      if (key === "ArrowLeft") nextIdx = (currentIdx - 1 + tabs.length) % tabs.length;
+      if (key === "ArrowRight") nextIdx = (currentIdx + 1) % tabs.length;
+      if (key === "Home") nextIdx = 0;
+      if (key === "End") nextIdx = tabs.length - 1;
+      const nextBtn = tabs[nextIdx];
+      if (!nextBtn) return;
+      const sectionId = String(nextBtn.getAttribute("data-section-target") || "");
+      setSectionTabSelected(sectionId);
+      nextBtn.focus();
+      e.preventDefault();
+    });
+
+    if (typeof window.IntersectionObserver !== "function") return;
+
+    const observer = new window.IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((x) => x && x.isIntersecting)
+          .sort((a, b) => (b.intersectionRatio || 0) - (a.intersectionRatio || 0));
+        if (!visible.length) return;
+        const id = visible[0].target && visible[0].target.id ? String(visible[0].target.id) : "";
+        if (!id) return;
+        setSectionTabSelected(id);
+      },
+      {
+        root: null,
+        threshold: [0.2, 0.5, 0.8],
+        rootMargin: "-18% 0px -55% 0px"
+      }
+    );
+
+    for (const id of SECTION_TARGETS) {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    }
+  };
+
+  const renderNetworkPill = () => {
+    if (!els.netPill) return;
+    const online = typeof navigator === "undefined" ? true : navigator.onLine !== false;
+    els.netPill.classList.toggle("pill--ok", online);
+    els.netPill.classList.toggle("pill--warn", !online);
+    els.netPill.textContent = online ? t("net_online") : t("net_offline");
+  };
+
+  const bindNetworkPill = () => {
+    renderNetworkPill();
+    window.addEventListener("online", renderNetworkPill);
+    window.addEventListener("offline", renderNetworkPill);
+  };
+
+  const readFileText = (file) =>
+    new Promise((resolve, reject) => {
+      if (!file) {
+        reject(new Error("no_file"));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(new Error("read_fail"));
+      reader.readAsText(file, "utf-8");
+    });
+
+  const downloadJson = (name, obj) => {
+    const filename = String(name || "auranet-backup.json");
+    const blob = new Blob([JSON.stringify(obj, null, 2)], {
+      type: "application/json;charset=utf-8"
+    });
+    const a = document.createElement("a");
+    const href = URL.createObjectURL(blob);
+    a.href = href;
+    a.download = filename;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(href), 3000);
+  };
+
+  const buildBackupPayload = () => ({
+    schemaVersion: 1,
+    app: "AuraNet",
+    exportedAt: new Date().toISOString(),
+    data: state
+  });
+
+  const applyImportedState = (candidate) => {
+    const prevRaw = localStorage.getItem(STORAGE_KEY);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(candidate));
+      const next = loadState();
+      if (!next || Number(next.version) !== 1) throw new Error("invalid");
+      state = next;
+      i18nLang = normalizeLang(state.activity && state.activity.prefs && state.activity.prefs.lang);
+      saveState();
+      applyI18n();
+      render();
+      if (mapApi && typeof mapApi.refreshI18n === "function") mapApi.refreshI18n();
+      return true;
+    } catch {
+      if (prevRaw == null) localStorage.removeItem(STORAGE_KEY);
+      else localStorage.setItem(STORAGE_KEY, prevRaw);
+      return false;
+    }
+  };
+
+  const normalizeBackupPayload = (parsed) => {
+    if (!parsed || typeof parsed !== "object") return null;
+    if (parsed.data && typeof parsed.data === "object") return parsed.data;
+    return parsed;
+  };
+
+  const bindDataTools = () => {
+    if (els.dataExportBtn) {
+      els.dataExportBtn.addEventListener("click", () => {
+        const stamp = fmtClock().replace(/[^0-9]/g, "").slice(0, 12);
+        downloadJson(`auranet-backup-${stamp}.json`, buildBackupPayload());
+        toast(t("toast_export_ready"));
+      });
+    }
+
+    if (els.dataImportBtn && els.dataImportInput) {
+      els.dataImportBtn.addEventListener("click", () => {
+        try {
+          els.dataImportInput.click();
+        } catch {
+          // ignore
+        }
+      });
+
+      els.dataImportInput.addEventListener("change", async () => {
+        const file = els.dataImportInput.files && els.dataImportInput.files[0] ? els.dataImportInput.files[0] : null;
+        els.dataImportInput.value = "";
+        if (!file) return;
+        try {
+          const text = await readFileText(file);
+          const parsed = JSON.parse(text);
+          const candidate = normalizeBackupPayload(parsed);
+          if (!candidate || Number(candidate.version) !== 1) {
+            toast(t("toast_import_invalid"));
+            return;
+          }
+          const ok = applyImportedState(candidate);
+          toast(ok ? t("toast_import_done") : t("toast_import_failed"));
+        } catch {
+          toast(t("toast_import_invalid"));
+        }
+      });
+    }
+  };
+
+  let deferredInstallPrompt = null;
+
+  const syncInstallButton = () => {
+    if (!els.appInstallBtn) return;
+    const canPrompt = Boolean(deferredInstallPrompt);
+    els.appInstallBtn.hidden = !canPrompt;
+    els.appInstallBtn.disabled = !canPrompt;
+  };
+
+  const bindPwaFeatures = () => {
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch(() => {
+          // Silent fail: app remains usable without offline cache.
+        });
+      });
+    }
+
+    window.addEventListener("beforeinstallprompt", (e) => {
+      if (!e) return;
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      syncInstallButton();
+    });
+
+    window.addEventListener("appinstalled", () => {
+      deferredInstallPrompt = null;
+      syncInstallButton();
+      toast(t("toast_app_installed"));
+    });
+
+    if (els.appInstallBtn) {
+      els.appInstallBtn.addEventListener("click", async () => {
+        if (!deferredInstallPrompt) {
+          toast(t("toast_pwa_unavailable"));
+          return;
+        }
+        const promptEvent = deferredInstallPrompt;
+        deferredInstallPrompt = null;
+        syncInstallButton();
+        try {
+          promptEvent.prompt();
+          await promptEvent.userChoice;
+        } catch {
+          // ignore
+        }
+      });
+    }
+
+    syncInstallButton();
+  };
+
   // --- Map ---
 
   const setMapStatus = (message, isError = false) => {
@@ -7153,6 +7471,11 @@
       if (mapApi && typeof mapApi.refreshI18n === "function") mapApi.refreshI18n();
     });
   }
+
+  bindSectionTabs();
+  bindNetworkPill();
+  bindDataTools();
+  bindPwaFeatures();
 
   mapApi = initPaperMap();
   applyI18n();

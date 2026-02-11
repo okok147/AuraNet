@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#f2e5d3" />
 
     <title>AuraNet</title>
     <meta
@@ -25,6 +26,8 @@
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""
     />
+    <link rel="manifest" href="./app.webmanifest" />
+    <link rel="apple-touch-icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./styles.css" />
 
     <script
@@ -36,6 +39,7 @@
     <script defer src="./app.js"></script>
   </head>
   <body>
+    <a class="skipLink" href="#mainContent" data-i18n="skip_main">Skip to main content</a>
     <div class="bg" aria-hidden="true"></div>
 
     <header class="shell">
@@ -58,6 +62,9 @@
               <option value="ja">日本語</option>
             </select>
           </label>
+          <div class="pill pill--ok" id="netPill" data-i18n="net_online">
+            ONLINE
+          </div>
           <div
             class="pill pill--ok"
             id="storagePill"
@@ -67,11 +74,60 @@
           </div>
         </div>
       </div>
+
+      <div class="headerStrip">
+        <nav
+          class="sectionTabs"
+          id="sectionTabs"
+          aria-label="Primary sections"
+        >
+          <button
+            class="sectionTabs__btn"
+            type="button"
+            id="sectionTabActivity"
+            data-section-target="activitySection"
+            aria-pressed="true"
+          >
+            <span data-i18n="section_activity">Activity</span>
+          </button>
+          <button
+            class="sectionTabs__btn"
+            type="button"
+            id="sectionTabMap"
+            data-section-target="mapSection"
+            aria-pressed="false"
+          >
+            <span data-i18n="section_map">Map</span>
+          </button>
+          <button
+            class="sectionTabs__btn"
+            type="button"
+            id="sectionTabMarket"
+            data-section-target="marketplaceSection"
+            aria-pressed="false"
+          >
+            <span data-i18n="section_marketplace">Marketplace</span>
+          </button>
+        </nav>
+
+        <div class="workspaceTools">
+          <button class="btn btn--ghost btn--compact" type="button" id="appInstallBtn" hidden>
+            <span data-i18n="install_app">Install app</span>
+          </button>
+          <button class="btn btn--ghost btn--compact" type="button" id="dataExportBtn">
+            <span data-i18n="data_export">Export data</span>
+          </button>
+          <button class="btn btn--ghost btn--compact" type="button" id="dataImportBtn">
+            <span data-i18n="data_import">Import data</span>
+          </button>
+          <input type="file" id="dataImportInput" accept="application/json" hidden />
+        </div>
+      </div>
     </header>
 
-    <main class="shell">
+    <main class="shell" id="mainContent">
       <div class="grid">
-        <section class="card card--timer" aria-labelledby="activityTitle">
+        <section class="card card--timer" id="activitySection" aria-labelledby="activityTitle" tabindex="-1">
           <div class="card__head">
             <h2 class="h1" id="activityTitle" data-i18n="activity_title">
               Activity Logger
@@ -262,7 +318,7 @@
           <ul class="activityList" id="activityList" aria-label="Recent activities"></ul>
         </section>
 
-        <section class="card card--map" aria-labelledby="mapTitle">
+        <section class="card card--map" id="mapSection" aria-labelledby="mapTitle" tabindex="-1">
           <div class="card__head">
             <h2 class="h1" id="mapTitle" data-i18n="map_title">
               Paper Sketch Map
@@ -307,7 +363,12 @@
           </div>
         </section>
 
-        <section class="card card--wide" aria-labelledby="marketplaceTitle">
+        <section
+          class="card card--wide"
+          id="marketplaceSection"
+          aria-labelledby="marketplaceTitle"
+          tabindex="-1"
+        >
           <div class="card__head">
             <h2 class="h1" id="marketplaceTitle" data-i18n="marketplace_title">
               Marketplace

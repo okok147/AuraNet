@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f2e5d3" />
+    <title>AuraNet Offline</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+        color: rgba(32, 24, 18, 0.92);
+        background:
+          radial-gradient(900px 600px at 12% 0%, rgba(255, 106, 0, 0.15), transparent 60%),
+          radial-gradient(760px 560px at 88% 0%, rgba(10, 122, 82, 0.1), transparent 60%),
+          linear-gradient(180deg, #f8f1e6 0%, #f2e5d3 100%);
+      }
+      .card {
+        width: min(560px, calc(100vw - 36px));
+        border-radius: 16px;
+        padding: 24px;
+        border: 1px solid rgba(32, 24, 18, 0.16);
+        background: rgba(255, 250, 242, 0.86);
+        box-shadow: 0 14px 32px rgba(24, 16, 10, 0.14);
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+        letter-spacing: 0.02em;
+      }
+      p {
+        margin: 0;
+        line-height: 1.6;
+        color: rgba(32, 24, 18, 0.76);
+      }
+      .actions {
+        margin-top: 18px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      a,
+      button {
+        appearance: none;
+        border: 1px solid rgba(32, 24, 18, 0.16);
+        background: rgba(255, 255, 255, 0.75);
+        color: rgba(32, 24, 18, 0.9);
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 14px;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      button.primary {
+        border-color: rgba(255, 106, 0, 0.45);
+        background: linear-gradient(180deg, rgba(255, 106, 0, 0.92), #ff8a2a);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <h1>AuraNet Offline</h1>
+      <p>
+        You are currently offline. Cached data remains available, and changes will continue saving locally.
+      </p>
+      <div class="actions">
+        <button class="primary" type="button" onclick="window.location.reload()">Retry</button>
+        <a href="./index.html">Open cached app</a>
+      </div>
+    </main>
+  </body>
+</html>
