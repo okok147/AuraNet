@@ -2071,6 +2071,63 @@ body {
   text-transform: uppercase;
 }
 
+.mapFilters {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mapFilters__label {
+  color: var(--muted2);
+  font-family: var(--font-ui);
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.mapFilters__chips {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mapFilterBtn {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(32, 24, 18, 0.16);
+  background: rgba(255, 255, 255, 0.42);
+  color: rgba(32, 24, 18, 0.8);
+  border-radius: 999px;
+  min-height: 32px;
+  padding: 6px 11px;
+  font-family: var(--font-ui);
+  font-weight: 900;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 6px 12px rgba(24, 16, 10, 0.04);
+}
+
+.mapFilterBtn.mapFilterBtn--on,
+.mapFilterBtn[aria-pressed="true"] {
+  border-color: rgba(255, 106, 0, 0.34);
+  background: rgba(255, 106, 0, 0.14);
+  color: rgba(32, 24, 18, 0.9);
+}
+
+.mapFilterBtn:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(255, 106, 0, 0.18),
+    0 6px 12px rgba(24, 16, 10, 0.04);
+}
+
 .mapBar {
   display: flex;
   align-items: center;
@@ -2576,6 +2633,20 @@ body {
   .mapBar {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .mapFilters {
+    align-items: flex-start;
+  }
+
+  .mapFilters__chips {
+    width: 100%;
+  }
+
+  .mapFilterBtn {
+    flex: 1 1 calc(33.333% - 6px);
+    min-width: 96px;
+    justify-content: center;
   }
 
   .mapMeta {

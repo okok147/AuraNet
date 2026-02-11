@@ -29,6 +29,10 @@
     mapGps: $("mapGps"),
     mapVis: $("mapVis"),
     mapAuraCount: $("mapAuraCount"),
+    mapLayerFilters: $("mapLayerFilters"),
+    mapFilterPeople: $("mapFilterPeople"),
+    mapFilterEvents: $("mapFilterEvents"),
+    mapFilterServices: $("mapFilterServices"),
     mapHud: $("mapHud"),
     mapHudText: $("mapHudText"),
     mapHudCancel: $("mapHudCancel"),
@@ -239,6 +243,15 @@
     return SUPPORTED_LANGS.includes(v) ? v : "en";
   };
 
+  const normalizeMapLayerFilters = (value) => {
+    const raw = value && typeof value === "object" ? value : {};
+    return {
+      people: raw.people !== false,
+      events: raw.events !== false,
+      services: raw.services !== false
+    };
+  };
+
   const I18N = {
     en: {
       ui_language: "Language",
@@ -324,6 +337,10 @@
       map_loading: "Loading map…",
       map_locate: "My location",
       map_reset: "Reset view",
+      map_filters_label: "Available on map",
+      map_filter_people: "People",
+      map_filter_events: "Event",
+      map_filter_services: "Service",
       map_pick_cancel: "Cancel",
       map_pick_hud_start: "Tap map: start area",
       map_pick_hud_dest: "Tap map: destination area",
@@ -571,6 +588,10 @@
       map_loading: "載入地圖中…",
       map_locate: "我的位置",
       map_reset: "重置視角",
+      map_filters_label: "地圖顯示",
+      map_filter_people: "人物",
+      map_filter_events: "活動",
+      map_filter_services: "服務",
       map_pick_cancel: "取消",
       map_pick_hud_start: "點選地圖：起點範圍",
       map_pick_hud_dest: "點選地圖：目的地範圍",
@@ -818,6 +839,10 @@
       map_loading: "地図を読み込み中…",
       map_locate: "現在地",
       map_reset: "表示を戻す",
+      map_filters_label: "地図に表示",
+      map_filter_people: "人",
+      map_filter_events: "イベント",
+      map_filter_services: "サービス",
       map_pick_cancel: "キャンセル",
       map_pick_hud_start: "地図をタップ: 出発エリア",
       map_pick_hud_dest: "地図をタップ: 目的地エリア",
@@ -1012,6 +1037,9 @@
       els.langSelect.value = i18nLang;
       els.langSelect.setAttribute("aria-label", t("ui_language"));
     }
+    if (els.mapLayerFilters) {
+      els.mapLayerFilters.setAttribute("aria-label", t("map_filters_label"));
+    }
 
     // Update any draft helpers that include translated labels.
     if (typeof renderActivityAssist === "function") renderActivityAssist();
@@ -1029,6 +1057,11 @@
     version: 1,
     ui: {
       marketTab: "tasks",
+      mapFilters: {
+        people: true,
+        events: true,
+        services: true
+      },
       drops: {
         tasksPost: false,
         tasksList: true,
@@ -1243,6 +1276,7 @@
       merged.ui.marketTab = ["tasks", "market", "events"].includes(String(merged.ui.marketTab || ""))
         ? String(merged.ui.marketTab || "")
         : "tasks";
+      merged.ui.mapFilters = normalizeMapLayerFilters(merged.ui.mapFilters);
 
       // Task draft route (stored as blurred area anchors).
       {
@@ -2888,6 +2922,7 @@
   const ensureUiPrefs = () => {
     const base = defaultState().ui;
     if (!state.ui || typeof state.ui !== "object") state.ui = { ...base };
+    state.ui.mapFilters = normalizeMapLayerFilters(state.ui.mapFilters || base.mapFilters);
     if (!state.ui.drops || typeof state.ui.drops !== "object") state.ui.drops = { ...base.drops };
     state.ui.drops = { ...base.drops, ...state.ui.drops };
   };
@@ -2928,6 +2963,40 @@
     ensureUiPrefs();
     state.ui.marketTab = normalizeMarketTab(state.ui.marketTab);
     setMarketTabSelected(state.ui.marketTab);
+  };
+
+  const mapFilterEntries = () => [
+    { key: "people", el: els.mapFilterPeople },
+    { key: "events", el: els.mapFilterEvents },
+    { key: "services", el: els.mapFilterServices }
+  ];
+
+  const renderMapLayerFilters = () => {
+    ensureUiPrefs();
+    const filters = normalizeMapLayerFilters(state.ui.mapFilters);
+    state.ui.mapFilters = filters;
+
+    for (const entry of mapFilterEntries()) {
+      if (!entry.el) continue;
+      const on = Boolean(filters[entry.key]);
+      entry.el.setAttribute("aria-pressed", on ? "true" : "false");
+      entry.el.classList.toggle("mapFilterBtn--on", on);
+    }
+
+    if (mapApi && typeof mapApi.setLayerFilters === "function") {
+      mapApi.setLayerFilters(filters);
+    }
+  };
+
+  const toggleMapLayerFilter = (key) => {
+    ensureUiPrefs();
+    const k = String(key || "").trim();
+    if (!["people", "events", "services"].includes(k)) return;
+    const current = normalizeMapLayerFilters(state.ui.mapFilters);
+    const next = { ...current, [k]: !current[k] };
+    state.ui.mapFilters = next;
+    saveState();
+    renderMapLayerFilters();
   };
 
   const USER_ACTOR = { kind: "user", id: "you" };
@@ -5202,6 +5271,7 @@
 
   const render = () => {
     renderActivity(true);
+    renderMapLayerFilters();
     renderMarketplaceTabs();
     applyDropStates();
     renderTasks();
@@ -5615,6 +5685,7 @@
     let userAuraAgeMs = 0;
     let userAuraStrength = 0;
     let userAuraVerified = Boolean(state && state.tasks && state.tasks.prefs && state.tasks.prefs.userVerified);
+    let userAuraRequested = false;
     let userWatchId = null;
     let lastUserLatLng = null;
     let lastUserLatLngRaw = null;
@@ -5623,6 +5694,7 @@
     let selfPreciseMode = false;
     let userVisibilityMode = normalizeVisibilityMode(state.activity.prefs.visibilityMode);
     let userAreaRadiusM = normalizeAreaRadiusM(state.activity.prefs.areaRadiusM);
+    let mapLayerFilters = normalizeMapLayerFilters(state && state.ui && state.ui.mapFilters);
     const PRIVACY_GRID_BY_MODE_M = {
       everyone: 5000,
       connected: 250
@@ -5740,8 +5812,24 @@
       return line;
     };
 
+    const clearTaskLines = () => {
+      for (const [id, line] of taskLines.entries()) {
+        try {
+          line.remove();
+        } catch {
+          // ignore
+        }
+        taskLines.delete(id);
+      }
+    };
+
     const syncTaskLines = (now) => {
       const tNow = Number.isFinite(Number(now)) ? Number(now) : simNow();
+      if (!mapLayerFilters.services) {
+        clearTaskLines();
+        lastLineSyncAt = tNow;
+        return;
+      }
 
       const asLatLng = (pt) => {
         if (!pt || typeof pt !== "object") return null;
@@ -6958,6 +7046,36 @@
       syncSimForView();
     };
 
+    const applyPeopleLayerFilter = () => {
+      const showPeople = Boolean(mapLayerFilters.people);
+      if (!showPeople) {
+        stopSimInternal();
+        setSimUi();
+        userAuraEnabled = false;
+        stopUserWatch();
+        removeUserAuraLayers();
+        setGpsBadge(t("map_gps_off"), "off");
+        return;
+      }
+
+      startSim();
+      const wantAura = Boolean(userAuraRequested);
+      if (!wantAura) {
+        userAuraEnabled = false;
+        stopUserWatch();
+        removeUserAuraLayers();
+        setGpsBadge(t("map_gps_off"), "off");
+        return;
+      }
+
+      userAuraEnabled = true;
+      if (lastUserLatLng) {
+        ensureUserAuraLayers(lastUserLatLng);
+        for (const l of userAuraLayers) l.setLatLng(lastUserLatLng);
+      }
+      startUserWatch();
+    };
+
     if (els.mapReset) {
       els.mapReset.addEventListener("click", () => {
         if (homeView && Array.isArray(homeView.center) && homeView.center.length === 2) {
@@ -7194,7 +7312,25 @@
     const marketLayers = new Map(); // id -> { layers: [l0,l1], tooltipBound: bool }
     let marketForMap = [];
 
+    const clearMarketLayers = () => {
+      for (const [id, rec] of marketLayers.entries()) {
+        for (const l of rec.layers || []) {
+          try {
+            l.remove();
+          } catch {
+            // ignore
+          }
+        }
+        marketLayers.delete(id);
+      }
+    };
+
     const syncMarketPosts = () => {
+      if (!mapLayerFilters.services) {
+        clearMarketLayers();
+        return;
+      }
+
       const want = new Set();
       const zoomOk = map.getZoom() >= DIALOG_MIN_ZOOM;
       for (const post of marketForMap) {
@@ -7202,8 +7338,9 @@
         const ll = toLatLngSafe(post.loc);
         if (!ll) continue;
         const id = String(post.id);
-        want.add(id);
         const kind = String(post.kind || "product") === "service" ? "service" : "product";
+        if (kind !== "service") continue;
+        want.add(id);
         const fill = activityColorHex(`${kind}:${String(post.title || "")}`);
         let rec = marketLayers.get(id) || null;
         if (!rec) {
@@ -7260,6 +7397,19 @@
     const eventLayers = new Map(); // id -> { circles: [c0,c1], tooltipBound: bool }
     let eventsForMap = [];
 
+    const clearEventLayers = () => {
+      for (const [id, rec] of eventLayers.entries()) {
+        for (const c of rec.circles || []) {
+          try {
+            c.remove();
+          } catch {
+            // ignore
+          }
+        }
+        eventLayers.delete(id);
+      }
+    };
+
     const eventRadiusM = (joinCount) => {
       const j = Math.max(0, Number(joinCount) || 0);
       const inc = Math.min(55, Math.log1p(j) * 14);
@@ -7267,6 +7417,11 @@
     };
 
     const syncEvents = () => {
+      if (!mapLayerFilters.events) {
+        clearEventLayers();
+        return;
+      }
+
       const want = new Set();
       const zoomOk = map.getZoom() >= DIALOG_MIN_ZOOM;
       const now = nowMs();
@@ -7352,8 +7507,13 @@
     setGpsBadge(t("map_gps_off"), "off");
     setMapStatus(t("map_status_ready"));
     setVisBadge(userVisibilityMode, "ok");
-    // Simulation is always enabled by default.
-    startSim();
+    if (mapLayerFilters.people) {
+      // Simulation is enabled by default when people layer is visible.
+      startSim();
+    } else {
+      stopSimInternal();
+      setSimUi();
+    }
 
     const api = {
       setUserAura: ({ enabled, color, verified, visibilityMode, areaRadiusM, ageMs, strength } = {}) => {
@@ -7399,7 +7559,8 @@
           applyUserAuraStyle();
         }
 
-        const want = Boolean(enabled);
+        userAuraRequested = Boolean(enabled);
+        const want = userAuraRequested && Boolean(mapLayerFilters.people);
         if (!want) {
           userAuraEnabled = false;
           stopUserWatch();
@@ -7475,6 +7636,13 @@
       },
       setEvents: (events) => {
         eventsForMap = Array.isArray(events) ? events.slice() : [];
+        syncEvents();
+      },
+      setLayerFilters: (filters) => {
+        mapLayerFilters = normalizeMapLayerFilters(filters);
+        applyPeopleLayerFilter();
+        syncTaskLines(simNow());
+        syncMarketPosts();
         syncEvents();
       },
       getActorInfo: (actor) => {
@@ -7653,6 +7821,17 @@
       e.preventDefault();
     });
   }
+
+  const bindMapLayerFilterBtn = (el, key) => {
+    if (!el) return;
+    el.addEventListener("click", () => {
+      toggleMapLayerFilter(key);
+    });
+  };
+
+  bindMapLayerFilterBtn(els.mapFilterPeople, "people");
+  bindMapLayerFilterBtn(els.mapFilterEvents, "events");
+  bindMapLayerFilterBtn(els.mapFilterServices, "services");
 
   const bindDropToggle = (el, key) => {
     if (!el) return;
