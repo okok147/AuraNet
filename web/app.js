@@ -176,6 +176,21 @@
     return Math.max(min, Math.min(max, n));
   };
 
+  const randomSubset = (items, count) => {
+    const source = Array.isArray(items) ? items : [];
+    const n = source.length;
+    const k = clampInt(count, 0, n, 0);
+    if (k <= 0 || n <= 0) return [];
+    const pool = source.slice();
+    for (let i = 0; i < k; i++) {
+      const j = i + Math.floor(Math.random() * (n - i));
+      const tmp = pool[i];
+      pool[i] = pool[j];
+      pool[j] = tmp;
+    }
+    return pool.slice(0, k);
+  };
+
   const todayISO = () => {
     const d = new Date();
     const y = d.getFullYear();
@@ -204,6 +219,11 @@
     // Enough for local-only IDs.
     return `${nowMs().toString(36)}_${Math.random().toString(36).slice(2, 9)}`;
   };
+
+  const MAX_ACTIVITY_LOG_ENTRIES = 900;
+  const AURA_RECOMPUTE_MS = 30_000;
+  const AURA_STRENGTH_RECOMPUTE_MS = 60_000;
+  const SAVE_DEBOUNCE_MS = 220;
 
   // --- i18n ---
 
@@ -1078,6 +1098,19 @@
       delete merged.timer;
       // Normalize shapes.
       if (!Array.isArray(merged.activity.log)) merged.activity.log = [];
+      merged.activity.log = merged.activity.log
+        .filter((entry) => entry && typeof entry === "object")
+        .map((entry) => ({
+          id: String(entry.id || ""),
+          text: String(entry.text || "").slice(0, 60),
+          key: String(entry.key || "").slice(0, 80),
+          colorHex: String(entry.colorHex || entry.color || "").slice(0, 16),
+          startedAt: Number(entry.startedAt) || 0,
+          endedAt: Number(entry.endedAt) || 0
+        }))
+        .filter((entry) => entry.endedAt > 0 && entry.startedAt >= 0 && entry.endedAt >= entry.startedAt)
+        .sort((a, b) => (Number(b && b.endedAt) || 0) - (Number(a && a.endedAt) || 0))
+        .slice(0, MAX_ACTIVITY_LOG_ENTRIES);
       // Normalize allowlist.
       if (!Array.isArray(merged.activity.prefs.allowlist)) merged.activity.prefs.allowlist = [];
       merged.activity.prefs.allowlist = merged.activity.prefs.allowlist
@@ -1356,16 +1389,111 @@
     }
   };
 
-  const saveState = () => {
+  let state = loadState();
+  const trimActivityLogInPlace = () => {
+    if (!state.activity || typeof state.activity !== "object") state.activity = defaultState().activity;
+    if (!Array.isArray(state.activity.log)) state.activity.log = [];
+    const log = state.activity.log;
+    if (log.length <= MAX_ACTIVITY_LOG_ENTRIES) return false;
+    log.length = MAX_ACTIVITY_LOG_ENTRIES;
+    return true;
+  };
+  const trimmedActivityLogOnBoot = trimActivityLogInPlace();
+
+  let saveTimer = null;
+  let savePending = false;
+  let lastSerializedState = null;
+
+  const flushSaveState = () => {
+    if (!savePending) return;
+    savePending = false;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      const payload = JSON.stringify(state);
+      if (payload === lastSerializedState) {
+        setStoragePill(true);
+        return;
+      }
+      localStorage.setItem(STORAGE_KEY, payload);
+      lastSerializedState = payload;
       setStoragePill(true);
     } catch {
       setStoragePill(false);
     }
   };
 
-  let state = loadState();
+  const cancelSaveTimer = () => {
+    if (saveTimer == null) return;
+    if (saveTimer.kind === "timeout") window.clearTimeout(saveTimer.id);
+    else if (saveTimer.kind === "idle" && typeof window.cancelIdleCallback === "function") {
+      window.cancelIdleCallback(saveTimer.id);
+    }
+    saveTimer = null;
+  };
+
+  const scheduleSaveFlush = () => {
+    if (saveTimer != null) return;
+    const run = () => {
+      saveTimer = null;
+      flushSaveState();
+    };
+    if (typeof window.requestIdleCallback === "function") {
+      saveTimer = {
+        kind: "idle",
+        id: window.requestIdleCallback(run, { timeout: SAVE_DEBOUNCE_MS })
+      };
+      return;
+    }
+    saveTimer = { kind: "timeout", id: window.setTimeout(run, SAVE_DEBOUNCE_MS) };
+  };
+
+  const saveState = (opts = {}) => {
+    const immediate =
+      typeof opts === "boolean" ? opts : Boolean(opts && typeof opts === "object" && opts.immediate);
+    savePending = true;
+    if (immediate) {
+      cancelSaveTimer();
+      flushSaveState();
+      return;
+    }
+    scheduleSaveFlush();
+  };
+
+  try {
+    lastSerializedState = localStorage.getItem(STORAGE_KEY);
+  } catch {
+    lastSerializedState = null;
+  }
+
+  window.addEventListener("pagehide", () => saveState({ immediate: true }));
+  window.addEventListener("beforeunload", () => saveState({ immediate: true }));
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") saveState({ immediate: true });
+  });
+
+  let activityLogRevision = 1;
+  const derivedCache = {
+    lastEndedAt: { rev: -1, value: 0 },
+    knownActivities: { rev: -1, data: [] },
+    longTermAura: { rev: -1, bucket: -1, data: { hex: "#FF6A00", byActivity: [] } },
+    auraStrength: { rev: -1, bucket: -1, data: { strength: 0, counts: [] } },
+    auraLegendSig: ""
+  };
+
+  const bumpActivityLogRevision = () => {
+    activityLogRevision += 1;
+    derivedCache.lastEndedAt.rev = -1;
+    derivedCache.knownActivities.rev = -1;
+    derivedCache.longTermAura.rev = -1;
+    derivedCache.auraStrength.rev = -1;
+  };
+
+  const onActivityLogMutated = () => {
+    if (trimActivityLogInPlace()) saveState();
+    bumpActivityLogRevision();
+  };
+
+  if (trimmedActivityLogOnBoot) saveState();
+
   let mapApi = null;
   let i18nLang = normalizeLang(state.activity && state.activity.prefs && state.activity.prefs.lang);
 
@@ -1600,6 +1728,15 @@
   };
 
   const computeLongTermAura = (now) => {
+    const bucket = Math.floor((Number(now) || 0) / AURA_RECOMPUTE_MS);
+    if (
+      derivedCache.longTermAura.rev === activityLogRevision &&
+      derivedCache.longTermAura.bucket === bucket &&
+      derivedCache.longTermAura.data
+    ) {
+      return derivedCache.longTermAura.data;
+    }
+
     // Habit-first weighting:
     // - Aggregate by (activity key, day).
     // - Each day contributes up to ~1 with a saturating curve (so one long session doesn't dominate).
@@ -1688,7 +1825,11 @@
       byActivity.set(key, { key, label, colorHex, weight });
     }
 
-    if (wSum <= 0) return { hex: "#FF6A00", byActivity: [] };
+    if (wSum <= 0) {
+      const empty = { hex: "#FF6A00", byActivity: [] };
+      derivedCache.longTermAura = { rev: activityLogRevision, bucket, data: empty };
+      return empty;
+    }
 
     const rr = linearToSrgb(lr / wSum) * 255;
     const gg = linearToSrgb(lg / wSum) * 255;
@@ -1699,10 +1840,21 @@
       .sort((a, b) => b.weight - a.weight)
       .map(({ key, label, colorHex, weight }) => ({ key, label, colorHex, weight }));
 
-    return { hex, byActivity: byActivityArr };
+    const result = { hex, byActivity: byActivityArr };
+    derivedCache.longTermAura = { rev: activityLogRevision, bucket, data: result };
+    return result;
   };
 
   const computeAuraStrength = (now) => {
+    const bucket = Math.floor((Number(now) || 0) / AURA_STRENGTH_RECOMPUTE_MS);
+    if (
+      derivedCache.auraStrength.rev === activityLogRevision &&
+      derivedCache.auraStrength.bucket === bucket &&
+      derivedCache.auraStrength.data
+    ) {
+      return derivedCache.auraStrength.data;
+    }
+
     // Strength is based on daily repetition (habit), not a single long session.
     // We look at distinct active days per activity key in a recent window,
     // then apply a saturating curve and blend the top few habits.
@@ -1743,7 +1895,9 @@
     const c1 = curve(counts[1] || 0);
     const c2 = curve(counts[2] || 0);
     const strength = clamp(c0 * 0.62 + c1 * 0.26 + c2 * 0.12, 0, 1);
-    return { strength, counts };
+    const result = { strength, counts };
+    derivedCache.auraStrength = { rev: activityLogRevision, bucket, data: result };
+    return result;
   };
 
   const renderAuraComposition = (longTerm) => {
@@ -1914,7 +2068,15 @@
     if (els.auraHex) {
       els.auraHex.textContent = longTerm.hex;
     }
-    renderAuraComposition(longTerm);
+    const entries = Array.isArray(longTerm.byActivity) ? longTerm.byActivity : [];
+    const sig = `${i18nLang}|${longTerm.hex}|${entries.length}|${entries
+      .slice(0, 7)
+      .map((e) => `${String(e && e.key)}:${Math.round((Number(e && e.weight) || 0) * 1000)}`)
+      .join("|")}`;
+    if (sig !== derivedCache.auraLegendSig) {
+      derivedCache.auraLegendSig = sig;
+      renderAuraComposition(longTerm);
+    }
 
     return hex;
   };
@@ -1931,11 +2093,15 @@
 
   const userAuraAgeMs = (now) => {
     if (state.activity.active) return 0;
-    let lastEndedAt = 0;
-    for (const entry of state.activity.log) {
-      const t = Number(entry && entry.endedAt) || 0;
-      if (t > lastEndedAt) lastEndedAt = t;
+    if (derivedCache.lastEndedAt.rev !== activityLogRevision) {
+      let lastEndedAt = 0;
+      for (const entry of state.activity.log) {
+        const t = Number(entry && entry.endedAt) || 0;
+        if (t > lastEndedAt) lastEndedAt = t;
+      }
+      derivedCache.lastEndedAt = { rev: activityLogRevision, value: lastEndedAt };
     }
+    const lastEndedAt = Number(derivedCache.lastEndedAt.value) || 0;
     if (!lastEndedAt) return 0;
     return Math.max(0, now - lastEndedAt);
   };
@@ -2097,6 +2263,10 @@
   };
 
   const collectKnownActivities = () => {
+    if (derivedCache.knownActivities.rev === activityLogRevision && Array.isArray(derivedCache.knownActivities.data)) {
+      return derivedCache.knownActivities.data;
+    }
+
     const seen = new Map();
     for (const entry of state.activity.log) {
       if (!entry || !entry.endedAt) continue;
@@ -2124,7 +2294,39 @@
       prev.colorHex = colorHex;
       seen.set(key, prev);
     }
-    return Array.from(seen.values()).sort((a, b) => b.lastAt - a.lastAt);
+    const result = Array.from(seen.values()).sort((a, b) => b.lastAt - a.lastAt);
+    derivedCache.knownActivities = { rev: activityLogRevision, data: result };
+    return result;
+  };
+
+  const topKSimilarActivities = (known, draftKey, limit = 5) => {
+    const top = [];
+    for (const item of known) {
+      if (!item || item.key === draftKey) continue;
+      const score = similarityScore(draftKey, item.key);
+      if (score < 22) continue;
+      const candidate = {
+        key: item.key,
+        label: item.label,
+        colorHex: item.colorHex,
+        lastAt: Number(item.lastAt) || 0,
+        score
+      };
+
+      let inserted = false;
+      for (let i = 0; i < top.length; i++) {
+        const cur = top[i];
+        if (candidate.score > cur.score || (candidate.score === cur.score && candidate.lastAt > cur.lastAt)) {
+          top.splice(i, 0, candidate);
+          inserted = true;
+          break;
+        }
+      }
+      if (!inserted) top.push(candidate);
+      if (top.length > limit) top.length = limit;
+    }
+
+    return top.map(({ key, label, colorHex }) => ({ key, label, colorHex }));
   };
 
   const renderSuggestList = (items) => {
@@ -2204,15 +2406,7 @@
     setActivityColorPreview(activityColorHex(draftKey));
 
     const known = collectKnownActivities();
-    const scored = known
-      .map((a) => ({
-        ...a,
-        score: similarityScore(draftKey, a.key)
-      }))
-      .filter((a) => a.score >= 22 && a.key !== draftKey)
-      .sort((a, b) => b.score - a.score || b.lastAt - a.lastAt)
-      .slice(0, 5)
-      .map(({ key, label, colorHex }) => ({ key, label, colorHex }));
+    const scored = topKSimilarActivities(known, draftKey, 5);
 
     renderSuggestList(scored);
   };
@@ -3621,6 +3815,7 @@
         startedAt: now - durMs,
         endedAt: now
       });
+      onActivityLogMutated();
       saveState();
       renderActivity(true);
     } else if (mapApi && typeof mapApi.applyTaskCompletion === "function") {
@@ -3641,6 +3836,7 @@
         startedAt: now - durMs,
         endedAt: now
       });
+      onActivityLogMutated();
       saveState();
       renderActivity(true);
     } else if (mapApi && typeof mapApi.applyTaskSupportBoost === "function") {
@@ -4644,6 +4840,7 @@
         startedAt: active.startedAt,
         endedAt
       });
+      onActivityLogMutated();
     }
 
     // Privacy + UX: keep aura visible briefly after logging so the color change is noticeable.
@@ -4662,6 +4859,7 @@
     if (!window.confirm(t("confirm_clear_log"))) return;
     state.activity.active = null;
     state.activity.log = [];
+    onActivityLogMutated();
     state.activity.prefs.lingerUntil = 0;
     saveState();
     renderActivity(true);
@@ -4845,15 +5043,22 @@
       const next = loadState();
       if (!next || Number(next.version) !== 1) throw new Error("invalid");
       state = next;
+      trimActivityLogInPlace();
+      bumpActivityLogRevision();
       i18nLang = normalizeLang(state.activity && state.activity.prefs && state.activity.prefs.lang);
-      saveState();
+      saveState({ immediate: true });
       applyI18n();
       render();
       if (mapApi && typeof mapApi.refreshI18n === "function") mapApi.refreshI18n();
       return true;
     } catch {
-      if (prevRaw == null) localStorage.removeItem(STORAGE_KEY);
-      else localStorage.setItem(STORAGE_KEY, prevRaw);
+      if (prevRaw == null) {
+        localStorage.removeItem(STORAGE_KEY);
+        lastSerializedState = null;
+      } else {
+        localStorage.setItem(STORAGE_KEY, prevRaw);
+        lastSerializedState = prevRaw;
+      }
       return false;
     }
   };
@@ -6102,10 +6307,7 @@
       const verified = Math.random() < 0.42;
       const skillsPool = ["courier", "photo", "fast", "careful", "bilingual", "tools", "trusted", "night"];
       const skillsCount = verified ? clamp(Math.round(randBetween(3, 5)), 3, 5) : clamp(Math.round(randBetween(2, 4)), 2, 4);
-      const skills = skillsPool
-        .slice()
-        .sort(() => Math.random() - 0.5)
-        .slice(0, skillsCount);
+      const skills = randomSubset(skillsPool, skillsCount);
       const rating = Math.round(randBetween(verified ? 4.4 : 4.0, 5.0) * 10) / 10;
       const tasksDone = Math.round(randBetween(verified ? 12 : 0, verified ? 220 : 90));
       const onTimePct = Math.round(randBetween(verified ? 92 : 80, 99));
