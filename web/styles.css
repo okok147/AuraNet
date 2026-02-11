@@ -178,6 +178,39 @@ body {
   justify-content: flex-end;
 }
 
+.auth {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.auth__status {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auth__google {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.auth__google:empty {
+  display: none;
+}
+
+.auth__google > div {
+  line-height: 0;
+}
+
+.auth__logout {
+  white-space: nowrap;
+}
+
 .headerStrip {
   margin-top: 12px;
   display: flex;
@@ -2492,6 +2525,26 @@ body {
     flex-wrap: wrap;
     justify-content: flex-start;
     gap: 8px;
+  }
+
+  .auth {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .auth__status {
+    max-width: none;
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  .auth__google {
+    flex: 1 1 auto;
+  }
+
+  .auth__logout {
+    flex: 1 1 auto;
+    justify-content: center;
   }
 
   .headerStrip {

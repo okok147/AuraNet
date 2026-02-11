@@ -6,6 +6,9 @@
   const els = {
     mainContent: $("mainContent"),
     storagePill: $("storagePill"),
+    authPill: $("authPill"),
+    googleSignIn: $("googleSignIn"),
+    authLogout: $("authLogout"),
     netPill: $("netPill"),
     clock: $("clock"),
     sectionTabs: $("sectionTabs"),
@@ -237,6 +240,10 @@
   const I18N = {
     en: {
       ui_language: "Language",
+      auth_not_configured: "Google login not configured",
+      auth_signed_out: "Not signed in",
+      auth_signed_in_as: "Signed in: {name}",
+      auth_logout: "Sign out",
       skip_main: "Skip to main content",
       section_activity: "Activity",
       section_map: "Map",
@@ -470,10 +477,18 @@
       toast_import_invalid: "Invalid backup file.",
       toast_import_failed: "Could not import backup.",
       toast_app_installed: "App installed.",
-      toast_pwa_unavailable: "Install prompt is not available right now."
+      toast_pwa_unavailable: "Install prompt is not available right now.",
+      toast_google_signed_in: "Signed in with Google.",
+      toast_google_signed_out: "Signed out.",
+      toast_google_load_failed: "Google login failed to load.",
+      toast_google_invalid_token: "Google credential is invalid."
     },
     "zh-Hant": {
       ui_language: "語言",
+      auth_not_configured: "Google 登入尚未設定",
+      auth_signed_out: "尚未登入",
+      auth_signed_in_as: "已登入：{name}",
+      auth_logout: "登出",
       skip_main: "跳到主要內容",
       section_activity: "活動",
       section_map: "地圖",
@@ -707,10 +722,18 @@
       toast_import_invalid: "備份檔格式無效。",
       toast_import_failed: "無法匯入備份。",
       toast_app_installed: "App 已安裝。",
-      toast_pwa_unavailable: "目前無法顯示安裝提示。"
+      toast_pwa_unavailable: "目前無法顯示安裝提示。",
+      toast_google_signed_in: "已使用 Google 登入。",
+      toast_google_signed_out: "已登出。",
+      toast_google_load_failed: "Google 登入載入失敗。",
+      toast_google_invalid_token: "Google 憑證無效。"
     },
     ja: {
       ui_language: "言語",
+      auth_not_configured: "Google ログイン未設定",
+      auth_signed_out: "未ログイン",
+      auth_signed_in_as: "ログイン中: {name}",
+      auth_logout: "ログアウト",
       skip_main: "メインコンテンツへスキップ",
       section_activity: "アクティビティ",
       section_map: "マップ",
@@ -944,7 +967,11 @@
       toast_import_invalid: "バックアップファイルの形式が無効です。",
       toast_import_failed: "バックアップを読み込めませんでした。",
       toast_app_installed: "アプリをインストールしました。",
-      toast_pwa_unavailable: "今はインストールできません。"
+      toast_pwa_unavailable: "今はインストールできません。",
+      toast_google_signed_in: "Google でログインしました。",
+      toast_google_signed_out: "ログアウトしました。",
+      toast_google_load_failed: "Google ログインの読み込みに失敗しました。",
+      toast_google_invalid_token: "Google 認証情報が無効です。"
     }
   };
 
@@ -986,6 +1013,7 @@
     if (typeof renderEvents === "function") renderEvents();
     if (typeof renderTaskRoom === "function") renderTaskRoom();
     if (typeof renderNetworkPill === "function") renderNetworkPill();
+    if (typeof renderAuthUi === "function") renderAuthUi();
     if (typeof syncInstallButton === "function") syncInstallButton();
   };
 
@@ -1044,8 +1072,28 @@
         draftLoc: null,
         draftGridM: 0
       }
+    },
+    auth: {
+      user: null
     }
   });
+
+  const normalizeAuthUser = (value) => {
+    if (!value || typeof value !== "object") return null;
+    const sub = String(value.sub || value.id || "").trim();
+    if (!sub) return null;
+    const name = String(value.name || value.displayName || "").trim().slice(0, 80);
+    const email = String(value.email || "").trim().slice(0, 120);
+    const picture = String(value.picture || "").trim().slice(0, 600);
+    const issuedAt = Number(value.issuedAt || value.iat || 0) || 0;
+    return {
+      sub,
+      name: name || "Google User",
+      email,
+      picture,
+      issuedAt
+    };
+  };
 
   const loadState = () => {
     try {
@@ -1092,6 +1140,10 @@
             ...base.events.prefs,
             ...((parsed.events && parsed.events.prefs) || {})
           }
+        },
+        auth: {
+          ...base.auth,
+          ...((parsed.auth && typeof parsed.auth === "object") ? parsed.auth : {})
         }
       };
       // Drop legacy timer state (previous versions).
@@ -1224,6 +1276,9 @@
             Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
         }
       }
+
+      if (!merged.auth || typeof merged.auth !== "object") merged.auth = defaultState().auth;
+      merged.auth.user = normalizeAuthUser(merged.auth.user);
 
       // Normalize task rooms (messages).
       {
@@ -1496,6 +1551,207 @@
 
   let mapApi = null;
   let i18nLang = normalizeLang(state.activity && state.activity.prefs && state.activity.prefs.lang);
+  const GOOGLE_GSI_SRC = "https://accounts.google.com/gsi/client";
+  let googleClientId = "";
+  let googleAuthReady = false;
+  let googleScriptPromise = null;
+
+  const readGoogleClientId = () => {
+    const cfg = window.AURANET_FIREBASE_CONFIG || window.firebaseConfig || null;
+    const candidates = [
+      cfg && cfg.googleClientId,
+      cfg && cfg.google_client_id,
+      window.AURANET_GOOGLE_CLIENT_ID
+    ];
+    for (const raw of candidates) {
+      const value = String(raw || "").trim();
+      if (!value) continue;
+      if (!value.includes(".apps.googleusercontent.com")) continue;
+      if (/YOUR_|REPLACE_ME|PLACEHOLDER/i.test(value)) continue;
+      return value;
+    }
+    return "";
+  };
+
+  const ensureScriptLoaded = (src, key) => {
+    if (!src) return Promise.reject(new Error("src_required"));
+    if (googleScriptPromise) return googleScriptPromise;
+    googleScriptPromise = new Promise((resolve, reject) => {
+      const id = key || "auranet-script";
+      const existing = document.getElementById(id);
+      if (existing) {
+        if (existing.getAttribute("data-loaded") === "1") {
+          resolve();
+          return;
+        }
+        existing.addEventListener("load", () => resolve(), { once: true });
+        existing.addEventListener("error", () => reject(new Error("script_load_error")), { once: true });
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.id = id;
+      script.src = src;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        script.setAttribute("data-loaded", "1");
+        resolve();
+      };
+      script.onerror = () => reject(new Error("script_load_error"));
+      document.head.appendChild(script);
+    }).catch((err) => {
+      googleScriptPromise = null;
+      throw err;
+    });
+    return googleScriptPromise;
+  };
+
+  const decodeJwtPayload = (token) => {
+    const raw = String(token || "");
+    const parts = raw.split(".");
+    if (parts.length < 2) return null;
+    const payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = payload + "=".repeat((4 - (payload.length % 4 || 4)) % 4);
+    try {
+      const json = window.atob(padded);
+      return JSON.parse(json);
+    } catch {
+      return null;
+    }
+  };
+
+  const renderAuthUi = () => {
+    const user = normalizeAuthUser(state && state.auth && state.auth.user);
+    state.auth = state.auth && typeof state.auth === "object" ? state.auth : defaultState().auth;
+    state.auth.user = user;
+
+    if (els.authPill) {
+      if (!googleClientId) {
+        els.authPill.textContent = t("auth_not_configured");
+      } else if (user) {
+        const display = normalizeActivityText(user.name || user.email || "").slice(0, 24) || "Google";
+        els.authPill.textContent = t("auth_signed_in_as", { name: display });
+      } else {
+        els.authPill.textContent = t("auth_signed_out");
+      }
+    }
+
+    if (els.authLogout) els.authLogout.hidden = !Boolean(user);
+    if (els.googleSignIn) {
+      els.googleSignIn.hidden = !googleClientId || Boolean(user) || !googleAuthReady;
+    }
+  };
+
+  const onGoogleCredential = (response) => {
+    const credential = String((response && response.credential) || "").trim();
+    if (!credential) {
+      toast(t("toast_google_invalid_token"));
+      return;
+    }
+    const payload = decodeJwtPayload(credential);
+    if (!payload || typeof payload !== "object") {
+      toast(t("toast_google_invalid_token"));
+      return;
+    }
+
+    const aud = String(payload.aud || "").trim();
+    if (googleClientId && aud && aud !== googleClientId) {
+      toast(t("toast_google_invalid_token"));
+      return;
+    }
+    const exp = Number(payload.exp) || 0;
+    if (exp > 0) {
+      const nowSec = Math.floor(nowMs() / 1000);
+      if (nowSec > exp + 30) {
+        toast(t("toast_google_invalid_token"));
+        return;
+      }
+    }
+
+    const user = normalizeAuthUser({
+      sub: payload.sub,
+      name: payload.name,
+      email: payload.email,
+      picture: payload.picture,
+      issuedAt: payload.iat
+    });
+    if (!user) {
+      toast(t("toast_google_invalid_token"));
+      return;
+    }
+
+    state.auth.user = user;
+    if (state.tasks && state.tasks.prefs) state.tasks.prefs.userVerified = true;
+    saveState();
+    renderAuthUi();
+    renderTasks();
+    toast(t("toast_google_signed_in"));
+  };
+
+  const signOutGoogle = () => {
+    state.auth.user = null;
+    saveState();
+    if (window.google && window.google.accounts && window.google.accounts.id) {
+      try {
+        window.google.accounts.id.disableAutoSelect();
+      } catch {
+        // ignore
+      }
+    }
+    renderAuthUi();
+    renderTasks();
+    toast(t("toast_google_signed_out"));
+  };
+
+  const initGoogleAuth = async () => {
+    googleClientId = readGoogleClientId();
+    googleAuthReady = false;
+    renderAuthUi();
+    if (!googleClientId) return;
+
+    try {
+      await ensureScriptLoaded(GOOGLE_GSI_SRC, "auranet-gsi-client");
+    } catch {
+      renderAuthUi();
+      toast(t("toast_google_load_failed"));
+      return;
+    }
+
+    if (!window.google || !window.google.accounts || !window.google.accounts.id) {
+      renderAuthUi();
+      toast(t("toast_google_load_failed"));
+      return;
+    }
+
+    try {
+      window.google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: onGoogleCredential,
+        auto_select: false,
+        cancel_on_tap_outside: true,
+        use_fedcm_for_prompt: true
+      });
+
+      if (els.googleSignIn) {
+        els.googleSignIn.replaceChildren();
+        window.google.accounts.id.renderButton(els.googleSignIn, {
+          type: "standard",
+          theme: "outline",
+          size: "large",
+          text: "signin_with",
+          shape: "rectangular"
+        });
+      }
+
+      googleAuthReady = true;
+      renderAuthUi();
+    } catch {
+      googleAuthReady = false;
+      renderAuthUi();
+      toast(t("toast_google_load_failed"));
+    }
+  };
 
   // --- Toast ---
 
@@ -7663,6 +7919,10 @@
     });
   }
 
+  if (els.authLogout) {
+    els.authLogout.addEventListener("click", signOutGoogle);
+  }
+
   if (els.langSelect) {
     els.langSelect.addEventListener("change", () => {
       i18nLang = normalizeLang(els.langSelect.value);
@@ -7678,6 +7938,7 @@
   bindNetworkPill();
   bindDataTools();
   bindPwaFeatures();
+  initGoogleAuth();
 
   mapApi = initPaperMap();
   applyI18n();
