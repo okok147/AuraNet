@@ -1,5 +1,7 @@
 (() => {
   const STORAGE_KEY = "auranet:v2";
+  const STORAGE_PROFILE_PREFIX = `${STORAGE_KEY}:profile:`;
+  const GUEST_PROFILE_ID = "guest";
 
   const $ = (id) => document.getElementById(id);
 
@@ -1101,9 +1103,39 @@
     };
   };
 
-  const loadState = () => {
+  const sanitizeProfileId = (value) => {
+    const raw = String(value || "").trim();
+    if (!raw) return GUEST_PROFILE_ID;
+    return raw.replace(/[^a-zA-Z0-9_.:-]/g, "_").slice(0, 96) || GUEST_PROFILE_ID;
+  };
+
+  const storageKeyForProfile = (profileId) => `${STORAGE_PROFILE_PREFIX}${sanitizeProfileId(profileId)}`;
+
+  const profileIdForAuthUser = (authUser) => {
+    const user = normalizeAuthUser(authUser);
+    if (!user || !user.sub) return GUEST_PROFILE_ID;
+    return `user:${sanitizeProfileId(user.sub)}`;
+  };
+
+  let activeProfileId = GUEST_PROFILE_ID;
+  let activeStorageKey = storageKeyForProfile(activeProfileId);
+
+  const migrateLegacyGuestStorage = () => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const legacyRaw = localStorage.getItem(STORAGE_KEY);
+      if (!legacyRaw) return;
+      const guestKey = storageKeyForProfile(GUEST_PROFILE_ID);
+      const guestRaw = localStorage.getItem(guestKey);
+      if (!guestRaw) localStorage.setItem(guestKey, legacyRaw);
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // ignore migration failures; app still works with defaults.
+    }
+  };
+
+  const loadState = (storageKey = activeStorageKey) => {
+    try {
+      const raw = localStorage.getItem(storageKey);
       if (!raw) return defaultState();
       const parsed = JSON.parse(raw);
       if (!parsed || parsed.version !== 1) return defaultState();
@@ -1450,7 +1482,8 @@
     }
   };
 
-  let state = loadState();
+  migrateLegacyGuestStorage();
+  let state = loadState(activeStorageKey);
   const trimActivityLogInPlace = () => {
     if (!state.activity || typeof state.activity !== "object") state.activity = defaultState().activity;
     if (!Array.isArray(state.activity.log)) state.activity.log = [];
@@ -1474,7 +1507,7 @@
         setStoragePill(true);
         return;
       }
-      localStorage.setItem(STORAGE_KEY, payload);
+      localStorage.setItem(activeStorageKey, payload);
       lastSerializedState = payload;
       setStoragePill(true);
     } catch {
@@ -1520,7 +1553,7 @@
   };
 
   try {
-    lastSerializedState = localStorage.getItem(STORAGE_KEY);
+    lastSerializedState = localStorage.getItem(activeStorageKey);
   } catch {
     lastSerializedState = null;
   }
@@ -1554,6 +1587,33 @@
   };
 
   if (trimmedActivityLogOnBoot) saveState();
+
+  const switchProfileState = (profileId, authUser) => {
+    const nextProfileId = sanitizeProfileId(profileId);
+    const nextStorageKey = storageKeyForProfile(nextProfileId);
+    const nextAuthUser = normalizeAuthUser(authUser);
+    const changed = nextStorageKey !== activeStorageKey;
+    if (changed) {
+      saveState({ immediate: true });
+      cancelSaveTimer();
+      savePending = false;
+      activeProfileId = nextProfileId;
+      activeStorageKey = nextStorageKey;
+      state = loadState(activeStorageKey);
+      trimActivityLogInPlace();
+      bumpActivityLogRevision();
+      i18nLang = normalizeLang(state.activity && state.activity.prefs && state.activity.prefs.lang);
+      try {
+        lastSerializedState = localStorage.getItem(activeStorageKey);
+      } catch {
+        lastSerializedState = null;
+      }
+    }
+    state.auth = state.auth && typeof state.auth === "object" ? state.auth : defaultState().auth;
+    state.auth.user = nextAuthUser;
+    if (nextAuthUser && state.tasks && state.tasks.prefs) state.tasks.prefs.userVerified = true;
+    return changed;
+  };
 
   let mapApi = null;
   let i18nLang = normalizeLang(state.activity && state.activity.prefs && state.activity.prefs.lang);
@@ -1653,12 +1713,15 @@
         })
       : null;
     const changed = !sameAuthUser(prevUser, nextUser);
+    const nextProfileId = profileIdForAuthUser(nextUser);
+    const profileChanged = switchProfileState(nextProfileId, nextUser);
 
-    state.auth = state.auth && typeof state.auth === "object" ? state.auth : defaultState().auth;
-    state.auth.user = nextUser;
-    if (nextUser && state.tasks && state.tasks.prefs) state.tasks.prefs.userVerified = true;
-
-    if (changed) {
+    if (profileChanged) {
+      saveState({ immediate: true });
+      applyI18n();
+      render();
+      if (mapApi && typeof mapApi.refreshI18n === "function") mapApi.refreshI18n();
+    } else if (changed) {
       saveState();
       if (typeof renderTasks === "function") renderTasks();
     }
@@ -5288,16 +5351,20 @@
     schemaVersion: 1,
     app: "AuraNet",
     exportedAt: new Date().toISOString(),
+    profileId: activeProfileId,
     data: state
   });
 
   const applyImportedState = (candidate) => {
-    const prevRaw = localStorage.getItem(STORAGE_KEY);
+    const currentAuthUser = normalizeAuthUser(state && state.auth && state.auth.user);
+    const prevRaw = localStorage.getItem(activeStorageKey);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(candidate));
-      const next = loadState();
+      localStorage.setItem(activeStorageKey, JSON.stringify(candidate));
+      const next = loadState(activeStorageKey);
       if (!next || Number(next.version) !== 1) throw new Error("invalid");
       state = next;
+      state.auth = state.auth && typeof state.auth === "object" ? state.auth : defaultState().auth;
+      state.auth.user = currentAuthUser;
       trimActivityLogInPlace();
       bumpActivityLogRevision();
       i18nLang = normalizeLang(state.activity && state.activity.prefs && state.activity.prefs.lang);
@@ -5308,10 +5375,10 @@
       return true;
     } catch {
       if (prevRaw == null) {
-        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(activeStorageKey);
         lastSerializedState = null;
       } else {
-        localStorage.setItem(STORAGE_KEY, prevRaw);
+        localStorage.setItem(activeStorageKey, prevRaw);
         lastSerializedState = prevRaw;
       }
       return false;
