@@ -33,6 +33,19 @@ Then open `http://127.0.0.1:5173`.
 
 `web/firebase-config.js` is gitignored and should stay local-only.
 
+### Enable Firebase Login On GitHub Pages
+
+The deploy workflow can generate `web/firebase-config.js` from GitHub Secrets (so config is not committed).
+
+Add these repository secrets in GitHub:
+- `FIREBASE_API_KEY`
+- `FIREBASE_AUTH_DOMAIN`
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_APP_ID`
+- `FIREBASE_STORAGE_BUCKET` (optional)
+- `FIREBASE_MESSAGING_SENDER_ID` (optional)
+- `FIREBASE_MEASUREMENT_ID` (optional)
+
 ## Deploy (GitHub Pages)
 
 Pushing to `main` triggers the GitHub Pages workflow (deploys the `web/` folder).
