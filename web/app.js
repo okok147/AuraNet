@@ -17,6 +17,7 @@
     sectionTabActivity: $("sectionTabActivity"),
     sectionTabMap: $("sectionTabMap"),
     sectionTabMarket: $("sectionTabMarket"),
+    mapSection: $("mapSection"),
     appInstallBtn: $("appInstallBtn"),
     dataExportBtn: $("dataExportBtn"),
     dataImportBtn: $("dataImportBtn"),
@@ -3608,6 +3609,10 @@
     }
     const hudText = hudKey ? t(hudKey) : t("toast_task_pick_on_map");
     mapApi.beginPick(onPick, { hudText });
+    scrollToSection("mapSection");
+    if (typeof mapApi.focusForPick === "function") {
+      mapApi.focusForPick({ durationMs: 2300 });
+    }
     toast(t("toast_task_pick_on_map"));
   };
 
@@ -7188,6 +7193,34 @@
     // --- Map picking + marketplace overlays (tasks route draft, market posts, scheduled auras) ---
 
     let pickCb = null;
+    let pickFocusTimer = null;
+    const mapWrapEl = () => {
+      if (!els.paperMap || typeof els.paperMap.closest !== "function") return null;
+      return els.paperMap.closest(".mapWrap");
+    };
+    const setPickFocusUi = (on) => {
+      const wrap = mapWrapEl();
+      if (wrap) wrap.classList.toggle("mapWrap--pick-focus", Boolean(on));
+      if (els.mapSection) els.mapSection.classList.toggle("card--map-pick-focus", Boolean(on));
+    };
+    const pulsePickFocus = (durationMs = 2000) => {
+      const ms = clamp(Number(durationMs) || 0, 900, 4200);
+      if (pickFocusTimer) {
+        window.clearTimeout(pickFocusTimer);
+        pickFocusTimer = null;
+      }
+      setPickFocusUi(true);
+      pickFocusTimer = window.setTimeout(() => {
+        setPickFocusUi(false);
+        pickFocusTimer = null;
+      }, ms);
+    };
+    const focusMapForPick = ({ durationMs = 2000 } = {}) => {
+      pulsePickFocus(durationMs);
+      window.requestAnimationFrame(() => map.invalidateSize());
+      window.setTimeout(() => map.invalidateSize(), 280);
+    };
+
     const setPickCursor = (on) => {
       try {
         map.getContainer().style.cursor = on ? "crosshair" : "";
@@ -7209,6 +7242,11 @@
       pickCb = null;
       setPickCursor(false);
       setPickHud(false);
+      setPickFocusUi(false);
+      if (pickFocusTimer) {
+        window.clearTimeout(pickFocusTimer);
+        pickFocusTimer = null;
+      }
       if (resetStatus) setMapStatus(t("map_status_ready"));
     };
     if (els.mapHudCancel) {
@@ -7629,6 +7667,10 @@
         const label = String(hudText || "").trim() || t("toast_task_pick_on_map");
         setPickHud(true, label);
         setMapStatus(label);
+        focusMapForPick({ durationMs: 2300 });
+      },
+      focusForPick: ({ durationMs = 2000 } = {}) => {
+        focusMapForPick({ durationMs });
       },
       setMarketPosts: (posts) => {
         marketForMap = Array.isArray(posts) ? posts.slice() : [];

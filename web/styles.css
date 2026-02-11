@@ -25,6 +25,13 @@
 
   --shadow: 0 14px 40px rgba(24, 16, 10, 0.12);
   --shadow2: 0 10px 22px rgba(24, 16, 10, 0.1);
+  --shadow3: 0 22px 46px rgba(24, 16, 10, 0.16);
+
+  --motion-fast: 160ms;
+  --motion-base: 260ms;
+  --motion-slow: 520ms;
+  --ease-smooth: cubic-bezier(0.2, 0.9, 0.2, 1);
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
 
   --font-ui: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system,
     Segoe UI, sans-serif;
@@ -41,11 +48,16 @@ body {
   height: 100%;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   color: var(--text);
   font-family: var(--font-mono);
   background: linear-gradient(180deg, var(--bg0) 0%, var(--bg1) 100%);
+  transition: background var(--motion-slow) var(--ease-soft);
 }
 
 .skipLink {
@@ -237,6 +249,11 @@ body {
   padding: 9px 11px;
   cursor: pointer;
   white-space: nowrap;
+  transition:
+    color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease,
+    box-shadow var(--motion-base) var(--ease-smooth),
+    transform var(--motion-fast) ease;
 }
 
 .sectionTabs__btn[aria-pressed="true"] {
@@ -364,6 +381,11 @@ body {
   overflow: clip;
   animation: up 520ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
   scroll-margin-top: 112px;
+  transition:
+    transform var(--motion-fast) ease,
+    box-shadow var(--motion-base) var(--ease-soft),
+    border-color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease;
 }
 
 .card::before {
@@ -545,11 +567,17 @@ body {
   background: rgba(255, 255, 255, 0.28);
   box-shadow: 0 10px 18px rgba(24, 16, 10, 0.04);
   overflow: hidden;
+  transition:
+    box-shadow var(--motion-base) var(--ease-smooth),
+    border-color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease,
+    transform var(--motion-fast) ease;
 }
 
 .drop[open] {
   background: rgba(255, 255, 255, 0.34);
   border-color: rgba(32, 24, 18, 0.18);
+  box-shadow: 0 16px 28px rgba(24, 16, 10, 0.08);
 }
 
 .drop__summary {
@@ -579,7 +607,7 @@ body {
   border-right: 2px solid rgba(32, 24, 18, 0.55);
   border-bottom: 2px solid rgba(32, 24, 18, 0.55);
   transform: rotate(45deg);
-  transition: transform 160ms ease;
+  transition: transform var(--motion-fast) ease;
   flex: 0 0 auto;
   margin-left: 8px;
 }
@@ -621,6 +649,22 @@ body {
   padding: 12px;
   display: grid;
   gap: 12px;
+  transform-origin: top center;
+}
+
+.drop[open] > .drop__body {
+  animation: dropIn var(--motion-base) var(--ease-smooth) both;
+}
+
+@keyframes dropIn {
+  from {
+    opacity: 0;
+    transform: translateY(-2px) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .panelHead {
@@ -1524,6 +1568,11 @@ body {
   border: 1px solid var(--stroke2);
   background: rgba(255, 255, 255, 0.38);
   box-shadow: 0 10px 18px rgba(24, 16, 10, 0.05);
+  transition:
+    transform var(--motion-fast) ease,
+    box-shadow var(--motion-base) var(--ease-smooth),
+    border-color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease;
 }
 
 .activityItem--empty {
@@ -1579,6 +1628,11 @@ body {
   padding: 10px 10px;
   display: grid;
   gap: 8px;
+  transition:
+    transform var(--motion-fast) ease,
+    box-shadow var(--motion-base) var(--ease-smooth),
+    border-color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease;
 }
 
 .taskPick__actions {
@@ -1659,6 +1713,11 @@ body {
   padding: 10px 10px;
   display: grid;
   gap: 8px;
+  transition:
+    transform var(--motion-fast) ease,
+    box-shadow var(--motion-base) var(--ease-smooth),
+    border-color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease;
 }
 
 .marketItem--empty,
@@ -1729,6 +1788,11 @@ body {
   padding: 10px 10px;
   display: grid;
   gap: 8px;
+  transition:
+    transform var(--motion-fast) ease,
+    box-shadow var(--motion-base) var(--ease-smooth),
+    border-color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease;
 }
 
 .taskItem--empty {
@@ -1858,6 +1922,53 @@ body {
   background: rgba(255, 255, 255, 0.28);
   box-shadow: 0 12px 22px rgba(24, 16, 10, 0.08);
   overflow: hidden;
+  transition:
+    transform var(--motion-fast) ease,
+    box-shadow var(--motion-base) var(--ease-soft),
+    border-color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease;
+}
+
+.mapWrap::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  border: 1px solid transparent;
+  opacity: 0;
+  transition:
+    opacity var(--motion-fast) ease,
+    border-color var(--motion-fast) ease;
+}
+
+.card--map-pick-focus .card__head::after {
+  width: 170px;
+  background: linear-gradient(90deg, rgba(255, 106, 0, 0.95), rgba(255, 106, 0, 0.18));
+}
+
+.mapWrap--pick-focus {
+  border-color: rgba(255, 106, 0, 0.38);
+  box-shadow: var(--shadow3);
+  transform: translateY(-1px);
+}
+
+.mapWrap--pick-focus::after {
+  opacity: 1;
+  border-color: rgba(255, 106, 0, 0.48);
+  animation: mapPickPulse 1600ms var(--ease-smooth) 1;
+}
+
+@keyframes mapPickPulse {
+  0% {
+    box-shadow: inset 0 0 0 0 rgba(255, 106, 0, 0.28);
+  }
+  70% {
+    box-shadow: inset 0 0 0 12px rgba(255, 106, 0, 0.02);
+  }
+  100% {
+    box-shadow: inset 0 0 0 0 rgba(255, 106, 0, 0);
+  }
 }
 
 .mapHud {
@@ -1874,6 +1985,9 @@ body {
   background: rgba(255, 250, 242, 0.86);
   box-shadow: var(--shadow2);
   backdrop-filter: blur(10px);
+  transition:
+    opacity var(--motion-fast) ease,
+    transform var(--motion-fast) ease;
 }
 
 .mapHud__text {
@@ -2112,6 +2226,12 @@ body {
   text-transform: uppercase;
   cursor: pointer;
   box-shadow: 0 6px 12px rgba(24, 16, 10, 0.04);
+  transition:
+    transform var(--motion-fast) ease,
+    box-shadow var(--motion-base) var(--ease-smooth),
+    border-color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease,
+    color var(--motion-fast) ease;
 }
 
 .mapFilterBtn.mapFilterBtn--on,
@@ -2172,6 +2292,11 @@ body {
   box-shadow: var(--shadow);
   display: grid;
   gap: 12px;
+  transition:
+    transform var(--motion-fast) ease,
+    box-shadow var(--motion-base) var(--ease-soft),
+    border-color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease;
 }
 
 .dialog__head {
@@ -2242,6 +2367,10 @@ body {
   background: rgba(255, 250, 242, 0.94);
   box-shadow: 0 22px 70px rgba(24, 16, 10, 0.25);
   overflow: hidden;
+  transition:
+    transform var(--motion-fast) ease,
+    box-shadow var(--motion-base) var(--ease-soft),
+    border-color var(--motion-fast) ease;
 }
 
 .modal__panel--narrow {
@@ -2480,6 +2609,48 @@ body {
   padding: 10px;
   display: grid;
   gap: 8px;
+  transition:
+    transform var(--motion-fast) ease,
+    box-shadow var(--motion-base) var(--ease-smooth),
+    border-color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card:hover {
+    box-shadow: var(--shadow3);
+    transform: translateY(-1px);
+  }
+
+  .drop:hover {
+    box-shadow: 0 16px 28px rgba(24, 16, 10, 0.08);
+  }
+
+  .taskPick:hover,
+  .activityItem:hover,
+  .taskItem:hover,
+  .marketItem:hover,
+  .eventItem:hover,
+  .offerItem:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 26px rgba(24, 16, 10, 0.08);
+    border-color: rgba(32, 24, 18, 0.2);
+    background: rgba(255, 255, 255, 0.52);
+  }
+
+  .mapFilterBtn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 22px rgba(24, 16, 10, 0.08);
+  }
+
+  .sectionTabs__btn:hover {
+    background: rgba(255, 255, 255, 0.52);
+    color: rgba(32, 24, 18, 0.86);
+  }
+
+  .mapWrap:hover {
+    box-shadow: 0 16px 30px rgba(24, 16, 10, 0.11);
+  }
 }
 
 .offerItem__top {
@@ -2747,11 +2918,33 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
   .card {
     animation: none;
   }
 
-  .btn {
+  .btn,
+  .card,
+  .drop,
+  .drop__summary::after,
+  .drop[open] > .drop__body,
+  .activityItem,
+  .taskPick,
+  .taskItem,
+  .marketItem,
+  .eventItem,
+  .offerItem,
+  .mapWrap,
+  .mapWrap::after,
+  .mapFilterBtn,
+  .sectionTabs__btn,
+  .dialog__panel,
+  .modal__panel,
+  .mapWrap--pick-focus::after {
     transition: none;
+    animation: none;
   }
 }
