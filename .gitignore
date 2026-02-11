@@ -16,4 +16,4 @@ coverage/
 
 # Per AGENTS.md: keep local-only
 firebase-config.js
-
+web/firebase-config.js

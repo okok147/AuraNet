@@ -7,7 +7,7 @@
     mainContent: $("mainContent"),
     storagePill: $("storagePill"),
     authPill: $("authPill"),
-    googleSignIn: $("googleSignIn"),
+    authLogin: $("authLogin"),
     authLogout: $("authLogout"),
     netPill: $("netPill"),
     clock: $("clock"),
@@ -240,9 +240,10 @@
   const I18N = {
     en: {
       ui_language: "Language",
-      auth_not_configured: "Google login not configured",
+      auth_not_configured: "Firebase login not configured",
       auth_signed_out: "Not signed in",
       auth_signed_in_as: "Signed in: {name}",
+      auth_login_google: "Sign in with Google",
       auth_logout: "Sign out",
       skip_main: "Skip to main content",
       section_activity: "Activity",
@@ -478,16 +479,18 @@
       toast_import_failed: "Could not import backup.",
       toast_app_installed: "App installed.",
       toast_pwa_unavailable: "Install prompt is not available right now.",
-      toast_google_signed_in: "Signed in with Google.",
-      toast_google_signed_out: "Signed out.",
-      toast_google_load_failed: "Google login failed to load.",
-      toast_google_invalid_token: "Google credential is invalid."
+      toast_auth_signed_in: "Signed in with Google.",
+      toast_auth_signed_out: "Signed out.",
+      toast_auth_unavailable: "Firebase login is unavailable.",
+      toast_auth_sign_in_failed: "Could not sign in with Google.",
+      toast_auth_sign_out_failed: "Could not sign out."
     },
     "zh-Hant": {
       ui_language: "語言",
-      auth_not_configured: "Google 登入尚未設定",
+      auth_not_configured: "Firebase 登入尚未設定",
       auth_signed_out: "尚未登入",
       auth_signed_in_as: "已登入：{name}",
+      auth_login_google: "使用 Google 登入",
       auth_logout: "登出",
       skip_main: "跳到主要內容",
       section_activity: "活動",
@@ -723,16 +726,18 @@
       toast_import_failed: "無法匯入備份。",
       toast_app_installed: "App 已安裝。",
       toast_pwa_unavailable: "目前無法顯示安裝提示。",
-      toast_google_signed_in: "已使用 Google 登入。",
-      toast_google_signed_out: "已登出。",
-      toast_google_load_failed: "Google 登入載入失敗。",
-      toast_google_invalid_token: "Google 憑證無效。"
+      toast_auth_signed_in: "已使用 Google 登入。",
+      toast_auth_signed_out: "已登出。",
+      toast_auth_unavailable: "Firebase 登入目前無法使用。",
+      toast_auth_sign_in_failed: "無法使用 Google 登入。",
+      toast_auth_sign_out_failed: "無法登出。"
     },
     ja: {
       ui_language: "言語",
-      auth_not_configured: "Google ログイン未設定",
+      auth_not_configured: "Firebase ログイン未設定",
       auth_signed_out: "未ログイン",
       auth_signed_in_as: "ログイン中: {name}",
+      auth_login_google: "Google でログイン",
       auth_logout: "ログアウト",
       skip_main: "メインコンテンツへスキップ",
       section_activity: "アクティビティ",
@@ -968,10 +973,11 @@
       toast_import_failed: "バックアップを読み込めませんでした。",
       toast_app_installed: "アプリをインストールしました。",
       toast_pwa_unavailable: "今はインストールできません。",
-      toast_google_signed_in: "Google でログインしました。",
-      toast_google_signed_out: "ログアウトしました。",
-      toast_google_load_failed: "Google ログインの読み込みに失敗しました。",
-      toast_google_invalid_token: "Google 認証情報が無効です。"
+      toast_auth_signed_in: "Google でログインしました。",
+      toast_auth_signed_out: "ログアウトしました。",
+      toast_auth_unavailable: "Firebase ログインは現在利用できません。",
+      toast_auth_sign_in_failed: "Google でログインできませんでした。",
+      toast_auth_sign_out_failed: "ログアウトできませんでした。"
     }
   };
 
@@ -1551,74 +1557,64 @@
 
   let mapApi = null;
   let i18nLang = normalizeLang(state.activity && state.activity.prefs && state.activity.prefs.lang);
-  const GOOGLE_GSI_SRC = "https://accounts.google.com/gsi/client";
-  let googleClientId = "";
-  let googleAuthReady = false;
-  let googleScriptPromise = null;
+  let firebaseAuthConfig = null;
+  let firebaseAuth = null;
+  let firebaseAuthReady = false;
+  let firebaseAuthBootstrapped = false;
 
-  const readGoogleClientId = () => {
+  const sameAuthUser = (a, b) => {
+    const left = normalizeAuthUser(a);
+    const right = normalizeAuthUser(b);
+    if (!left && !right) return true;
+    if (!left || !right) return false;
+    return (
+      left.sub === right.sub &&
+      left.name === right.name &&
+      left.email === right.email &&
+      left.picture === right.picture
+    );
+  };
+
+  const readFirebaseAuthConfig = () => {
     const cfg = window.AURANET_FIREBASE_CONFIG || window.firebaseConfig || null;
-    const candidates = [
-      cfg && cfg.googleClientId,
-      cfg && cfg.google_client_id,
-      window.AURANET_GOOGLE_CLIENT_ID
-    ];
-    for (const raw of candidates) {
-      const value = String(raw || "").trim();
-      if (!value) continue;
-      if (!value.includes(".apps.googleusercontent.com")) continue;
-      if (/YOUR_|REPLACE_ME|PLACEHOLDER/i.test(value)) continue;
-      return value;
-    }
-    return "";
-  };
+    if (!cfg || typeof cfg !== "object") return null;
 
-  const ensureScriptLoaded = (src, key) => {
-    if (!src) return Promise.reject(new Error("src_required"));
-    if (googleScriptPromise) return googleScriptPromise;
-    googleScriptPromise = new Promise((resolve, reject) => {
-      const id = key || "auranet-script";
-      const existing = document.getElementById(id);
-      if (existing) {
-        if (existing.getAttribute("data-loaded") === "1") {
-          resolve();
-          return;
-        }
-        existing.addEventListener("load", () => resolve(), { once: true });
-        existing.addEventListener("error", () => reject(new Error("script_load_error")), { once: true });
-        return;
+    const pick = (...keys) => {
+      for (const key of keys) {
+        const value = String(cfg[key] || "").trim();
+        if (!value) continue;
+        if (/YOUR_|REPLACE_ME|PLACEHOLDER/i.test(value)) continue;
+        return value;
       }
+      return "";
+    };
 
-      const script = document.createElement("script");
-      script.id = id;
-      script.src = src;
-      script.async = true;
-      script.defer = true;
-      script.onload = () => {
-        script.setAttribute("data-loaded", "1");
-        resolve();
-      };
-      script.onerror = () => reject(new Error("script_load_error"));
-      document.head.appendChild(script);
-    }).catch((err) => {
-      googleScriptPromise = null;
-      throw err;
-    });
-    return googleScriptPromise;
+    const out = {
+      apiKey: pick("apiKey", "api_key"),
+      authDomain: pick("authDomain", "auth_domain"),
+      projectId: pick("projectId", "project_id"),
+      appId: pick("appId", "app_id"),
+      messagingSenderId: pick("messagingSenderId", "messaging_sender_id"),
+      storageBucket: pick("storageBucket", "storage_bucket"),
+      measurementId: pick("measurementId", "measurement_id")
+    };
+
+    if (!out.apiKey || !out.authDomain || !out.projectId || !out.appId) return null;
+    return out;
   };
 
-  const decodeJwtPayload = (token) => {
-    const raw = String(token || "");
-    const parts = raw.split(".");
-    if (parts.length < 2) return null;
-    const payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const padded = payload + "=".repeat((4 - (payload.length % 4 || 4)) % 4);
-    try {
-      const json = window.atob(padded);
-      return JSON.parse(json);
-    } catch {
-      return null;
-    }
+  const getFirebaseNamespace = () => {
+    const fb = window.firebase;
+    if (!fb || typeof fb.initializeApp !== "function" || typeof fb.auth !== "function") return null;
+    return fb;
+  };
+
+  const createGoogleProvider = () => {
+    const fb = getFirebaseNamespace();
+    if (!fb || !fb.auth || typeof fb.auth.GoogleAuthProvider !== "function") return null;
+    const provider = new fb.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    return provider;
   };
 
   const renderAuthUi = () => {
@@ -1627,7 +1623,7 @@
     state.auth.user = user;
 
     if (els.authPill) {
-      if (!googleClientId) {
+      if (!firebaseAuthConfig) {
         els.authPill.textContent = t("auth_not_configured");
       } else if (user) {
         const display = normalizeActivityText(user.name || user.email || "").slice(0, 24) || "Google";
@@ -1637,119 +1633,122 @@
       }
     }
 
-    if (els.authLogout) els.authLogout.hidden = !Boolean(user);
-    if (els.googleSignIn) {
-      els.googleSignIn.hidden = !googleClientId || Boolean(user) || !googleAuthReady;
+    if (els.authLogout) els.authLogout.hidden = !firebaseAuthConfig || !Boolean(user);
+    if (els.authLogin) {
+      els.authLogin.hidden = !firebaseAuthConfig || Boolean(user);
+      els.authLogin.disabled = !firebaseAuthReady;
     }
   };
 
-  const onGoogleCredential = (response) => {
-    const credential = String((response && response.credential) || "").trim();
-    if (!credential) {
-      toast(t("toast_google_invalid_token"));
-      return;
-    }
-    const payload = decodeJwtPayload(credential);
-    if (!payload || typeof payload !== "object") {
-      toast(t("toast_google_invalid_token"));
-      return;
-    }
+  const syncSignedInUser = (firebaseUser, opts = {}) => {
+    const showToast = Boolean(opts && opts.showToast);
+    const prevUser = normalizeAuthUser(state && state.auth && state.auth.user);
+    const nextUser = firebaseUser
+      ? normalizeAuthUser({
+          sub: firebaseUser.uid,
+          name: firebaseUser.displayName,
+          email: firebaseUser.email,
+          picture: firebaseUser.photoURL,
+          issuedAt: nowMs()
+        })
+      : null;
+    const changed = !sameAuthUser(prevUser, nextUser);
 
-    const aud = String(payload.aud || "").trim();
-    if (googleClientId && aud && aud !== googleClientId) {
-      toast(t("toast_google_invalid_token"));
+    state.auth = state.auth && typeof state.auth === "object" ? state.auth : defaultState().auth;
+    state.auth.user = nextUser;
+    if (nextUser && state.tasks && state.tasks.prefs) state.tasks.prefs.userVerified = true;
+
+    if (changed) {
+      saveState();
+      if (typeof renderTasks === "function") renderTasks();
+    }
+    renderAuthUi();
+
+    if (showToast && changed) {
+      toast(nextUser ? t("toast_auth_signed_in") : t("toast_auth_signed_out"));
+    }
+  };
+
+  const signInWithFirebase = async () => {
+    if (!firebaseAuthConfig || !firebaseAuth || !firebaseAuthReady) {
+      toast(t("toast_auth_unavailable"));
       return;
     }
-    const exp = Number(payload.exp) || 0;
-    if (exp > 0) {
-      const nowSec = Math.floor(nowMs() / 1000);
-      if (nowSec > exp + 30) {
-        toast(t("toast_google_invalid_token"));
-        return;
+    const provider = createGoogleProvider();
+    if (!provider) {
+      toast(t("toast_auth_unavailable"));
+      return;
+    }
+    try {
+      await firebaseAuth.signInWithPopup(provider);
+    } catch (err) {
+      const code = String((err && err.code) || "");
+      if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") return;
+      if (code === "auth/popup-blocked" && typeof firebaseAuth.signInWithRedirect === "function") {
+        try {
+          const redirectProvider = createGoogleProvider();
+          if (redirectProvider) {
+            await firebaseAuth.signInWithRedirect(redirectProvider);
+            return;
+          }
+        } catch {
+          // falls through to shared error handling below
+        }
       }
+      toast(t("toast_auth_sign_in_failed"));
     }
+  };
 
-    const user = normalizeAuthUser({
-      sub: payload.sub,
-      name: payload.name,
-      email: payload.email,
-      picture: payload.picture,
-      issuedAt: payload.iat
-    });
-    if (!user) {
-      toast(t("toast_google_invalid_token"));
+  const signOutFirebase = async () => {
+    if (!firebaseAuth || typeof firebaseAuth.signOut !== "function") {
+      syncSignedInUser(null, { showToast: true });
       return;
     }
-
-    state.auth.user = user;
-    if (state.tasks && state.tasks.prefs) state.tasks.prefs.userVerified = true;
-    saveState();
-    renderAuthUi();
-    renderTasks();
-    toast(t("toast_google_signed_in"));
-  };
-
-  const signOutGoogle = () => {
-    state.auth.user = null;
-    saveState();
-    if (window.google && window.google.accounts && window.google.accounts.id) {
-      try {
-        window.google.accounts.id.disableAutoSelect();
-      } catch {
-        // ignore
-      }
+    try {
+      await firebaseAuth.signOut();
+    } catch {
+      toast(t("toast_auth_sign_out_failed"));
     }
-    renderAuthUi();
-    renderTasks();
-    toast(t("toast_google_signed_out"));
   };
 
-  const initGoogleAuth = async () => {
-    googleClientId = readGoogleClientId();
-    googleAuthReady = false;
+  const initFirebaseAuth = () => {
+    firebaseAuthConfig = readFirebaseAuthConfig();
+    firebaseAuthReady = false;
+    firebaseAuthBootstrapped = false;
     renderAuthUi();
-    if (!googleClientId) return;
+    if (!firebaseAuthConfig) return;
+
+    const fb = getFirebaseNamespace();
+    if (!fb) {
+      toast(t("toast_auth_unavailable"));
+      return;
+    }
 
     try {
-      await ensureScriptLoaded(GOOGLE_GSI_SRC, "auranet-gsi-client");
-    } catch {
-      renderAuthUi();
-      toast(t("toast_google_load_failed"));
-      return;
-    }
-
-    if (!window.google || !window.google.accounts || !window.google.accounts.id) {
-      renderAuthUi();
-      toast(t("toast_google_load_failed"));
-      return;
-    }
-
-    try {
-      window.google.accounts.id.initialize({
-        client_id: googleClientId,
-        callback: onGoogleCredential,
-        auto_select: false,
-        cancel_on_tap_outside: true,
-        use_fedcm_for_prompt: true
-      });
-
-      if (els.googleSignIn) {
-        els.googleSignIn.replaceChildren();
-        window.google.accounts.id.renderButton(els.googleSignIn, {
-          type: "standard",
-          theme: "outline",
-          size: "large",
-          text: "signin_with",
-          shape: "rectangular"
-        });
+      if (!Array.isArray(fb.apps) || !fb.apps.length) {
+        fb.initializeApp(firebaseAuthConfig);
       }
-
-      googleAuthReady = true;
+      const app = typeof fb.app === "function" ? fb.app() : null;
+      firebaseAuth = app && typeof app.auth === "function" ? app.auth() : fb.auth();
+      if (!firebaseAuth || typeof firebaseAuth.onAuthStateChanged !== "function") {
+        throw new Error("firebase_auth_unavailable");
+      }
+      firebaseAuthReady = true;
       renderAuthUi();
+      firebaseAuth.onAuthStateChanged(
+        (firebaseUser) => {
+          syncSignedInUser(firebaseUser, { showToast: firebaseAuthBootstrapped });
+          firebaseAuthBootstrapped = true;
+        },
+        () => {
+          toast(t("toast_auth_unavailable"));
+        }
+      );
     } catch {
-      googleAuthReady = false;
+      firebaseAuth = null;
+      firebaseAuthReady = false;
       renderAuthUi();
-      toast(t("toast_google_load_failed"));
+      toast(t("toast_auth_unavailable"));
     }
   };
 
@@ -7919,8 +7918,16 @@
     });
   }
 
+  if (els.authLogin) {
+    els.authLogin.addEventListener("click", () => {
+      signInWithFirebase();
+    });
+  }
+
   if (els.authLogout) {
-    els.authLogout.addEventListener("click", signOutGoogle);
+    els.authLogout.addEventListener("click", () => {
+      signOutFirebase();
+    });
   }
 
   if (els.langSelect) {
@@ -7929,6 +7936,7 @@
       state.activity.prefs.lang = i18nLang;
       saveState();
       applyI18n();
+      renderAuthUi();
       renderActivity(true);
       if (mapApi && typeof mapApi.refreshI18n === "function") mapApi.refreshI18n();
     });
@@ -7938,7 +7946,7 @@
   bindNetworkPill();
   bindDataTools();
   bindPwaFeatures();
-  initGoogleAuth();
+  initFirebaseAuth();
 
   mapApi = initPaperMap();
   applyI18n();

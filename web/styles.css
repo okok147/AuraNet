@@ -193,18 +193,8 @@ body {
   white-space: nowrap;
 }
 
-.auth__google {
-  min-height: 40px;
-  display: inline-flex;
-  align-items: center;
-}
-
-.auth__google:empty {
-  display: none;
-}
-
-.auth__google > div {
-  line-height: 0;
+.auth__login {
+  white-space: nowrap;
 }
 
 .auth__logout {
@@ -2538,8 +2528,9 @@ body {
     justify-content: center;
   }
 
-  .auth__google {
+  .auth__login {
     flex: 1 1 auto;
+    justify-content: center;
   }
 
   .auth__logout {

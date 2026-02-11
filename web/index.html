@@ -36,6 +36,8 @@
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
     <script defer src="./firebase-config.js"></script>
     <script defer src="./app.js"></script>
   </head>
@@ -65,9 +67,11 @@
           </label>
           <div class="auth" id="authWrap" aria-live="polite">
             <div class="pill pill--muted auth__status" id="authPill" data-i18n="auth_not_configured">
-              Google login not configured
+              Firebase login not configured
             </div>
-            <div class="auth__google" id="googleSignIn" aria-label="Google sign-in button"></div>
+            <button class="btn btn--primary btn--compact auth__login" type="button" id="authLogin" hidden>
+              <span data-i18n="auth_login_google">Sign in with Google</span>
+            </button>
             <button class="btn btn--ghost btn--compact auth__logout" type="button" id="authLogout" hidden>
               <span data-i18n="auth_logout">Sign out</span>
             </button>
