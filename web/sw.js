@@ -1,4 +1,6 @@
-const CACHE_NAME = "auranet-shell-v1";
+const CACHE_VERSION = "v2";
+const STATIC_CACHE = `auranet-static-${CACHE_VERSION}`;
+const RUNTIME_CACHE = `auranet-runtime-${CACHE_VERSION}`;
 const OFFLINE_URL = "./offline.html";
 
 const PRECACHE_URLS = [
@@ -11,16 +13,35 @@ const PRECACHE_URLS = [
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./offline.html",
+  "./data/locations.json",
   "./paper-map/index.html",
   "./paper-map/app.js",
-  "./paper-map/styles.css",
-  "./paper-map/data/locations.json"
+  "./paper-map/styles.css"
 ];
+
+const isSameOrigin = (request) => {
+  try {
+    const url = new URL(request.url);
+    return url.origin === self.location.origin;
+  } catch {
+    return false;
+  }
+};
+
+const withTimeout = (promise, timeoutMs = 4500) => {
+  let timeoutId = null;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error("timeout")), timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timeoutId !== null) clearTimeout(timeoutId);
+  });
+};
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
-      .open(CACHE_NAME)
+      .open(STATIC_CACHE)
       .then((cache) => cache.addAll(PRECACHE_URLS))
       .then(() => self.skipWaiting())
       .catch(() => null)
@@ -34,7 +55,7 @@ self.addEventListener("activate", (event) => {
       .then((keys) =>
         Promise.all(
           keys
-            .filter((key) => key !== CACHE_NAME)
+            .filter((key) => key !== STATIC_CACHE && key !== RUNTIME_CACHE)
             .map((key) => caches.delete(key))
         )
       )
@@ -42,12 +63,41 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-const isSameOrigin = (request) => {
+self.addEventListener("message", (event) => {
+  if (!event || !event.data) return;
+  if (event.data === "SKIP_WAITING") self.skipWaiting();
+});
+
+const cacheFirstThenRevalidate = async (request) => {
+  const cache = await caches.open(RUNTIME_CACHE);
+  const cached = await cache.match(request);
+  const freshPromise = fetch(request)
+    .then((response) => {
+      if (response && response.status < 400) cache.put(request, response.clone()).catch(() => null);
+      return response;
+    })
+    .catch(() => null);
+
+  if (cached) {
+    // Fire and forget background revalidation.
+    freshPromise.catch(() => null);
+    return cached;
+  }
+  const fresh = await freshPromise;
+  if (fresh) return fresh;
+  return caches.match(OFFLINE_URL);
+};
+
+const networkFirst = async (request, { timeoutMs = 4500 } = {}) => {
+  const cache = await caches.open(RUNTIME_CACHE);
   try {
-    const url = new URL(request.url);
-    return url.origin === self.location.origin;
+    const response = await withTimeout(fetch(request), timeoutMs);
+    if (response && response.status < 400) cache.put(request, response.clone()).catch(() => null);
+    return response;
   } catch {
-    return false;
+    const cached = await cache.match(request);
+    if (cached) return cached;
+    return caches.match(OFFLINE_URL) || caches.match("./index.html");
   }
 };
 
@@ -56,42 +106,19 @@ self.addEventListener("fetch", (event) => {
   if (!request || request.method !== "GET") return;
 
   if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone)).catch(() => null);
-          return response;
-        })
-        .catch(() =>
-          caches
-            .match(request)
-            .then((cached) => cached || caches.match(OFFLINE_URL) || caches.match("./index.html"))
-        )
-    );
+    event.respondWith(networkFirst(request, { timeoutMs: 5000 }));
     return;
   }
 
   if (!isSameOrigin(request)) return;
 
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) {
-        fetch(request)
-          .then((fresh) => {
-            if (!fresh || fresh.status >= 400) return;
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, fresh.clone())).catch(() => null);
-          })
-          .catch(() => null);
-        return cached;
-      }
-      return fetch(request)
-        .then((response) => {
-          if (!response || response.status >= 400) return response;
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, response.clone())).catch(() => null);
-          return response;
-        })
-        .catch(() => caches.match(OFFLINE_URL));
-    })
-  );
+  const url = new URL(request.url);
+  const pathname = url.pathname || "";
+  const isStaticAsset = /\.(?:css|js|json|svg|png|jpg|jpeg|webp|ico|woff2?)$/i.test(pathname);
+  if (isStaticAsset) {
+    event.respondWith(cacheFirstThenRevalidate(request));
+    return;
+  }
+
+  event.respondWith(networkFirst(request, { timeoutMs: 4500 }));
 });

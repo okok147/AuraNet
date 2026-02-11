@@ -6,7 +6,8 @@
   "license": "UNLICENSED",
   "scripts": {
     "dev": "http-server web -p 5173 -c-1",
-    "test": "node --test policy/evaluator.test.js"
+    "test": "node --test policy/evaluator.test.js",
+    "check": "npm test && node --check web/app.js && node --check web/sw.js"
   },
   "devDependencies": {
     "http-server": "^14.1.1"

@@ -21,6 +21,14 @@ npm run dev
 
 Then open `http://127.0.0.1:5173`.
 
+## Production checks
+
+```bash
+npm run check
+```
+
+This runs policy tests plus JS syntax checks used by CI (`.github/workflows/quality.yml`).
+
 ### Enable Firebase Google Login (minimum setup)
 
 1. In [Firebase Console](https://console.firebase.google.com), create/select a project.

@@ -262,9 +262,9 @@
       auth_login_google: "Sign in with Google",
       auth_logout: "Sign out",
       skip_main: "Skip to main content",
-      section_activity: "Activity",
-      section_map: "Map",
-      section_marketplace: "Marketplace",
+      section_activity: "Activity Logger",
+      section_map: "Live Map",
+      section_marketplace: "Tasks & Market",
       net_online: "ONLINE",
       net_offline: "OFFLINE",
       install_app: "Install app",
@@ -280,11 +280,11 @@
       idle_show_aura_toggle: "Show my aura on map while idle",
       visibility_label: "Visibility",
       visibility_everyone: "Everyone",
-      visibility_area: "Specific area",
+      visibility_area: "Nearby radius",
       visibility_area_radius_label: "Visible area",
-      visibility_area_badge: "Specific area ({m}m)",
+      visibility_area_badge: "Nearby ({m}m)",
       visibility_area_note: "Visible to people within {m} of you.",
-      visibility_connected: "Approved aura",
+      visibility_connected: "Trusted contacts",
       room_label: "Room",
       room_placeholder: "Room code",
       room_join: "Join",
@@ -334,7 +334,7 @@
       gps_error: "Unable to get your location.",
       gps_ready: "GPS ready.",
       map_lib_failed: "Map library failed to load.",
-      map_title: "Paper Sketch Map",
+      map_title: "Live Aura Map",
       map_loading: "Loading map…",
       map_locate: "My location",
       map_reset: "Reset view",
@@ -371,16 +371,16 @@
       sim_doing_resting: "Resting",
 
       marketplace_title: "Marketplace",
-      marketplace_sub: "Tasks, market posts, and scheduled activities.",
+      marketplace_sub: "Post tasks, listings, and scheduled activities.",
       tab_tasks: "Tasks",
       tab_market: "Market",
       tab_events: "Scheduled",
-      drop_post_task: "Post task",
-      drop_task_list: "Tasks",
-      drop_post_market: "Post product/service",
-      drop_market_list: "Market posts",
-      drop_post_events: "Schedule activity",
-      drop_events_list: "Scheduled activities",
+      drop_post_task: "Create task",
+      drop_task_list: "Open tasks",
+      drop_post_market: "Create listing",
+      drop_market_list: "Open listings",
+      drop_post_events: "Create schedule",
+      drop_events_list: "Upcoming activities",
 
       tasks_title: "Tasks",
       task_label: "Task",
@@ -499,6 +499,8 @@
       toast_import_failed: "Could not import backup.",
       toast_app_installed: "App installed.",
       toast_pwa_unavailable: "Install prompt is not available right now.",
+      toast_pwa_update_ready: "App update ready. Refresh to use the latest version.",
+      toast_pwa_update_applied: "App updated.",
       toast_auth_signed_in: "Signed in with Google.",
       toast_auth_signed_out: "Signed out.",
       toast_auth_unavailable: "Firebase login is unavailable.",
@@ -513,9 +515,9 @@
       auth_login_google: "使用 Google 登入",
       auth_logout: "登出",
       skip_main: "跳到主要內容",
-      section_activity: "活動",
-      section_map: "地圖",
-      section_marketplace: "市集",
+      section_activity: "活動記錄",
+      section_map: "即時地圖",
+      section_marketplace: "任務與市集",
       net_online: "連線中",
       net_offline: "離線",
       install_app: "安裝 App",
@@ -531,11 +533,11 @@
       idle_show_aura_toggle: "待機時也在地圖顯示我的氣場",
       visibility_label: "可見性",
       visibility_everyone: "所有人",
-      visibility_area: "同場域",
+      visibility_area: "附近範圍",
       visibility_area_radius_label: "可見範圍",
-      visibility_area_badge: "同場域（{m} 公尺）",
+      visibility_area_badge: "附近範圍（{m} 公尺）",
       visibility_area_note: "只有距離你 {m} 公尺內的人能看到你的氣場。",
-      visibility_connected: "已核准",
+      visibility_connected: "信任聯絡人",
       room_label: "房間",
       room_placeholder: "房間代碼",
       room_join: "加入",
@@ -585,7 +587,7 @@
       gps_error: "無法取得你的定位。",
       gps_ready: "定位已就緒。",
       map_lib_failed: "地圖套件載入失敗。",
-      map_title: "紙感素描地圖",
+      map_title: "即時氣場地圖",
       map_loading: "載入地圖中…",
       map_locate: "我的位置",
       map_reset: "重置視角",
@@ -622,16 +624,16 @@
       sim_doing_resting: "休息中",
 
       marketplace_title: "市集",
-      marketplace_sub: "任務、商品服務、以及排程活動。",
+      marketplace_sub: "發布任務、商品服務、以及排程活動。",
       tab_tasks: "任務",
       tab_market: "市集",
       tab_events: "排程",
-      drop_post_task: "發布任務",
-      drop_task_list: "任務列表",
-      drop_post_market: "發布商品/服務",
-      drop_market_list: "市集列表",
-      drop_post_events: "排程活動",
-      drop_events_list: "排程列表",
+      drop_post_task: "建立任務",
+      drop_task_list: "公開任務",
+      drop_post_market: "建立刊登",
+      drop_market_list: "公開刊登",
+      drop_post_events: "建立排程",
+      drop_events_list: "即將開始",
 
       tasks_title: "任務",
       task_label: "任務",
@@ -750,6 +752,8 @@
       toast_import_failed: "無法匯入備份。",
       toast_app_installed: "App 已安裝。",
       toast_pwa_unavailable: "目前無法顯示安裝提示。",
+      toast_pwa_update_ready: "已有新版可用，重新整理即可更新。",
+      toast_pwa_update_applied: "應用程式已更新。",
       toast_auth_signed_in: "已使用 Google 登入。",
       toast_auth_signed_out: "已登出。",
       toast_auth_unavailable: "Firebase 登入目前無法使用。",
@@ -764,9 +768,9 @@
       auth_login_google: "Google でログイン",
       auth_logout: "ログアウト",
       skip_main: "メインコンテンツへスキップ",
-      section_activity: "アクティビティ",
-      section_map: "マップ",
-      section_marketplace: "マーケット",
+      section_activity: "アクティビティ記録",
+      section_map: "ライブマップ",
+      section_marketplace: "タスクとマーケット",
       net_online: "オンライン",
       net_offline: "オフライン",
       install_app: "アプリをインストール",
@@ -782,11 +786,11 @@
       idle_show_aura_toggle: "アイドル中も地図で自分のオーラを表示",
       visibility_label: "公開範囲",
       visibility_everyone: "全員",
-      visibility_area: "同じ場所",
+      visibility_area: "近距離",
       visibility_area_radius_label: "表示範囲",
-      visibility_area_badge: "同じ場所（{m}m）",
+      visibility_area_badge: "近距離（{m}m）",
       visibility_area_note: "あなたから{m}m以内の人にだけオーラを表示します。",
-      visibility_connected: "承認済み",
+      visibility_connected: "信頼済み連絡先",
       room_label: "ルーム",
       room_placeholder: "ルームコード",
       room_join: "参加",
@@ -836,7 +840,7 @@
       gps_error: "位置情報を取得できませんでした。",
       gps_ready: "GPS 準備完了。",
       map_lib_failed: "地図ライブラリの読み込みに失敗しました。",
-      map_title: "スケッチ風マップ",
+      map_title: "ライブオーラマップ",
       map_loading: "地図を読み込み中…",
       map_locate: "現在地",
       map_reset: "表示を戻す",
@@ -873,16 +877,16 @@
       sim_doing_resting: "休憩中",
 
       marketplace_title: "マーケット",
-      marketplace_sub: "タスク、投稿、スケジュール。",
+      marketplace_sub: "タスク、商品/サービス、予定アクティビティ。",
       tab_tasks: "タスク",
       tab_market: "マーケット",
       tab_events: "予定",
-      drop_post_task: "タスクを投稿",
-      drop_task_list: "タスク一覧",
-      drop_post_market: "商品/サービスを投稿",
-      drop_market_list: "マーケット一覧",
+      drop_post_task: "タスクを作成",
+      drop_task_list: "公開タスク",
+      drop_post_market: "掲載を作成",
+      drop_market_list: "公開掲載",
       drop_post_events: "予定を作成",
-      drop_events_list: "予定一覧",
+      drop_events_list: "まもなく開始",
 
       tasks_title: "タスク",
       task_label: "タスク",
@@ -1001,6 +1005,8 @@
       toast_import_failed: "バックアップを読み込めませんでした。",
       toast_app_installed: "アプリをインストールしました。",
       toast_pwa_unavailable: "今はインストールできません。",
+      toast_pwa_update_ready: "新しいバージョンを利用できます。再読み込みしてください。",
+      toast_pwa_update_applied: "アプリを更新しました。",
       toast_auth_signed_in: "Google でログインしました。",
       toast_auth_signed_out: "ログアウトしました。",
       toast_auth_unavailable: "Firebase ログインは現在利用できません。",
@@ -1057,6 +1063,7 @@
   const defaultState = () => ({
     version: 1,
     ui: {
+      section: "activitySection",
       marketTab: "tasks",
       mapFilters: {
         people: true,
@@ -1274,10 +1281,14 @@
 
       // UI prefs.
       if (!merged.ui || typeof merged.ui !== "object") merged.ui = defaultState().ui;
+      merged.ui.section = ["activitySection", "mapSection", "marketplaceSection"].includes(String(merged.ui.section || ""))
+        ? String(merged.ui.section || "")
+        : "activitySection";
       merged.ui.marketTab = ["tasks", "market", "events"].includes(String(merged.ui.marketTab || ""))
         ? String(merged.ui.marketTab || "")
         : "tasks";
       merged.ui.mapFilters = normalizeMapLayerFilters(merged.ui.mapFilters);
+      merged.ui.drops = { ...defaultState().ui.drops, ...(merged.ui.drops && typeof merged.ui.drops === "object" ? merged.ui.drops : {}) };
 
       // Task draft route (stored as blurred area anchors).
       {
@@ -1600,12 +1611,18 @@
   });
 
   let activityLogRevision = 1;
+  const ACTIVITY_SIM_CACHE_MAX = 3200;
+  const BIGRAM_MEMO_MAX = 1200;
+  const TOKEN_MEMO_MAX = 1200;
   const derivedCache = {
     lastEndedAt: { rev: -1, value: 0 },
     knownActivities: { rev: -1, data: [] },
     longTermAura: { rev: -1, bucket: -1, data: { hex: "#FF6A00", byActivity: [] } },
     auraStrength: { rev: -1, bucket: -1, data: { strength: 0, counts: [] } },
-    auraLegendSig: ""
+    auraLegendSig: "",
+    similarity: new Map(),
+    bigrams: new Map(),
+    tokens: new Map()
   };
 
   const bumpActivityLogRevision = () => {
@@ -1614,6 +1631,9 @@
     derivedCache.knownActivities.rev = -1;
     derivedCache.longTermAura.rev = -1;
     derivedCache.auraStrength.rev = -1;
+    derivedCache.similarity.clear();
+    derivedCache.bigrams.clear();
+    derivedCache.tokens.clear();
   };
 
   const onActivityLogMutated = () => {
@@ -2581,13 +2601,39 @@
     }
   };
 
-  const bigramCounts = (s) => {
-    const str = String(s || "");
+  const memoSetBounded = (map, key, value, max) => {
+    if (!map || typeof map.set !== "function") return;
+    if (map.has(key)) map.delete(key);
+    map.set(key, value);
+    if (map.size > max) {
+      const first = map.keys().next();
+      if (!first.done) map.delete(first.value);
+    }
+  };
+
+  const tokensForKey = (value) => {
+    const key = String(value || "");
+    const memo = derivedCache.tokens;
+    if (memo.has(key)) return memo.get(key);
+    const tokens = key
+      .split(/[_\s-]+/g)
+      .map((x) => String(x || "").trim())
+      .filter(Boolean);
+    memoSetBounded(memo, key, tokens, TOKEN_MEMO_MAX);
+    return tokens;
+  };
+
+  const bigramCounts = (value) => {
+    const key = String(value || "");
+    const memo = derivedCache.bigrams;
+    if (memo.has(key)) return memo.get(key);
+
     const map = new Map();
-    for (let i = 0; i < str.length - 1; i++) {
-      const bg = str.slice(i, i + 2);
+    for (let i = 0; i < key.length - 1; i++) {
+      const bg = key.slice(i, i + 2);
       map.set(bg, (map.get(bg) || 0) + 1);
     }
+    memoSetBounded(memo, key, map, BIGRAM_MEMO_MAX);
     return map;
   };
 
@@ -2605,14 +2651,54 @@
     return (2 * inter) / ((aa.length - 1) + (bb.length - 1));
   };
 
+  const tokenJaccard = (a, b) => {
+    const aa = tokensForKey(a);
+    const bb = tokensForKey(b);
+    if (!aa.length || !bb.length) return 0;
+
+    const setA = new Set(aa);
+    const setB = new Set(bb);
+    let inter = 0;
+    for (const tok of setA) {
+      if (setB.has(tok)) inter += 1;
+    }
+    const union = setA.size + setB.size - inter;
+    if (union <= 0) return 0;
+    return inter / union;
+  };
+
   const similarityScore = (queryKey, candidateKey) => {
     const q = String(queryKey || "");
     const c = String(candidateKey || "");
     if (!q || !c) return 0;
     if (c === q) return 100;
-    if (c.startsWith(q)) return 84;
-    if (c.includes(q)) return 64;
-    return Math.round(diceCoefficient(q, c) * 52);
+
+    const cacheKey = q < c ? `${q}|${c}` : `${c}|${q}`;
+    if (derivedCache.similarity.has(cacheKey)) {
+      return derivedCache.similarity.get(cacheKey);
+    }
+
+    let score = 0;
+    if (c.startsWith(q)) score = 90;
+    else if (c.includes(q)) score = 74;
+
+    const dice = diceCoefficient(q, c);
+    const jac = tokenJaccard(q, c);
+    const qTokens = tokensForKey(q);
+    const cTokens = tokensForKey(c);
+    const cSet = new Set(cTokens);
+    const tokenCover = qTokens.length ? qTokens.every((tok) => cSet.has(tok)) : false;
+
+    const blended = Math.round((dice * 58) + (jac * 42));
+    score = Math.max(score, blended);
+    if (tokenCover) score = Math.max(score, 80);
+
+    // Keep short inputs permissive while preventing weak noisy matches.
+    if (q.length <= 2 && !c.startsWith(q)) score = Math.min(score, 58);
+    score = clamp(score, 0, 100);
+
+    memoSetBounded(derivedCache.similarity, cacheKey, score, ACTIVITY_SIM_CACHE_MAX);
+    return score;
   };
 
   const collectKnownActivities = () => {
@@ -2923,6 +3009,9 @@
   const ensureUiPrefs = () => {
     const base = defaultState().ui;
     if (!state.ui || typeof state.ui !== "object") state.ui = { ...base };
+    state.ui.section = ["activitySection", "mapSection", "marketplaceSection"].includes(String(state.ui.section || ""))
+      ? String(state.ui.section)
+      : base.section;
     state.ui.mapFilters = normalizeMapLayerFilters(state.ui.mapFilters || base.mapFilters);
     if (!state.ui.drops || typeof state.ui.drops !== "object") state.ui.drops = { ...base.drops };
     state.ui.drops = { ...base.drops, ...state.ui.drops };
@@ -5288,6 +5377,10 @@
   // --- App Shell (section nav, backup, PWA, online state) ---
 
   const SECTION_TARGETS = ["activitySection", "mapSection", "marketplaceSection"];
+  const normalizeSectionTarget = (value) => {
+    const v = String(value || "");
+    return SECTION_TARGETS.includes(v) ? v : "activitySection";
+  };
 
   const sectionTabElements = () =>
     [
@@ -5296,20 +5389,26 @@
       { id: "marketplaceSection", el: els.sectionTabMarket }
     ].filter((x) => x.el);
 
-  const setSectionTabSelected = (sectionId) => {
-    const active = String(sectionId || "");
+  const setSectionTabSelected = (sectionId, { persist = false } = {}) => {
+    const active = normalizeSectionTarget(sectionId);
     for (const { id, el } of sectionTabElements()) {
       const on = id === active;
       el.setAttribute("aria-pressed", on ? "true" : "false");
     }
+    if (persist) {
+      ensureUiPrefs();
+      if (state.ui.section !== active) {
+        state.ui.section = active;
+        saveState();
+      }
+    }
   };
 
   const scrollToSection = (sectionId) => {
-    const id = String(sectionId || "");
-    if (!SECTION_TARGETS.includes(id)) return;
+    const id = normalizeSectionTarget(sectionId);
     const target = document.getElementById(id);
     if (!target) return;
-    setSectionTabSelected(id);
+    setSectionTabSelected(id, { persist: true });
     try {
       target.scrollIntoView({ behavior: "smooth", block: "start" });
       target.focus({ preventScroll: true });
@@ -5322,7 +5421,8 @@
   const bindSectionTabs = () => {
     if (!els.sectionTabs) return;
 
-    setSectionTabSelected("activitySection");
+    ensureUiPrefs();
+    setSectionTabSelected(normalizeSectionTarget(state.ui.section), { persist: false });
 
     els.sectionTabs.addEventListener("click", (e) => {
       const btn = e && e.target ? e.target.closest("button[data-section-target]") : null;
@@ -5350,7 +5450,7 @@
       const nextBtn = tabs[nextIdx];
       if (!nextBtn) return;
       const sectionId = String(nextBtn.getAttribute("data-section-target") || "");
-      setSectionTabSelected(sectionId);
+      setSectionTabSelected(sectionId, { persist: true });
       nextBtn.focus();
       e.preventDefault();
     });
@@ -5365,7 +5465,7 @@
         if (!visible.length) return;
         const id = visible[0].target && visible[0].target.id ? String(visible[0].target.id) : "";
         if (!id) return;
-        setSectionTabSelected(id);
+        setSectionTabSelected(id, { persist: true });
       },
       {
         root: null,
@@ -5516,10 +5616,40 @@
 
   const bindPwaFeatures = () => {
     if ("serviceWorker" in navigator) {
+      let swUpdatedNoticeShown = false;
+      let swControllerChanged = false;
+      const notifySwUpdate = () => {
+        if (swUpdatedNoticeShown) return;
+        swUpdatedNoticeShown = true;
+        toast(t("toast_pwa_update_ready"));
+      };
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./sw.js").catch(() => {
-          // Silent fail: app remains usable without offline cache.
-        });
+        navigator.serviceWorker
+          .register("./sw.js")
+          .then((registration) => {
+            if (!registration) return;
+            if (registration.waiting && navigator.serviceWorker.controller) {
+              notifySwUpdate();
+            }
+            registration.addEventListener("updatefound", () => {
+              const installing = registration.installing;
+              if (!installing) return;
+              installing.addEventListener("statechange", () => {
+                if (installing.state === "installed" && navigator.serviceWorker.controller) {
+                  notifySwUpdate();
+                }
+              });
+            });
+          })
+          .catch(() => {
+            // Silent fail: app remains usable without offline cache.
+          });
+      });
+
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (swControllerChanged) return;
+        swControllerChanged = true;
+        toast(t("toast_pwa_update_applied"));
       });
     }
 
@@ -5563,6 +5693,11 @@
     if (!els.mapStatus) return;
     els.mapStatus.textContent = message;
     els.mapStatus.style.color = isError ? "rgba(180, 35, 58, 0.9)" : "";
+    if (els.mapSection) {
+      const txt = String(message || "").toLowerCase();
+      const busy = !isError && /(load|request|fetch|載入|請求|取得|読み込み|要求|取得中)/.test(txt);
+      els.mapSection.setAttribute("aria-busy", busy ? "true" : "false");
+    }
   };
 
   const escapeHtml = (value) => {
@@ -5923,6 +6058,7 @@
     const OSRM_BASE = "https://router.project-osrm.org";
     const ROUTE_POINT_LIMIT = 260;
     const ROUTE_CACHE_MAX = 80;
+    const ROUTE_FETCH_TIMEOUT_MS = 4500;
 
     const decayFactor = (ageMs) => {
       const a = Math.max(0, Number(ageMs) || 0);
@@ -5979,11 +6115,49 @@
       return `${profile}:${roundCoord(start.lat)},${roundCoord(start.lng)}:${roundCoord(end.lat)},${roundCoord(end.lng)}`;
     };
 
-    const fetchRoute = async (profile, start, end, signal) => {
-      const key = routeKey(profile, start, end);
-      const cached = sim.routeCache.get(key);
-      if (cached) return cached;
+    const buildRouteFromPoints = (profile, points) => {
+      const pts = Array.isArray(points) ? points.filter(Boolean) : [];
+      if (pts.length < 2) return null;
+      const cum = [0];
+      for (let i = 1; i < pts.length; i++) {
+        cum.push(cum[i - 1] + map.distance(pts[i - 1], pts[i]));
+      }
+      const totalM = cum[cum.length - 1];
+      if (!Number.isFinite(totalM) || totalM <= 0) return null;
+      return {
+        profile,
+        points: pts,
+        cum,
+        totalM
+      };
+    };
 
+    const buildFallbackRoute = (profile, start, end) => {
+      const a = L.latLng(clamp(start.lat, -85, 85), wrapLng(start.lng));
+      const b = L.latLng(clamp(end.lat, -85, 85), wrapLng(end.lng));
+      const aPt = map.latLngToContainerPoint(a);
+      const bPt = map.latLngToContainerPoint(b);
+      const vx = bPt.x - aPt.x;
+      const vy = bPt.y - aPt.y;
+      const len = Math.max(1, Math.hypot(vx, vy));
+      const nx = -vy / len;
+      const ny = vx / len;
+      const segments = profile === "walking" ? 4 : 5;
+      const swayBase = profile === "walking" ? 8 : 14;
+      const points = [a];
+      for (let i = 1; i < segments; i++) {
+        const t = i / segments;
+        const wobble = Math.sin(t * Math.PI) * swayBase * (0.65 + Math.random() * 0.8);
+        const px = aPt.x + (vx * t) + (nx * wobble);
+        const py = aPt.y + (vy * t) + (ny * wobble);
+        const ll = map.containerPointToLatLng([px, py]);
+        points.push(L.latLng(clamp(ll.lat, -85, 85), wrapLng(ll.lng)));
+      }
+      points.push(b);
+      return buildRouteFromPoints(profile, points);
+    };
+
+    const fetchRouteFromOsrm = async (profile, start, end, signal) => {
       const coords = `${start.lng},${start.lat};${end.lng},${end.lat}`;
       const qs = new URLSearchParams({
         overview: "full",
@@ -5994,38 +6168,61 @@
         radiuses: "350;350"
       });
       const url = `${OSRM_BASE}/route/v1/${profile}/${coords}?${qs}`;
-      const res = await fetch(url, { signal, cache: "no-store" });
-      if (!res.ok) throw new Error(`route ${res.status}`);
-
-      const data = await res.json();
-      const geometry = data && data.routes && data.routes[0] && data.routes[0].geometry;
-      const coordsArr = geometry && geometry.coordinates;
-      if (!Array.isArray(coordsArr) || coordsArr.length < 2) {
-        throw new Error("route geometry missing");
+      const ac = new AbortController();
+      const abortFromOuter = () => ac.abort();
+      let timeoutId = null;
+      if (signal) {
+        if (signal.aborted) ac.abort();
+        else signal.addEventListener("abort", abortFromOuter, { once: true });
       }
+      timeoutId = window.setTimeout(() => ac.abort(), ROUTE_FETCH_TIMEOUT_MS);
 
-      let points = coordsArr.map((c) => L.latLng(c[1], c[0]));
-      if (points.length > ROUTE_POINT_LIMIT) {
-        const step = Math.ceil(points.length / ROUTE_POINT_LIMIT);
-        const slim = [];
-        for (let i = 0; i < points.length; i += step) slim.push(points[i]);
-        if (slim[slim.length - 1] !== points[points.length - 1]) {
-          slim.push(points[points.length - 1]);
+      try {
+        const res = await fetch(url, { signal: ac.signal, cache: "no-store" });
+        if (!res.ok) throw new Error(`route ${res.status}`);
+
+        const data = await res.json();
+        const geometry = data && data.routes && data.routes[0] && data.routes[0].geometry;
+        const coordsArr = geometry && geometry.coordinates;
+        if (!Array.isArray(coordsArr) || coordsArr.length < 2) {
+          throw new Error("route geometry missing");
         }
-        points = slim;
+
+        let points = coordsArr.map((c) => L.latLng(c[1], c[0]));
+        if (points.length > ROUTE_POINT_LIMIT) {
+          const step = Math.ceil(points.length / ROUTE_POINT_LIMIT);
+          const slim = [];
+          for (let i = 0; i < points.length; i += step) slim.push(points[i]);
+          if (slim[slim.length - 1] !== points[points.length - 1]) {
+            slim.push(points[points.length - 1]);
+          }
+          points = slim;
+        }
+
+        const built = buildRouteFromPoints(profile, points);
+        if (!built) throw new Error("route points invalid");
+        return built;
+      } finally {
+        if (timeoutId !== null) window.clearTimeout(timeoutId);
+        if (signal) signal.removeEventListener("abort", abortFromOuter);
+      }
+    };
+
+    const fetchRoute = async (profile, start, end, signal) => {
+      const key = routeKey(profile, start, end);
+      const cached = sim.routeCache.get(key);
+      if (cached) return cached;
+
+      let route = null;
+      try {
+        route = await fetchRouteFromOsrm(profile, start, end, signal);
+      } catch (err) {
+        // If the caller cancelled the rebuild, bubble up and stop quickly.
+        if (signal && signal.aborted) throw err;
+        route = buildFallbackRoute(profile, start, end);
+        if (!route) throw err;
       }
 
-      const cum = [0];
-      for (let i = 1; i < points.length; i++) {
-        cum.push(cum[i - 1] + map.distance(points[i - 1], points[i]));
-      }
-
-      const route = {
-        profile,
-        points,
-        cum,
-        totalM: cum[cum.length - 1]
-      };
       routeCacheSet(key, route);
       return route;
     };

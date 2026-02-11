@@ -1,0 +1,42 @@
+name: Quality Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Syntax checks
+        run: |
+          node --check web/app.js
+          node --check web/sw.js
+
+      - name: Secret scan
+        shell: bash
+        run: |
+          set -euo pipefail
+          PATTERN='(AIza[0-9A-Za-z_-]{35}|-----BEGIN (RSA|EC|OPENSSH|PRIVATE) KEY-----|ghp_[A-Za-z0-9]{36}|xox[baprs]-[A-Za-z0-9-]{10,}|sk_live_[A-Za-z0-9]{16,})'
+          MATCHES="$(git ls-files | xargs rg -n -S --glob '!web/firebase-config.example.js' --glob '!web/firebase-config.js' "${PATTERN}" || true)"
+          if [[ -n "${MATCHES}" ]]; then
+            echo "Potential secret(s) detected:"
+            echo "${MATCHES}"
+            exit 1
+          fi
