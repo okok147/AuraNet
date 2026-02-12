@@ -493,6 +493,7 @@
       room_send: "Send",
       room_view_on_map: "View",
       toast_room_photo_too_large: "Photo too large. Try a smaller image.",
+      toast_room_only_accepted: "Room is available only to accepted task participants.",
       toast_export_ready: "Backup exported.",
       toast_import_done: "Backup imported.",
       toast_import_invalid: "Invalid backup file.",
@@ -746,6 +747,7 @@
       room_send: "送出",
       room_view_on_map: "查看",
       toast_room_photo_too_large: "照片太大，請改用較小的圖片。",
+      toast_room_only_accepted: "只有已接受任務的參與者可開啟房間。",
       toast_export_ready: "已匯出備份。",
       toast_import_done: "已匯入備份。",
       toast_import_invalid: "備份檔格式無效。",
@@ -999,6 +1001,7 @@
       room_send: "送信",
       room_view_on_map: "見る",
       toast_room_photo_too_large: "写真が大きすぎます。小さい画像で試してください。",
+      toast_room_only_accepted: "ルームは受諾済みタスクの参加者のみ利用できます。",
       toast_export_ready: "バックアップを出力しました。",
       toast_import_done: "バックアップを読み込みました。",
       toast_import_invalid: "バックアップファイルの形式が無効です。",
@@ -1063,7 +1066,8 @@
   const defaultState = () => ({
     version: 1,
     ui: {
-      section: "activitySection",
+      rev: 2,
+      section: "mapSection",
       marketTab: "tasks",
       mapFilters: {
         people: true,
@@ -1072,11 +1076,11 @@
       },
       drops: {
         tasksPost: false,
-        tasksList: true,
+        tasksList: false,
         marketPost: false,
-        marketList: true,
+        marketList: false,
         eventsPost: false,
-        eventsList: true
+        eventsList: false
       }
     },
     activity: {
@@ -1281,9 +1285,10 @@
 
       // UI prefs.
       if (!merged.ui || typeof merged.ui !== "object") merged.ui = defaultState().ui;
+      merged.ui.rev = clampInt(merged.ui.rev, 1, 999, 1);
       merged.ui.section = ["activitySection", "mapSection", "marketplaceSection"].includes(String(merged.ui.section || ""))
         ? String(merged.ui.section || "")
-        : "activitySection";
+        : "mapSection";
       merged.ui.marketTab = ["tasks", "market", "events"].includes(String(merged.ui.marketTab || ""))
         ? String(merged.ui.marketTab || "")
         : "tasks";
@@ -3009,12 +3014,20 @@
   const ensureUiPrefs = () => {
     const base = defaultState().ui;
     if (!state.ui || typeof state.ui !== "object") state.ui = { ...base };
+    const prevRev = clampInt(state.ui.rev, 1, 999, 1);
+    state.ui.rev = prevRev;
     state.ui.section = ["activitySection", "mapSection", "marketplaceSection"].includes(String(state.ui.section || ""))
       ? String(state.ui.section)
       : base.section;
     state.ui.mapFilters = normalizeMapLayerFilters(state.ui.mapFilters || base.mapFilters);
     if (!state.ui.drops || typeof state.ui.drops !== "object") state.ui.drops = { ...base.drops };
     state.ui.drops = { ...base.drops, ...state.ui.drops };
+    if (prevRev < base.rev) {
+      state.ui.rev = base.rev;
+      state.ui.section = base.section;
+      state.ui.drops = { ...base.drops };
+      saveState();
+    }
   };
 
   const setDetailsOpen = (el, open) => {
@@ -3404,10 +3417,24 @@
     els.roomBody.scrollTop = els.roomBody.scrollHeight;
   };
 
+  const canCurrentUserOpenRoomForTask = (task) => {
+    if (!task || !task.id) return false;
+    if (normalizeTaskStatus(task.status) !== "accepted") return false;
+    const posterKey = actorKeyLocal(task.poster);
+    const workerKey = task.acceptedBy ? actorKeyLocal(task.acceptedBy) : "";
+    return posterKey === userKey || workerKey === userKey;
+  };
+
   const openTaskRoom = (taskId) => {
     if (!els.roomModal) return;
     const id = String(taskId || "");
     if (!id) return;
+    ensureTaskPrefs();
+    const task = state.tasks.list.find((x) => x && x.id === id) || null;
+    if (!canCurrentUserOpenRoomForTask(task)) {
+      toast(t("toast_room_only_accepted"));
+      return;
+    }
     openRoomTaskId = id;
     const room = ensureRoom(id);
     if (room && !room.ownerKey) {
@@ -3846,9 +3873,7 @@
           }
         }
       } else if (status === "accepted") {
-        const room = state.tasks && state.tasks.rooms ? state.tasks.rooms[task.id] : null;
-        const roomVis = room && room.visibility === "public" ? "public" : "participants";
-        if (isPosterMe || isWorkerMe || roomVis === "public") {
+        if (canCurrentUserOpenRoomForTask(task)) {
           addBtn(t("task_room"), "ghost", () => openTaskRoom(task.id));
         }
         if (isPosterMe || isWorkerMe) {
