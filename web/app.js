@@ -17,6 +17,12 @@
     sectionTabActivity: $("sectionTabActivity"),
     sectionTabMap: $("sectionTabMap"),
     sectionTabMarket: $("sectionTabMarket"),
+    quickActions: $("quickActions"),
+    qaStartActivity: $("qaStartActivity"),
+    qaLocateMap: $("qaLocateMap"),
+    qaPostTask: $("qaPostTask"),
+    qaPostService: $("qaPostService"),
+    qaScheduleEvent: $("qaScheduleEvent"),
     mapSection: $("mapSection"),
     appInstallBtn: $("appInstallBtn"),
     dataExportBtn: $("dataExportBtn"),
@@ -41,6 +47,7 @@
     auraPill: $("auraPill"),
     activityForm: $("activityForm"),
     activityText: $("activityText"),
+    onboardPanel: $("onboardPanel"),
     activitySuggest: $("activitySuggest"),
     activityColorPreview: $("activityColorPreview"),
     activityShowAura: $("activityShowAura"),
@@ -84,6 +91,10 @@
     dropTasksPost: $("dropTasksPost"),
     dropTasksList: $("dropTasksList"),
     taskListCount: $("taskListCount"),
+    taskSearchInput: $("taskSearchInput"),
+    taskStatusFilter: $("taskStatusFilter"),
+    taskFilterClear: $("taskFilterClear"),
+    taskFilterMeta: $("taskFilterMeta"),
     taskForm: $("taskForm"),
     taskText: $("taskText"),
     taskReward: $("taskReward"),
@@ -103,6 +114,11 @@
     dropMarketPost: $("dropMarketPost"),
     dropMarketList: $("dropMarketList"),
     marketListCount: $("marketListCount"),
+    marketSearchInput: $("marketSearchInput"),
+    marketKindFilter: $("marketKindFilter"),
+    marketStatusFilter: $("marketStatusFilter"),
+    marketFilterClear: $("marketFilterClear"),
+    marketFilterMeta: $("marketFilterMeta"),
     marketForm: $("marketForm"),
     marketKind: $("marketKind"),
     marketText: $("marketText"),
@@ -121,6 +137,10 @@
     dropEventsPost: $("dropEventsPost"),
     dropEventsList: $("dropEventsList"),
     eventsListCount: $("eventsListCount"),
+    eventsSearchInput: $("eventsSearchInput"),
+    eventsStateFilter: $("eventsStateFilter"),
+    eventsFilterClear: $("eventsFilterClear"),
+    eventsFilterMeta: $("eventsFilterMeta"),
     eventsForm: $("eventsForm"),
     eventsText: $("eventsText"),
     eventsPickLocation: $("eventsPickLocation"),
@@ -253,6 +273,76 @@
     };
   };
 
+  const normalizeFilterQuery = (value, maxLen = 72) =>
+    String(value || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, Math.max(0, clampInt(maxLen, 0, 400, 72)));
+
+  const queryTokens = (value) =>
+    normalizeFilterQuery(value, 72)
+      .toLowerCase()
+      .split(" ")
+      .filter((x) => x)
+      .slice(0, 8);
+
+  const queryMatchesText = (tokens, value) => {
+    if (!Array.isArray(tokens) || tokens.length <= 0) return true;
+    const hay = String(value || "").toLowerCase();
+    return tokens.every((token) => hay.includes(token));
+  };
+
+  const TASK_LIST_FILTER_STATUS = ["all", "open", "accepted", "completed", "closed"];
+  const MARKET_LIST_FILTER_KIND = ["all", "product", "service"];
+  const MARKET_LIST_FILTER_STATUS = ["all", "open", "sold", "closed"];
+  const EVENTS_LIST_FILTER_STATE = ["all", "scheduled", "live", "ended", "cancelled"];
+
+  const normalizeTaskListFilterStatus = (value) => {
+    const v = String(value || "").trim().toLowerCase();
+    return TASK_LIST_FILTER_STATUS.includes(v) ? v : "all";
+  };
+
+  const normalizeMarketListFilterKind = (value) => {
+    const v = String(value || "").trim().toLowerCase();
+    return MARKET_LIST_FILTER_KIND.includes(v) ? v : "all";
+  };
+
+  const normalizeMarketListFilterStatus = (value) => {
+    const v = String(value || "").trim().toLowerCase();
+    return MARKET_LIST_FILTER_STATUS.includes(v) ? v : "all";
+  };
+
+  const normalizeEventsListFilterState = (value) => {
+    const v = String(value || "").trim().toLowerCase();
+    return EVENTS_LIST_FILTER_STATE.includes(v) ? v : "all";
+  };
+
+  const defaultUiListFilters = () => ({
+    tasks: { q: "", status: "all" },
+    market: { q: "", kind: "all", status: "all" },
+    events: { q: "", state: "all" }
+  });
+
+  const normalizeUiListFilters = (value) => {
+    const raw = value && typeof value === "object" ? value : {};
+    const out = defaultUiListFilters();
+    const tasks = raw.tasks && typeof raw.tasks === "object" ? raw.tasks : {};
+    const market = raw.market && typeof raw.market === "object" ? raw.market : {};
+    const events = raw.events && typeof raw.events === "object" ? raw.events : {};
+
+    out.tasks.q = normalizeFilterQuery(tasks.q, 72);
+    out.tasks.status = normalizeTaskListFilterStatus(tasks.status);
+
+    out.market.q = normalizeFilterQuery(market.q, 72);
+    out.market.kind = normalizeMarketListFilterKind(market.kind);
+    out.market.status = normalizeMarketListFilterStatus(market.status);
+
+    out.events.q = normalizeFilterQuery(events.q, 72);
+    out.events.state = normalizeEventsListFilterState(events.state);
+
+    return out;
+  };
+
   const I18N = {
     en: {
       ui_language: "Language",
@@ -265,6 +355,12 @@
       section_activity: "Activity Logger",
       section_map: "Live Map",
       section_marketplace: "Tasks & Market",
+      quick_actions_label: "Quick actions",
+      quick_start_activity: "Start activity",
+      quick_locate_me: "Center map",
+      quick_post_task: "Post task",
+      quick_post_service: "Post service",
+      quick_schedule_event: "Schedule event",
       net_online: "ONLINE",
       net_offline: "OFFLINE",
       install_app: "Install app",
@@ -272,6 +368,12 @@
       data_import: "Import data",
       activity_title: "Activity Logger",
       activity_hint_idle: "Log what you’re doing. Each activity generates a unique color over time.",
+      onboard_title: "Quick start",
+      onboard_desc: "Core flow in less than a minute.",
+      onboard_step_1: "Log an activity and let your aura blend automatically.",
+      onboard_step_2: "Choose aura visibility: everyone, nearby area, or trusted contacts.",
+      onboard_step_3: "Use map filters to focus on people, events, or services.",
+      onboard_step_4: "Post tasks or services and manage responses in one place.",
       activity_tracking: "Tracking: {text}",
       activity_label: "Activity",
       activity_placeholder: "Work, commute, gym, coffee…",
@@ -381,6 +483,39 @@
       drop_market_list: "Open listings",
       drop_post_events: "Create schedule",
       drop_events_list: "Upcoming activities",
+      filter_clear: "Clear",
+      filter_results: "Showing {shown} / {total}",
+      filter_results_none: "No matches. Adjust filters.",
+
+      filter_search_tasks_label: "Search tasks",
+      filter_task_search_placeholder: "Search tasks…",
+      filter_task_status_label: "Task status",
+      filter_task_status_all: "All status",
+      filter_task_status_open: "Open",
+      filter_task_status_accepted: "Accepted",
+      filter_task_status_completed: "Completed",
+      filter_task_status_closed: "Closed",
+
+      filter_search_market_label: "Search listings",
+      filter_market_search_placeholder: "Search listings…",
+      filter_market_kind_label: "Listing type",
+      filter_market_kind_all: "All types",
+      filter_market_kind_product: "Product",
+      filter_market_kind_service: "Service",
+      filter_market_status_label: "Listing status",
+      filter_market_status_all: "All status",
+      filter_market_status_open: "Open",
+      filter_market_status_sold: "Sold",
+      filter_market_status_closed: "Closed",
+
+      filter_search_events_label: "Search activities",
+      filter_events_search_placeholder: "Search activities…",
+      filter_events_state_label: "Activity state",
+      filter_events_state_all: "All state",
+      filter_events_state_scheduled: "Scheduled",
+      filter_events_state_live: "Live",
+      filter_events_state_ended: "Ended",
+      filter_events_state_cancelled: "Cancelled",
 
       tasks_title: "Tasks",
       task_label: "Task",
@@ -519,6 +654,12 @@
       section_activity: "活動記錄",
       section_map: "即時地圖",
       section_marketplace: "任務與市集",
+      quick_actions_label: "快捷操作",
+      quick_start_activity: "開始活動",
+      quick_locate_me: "地圖置中",
+      quick_post_task: "發布任務",
+      quick_post_service: "發布服務",
+      quick_schedule_event: "建立排程",
       net_online: "連線中",
       net_offline: "離線",
       install_app: "安裝 App",
@@ -526,6 +667,12 @@
       data_import: "匯入資料",
       activity_title: "活動紀錄",
       activity_hint_idle: "紀錄你正在做的事，每個活動都會生成獨特的顏色並隨時間混合。",
+      onboard_title: "快速上手",
+      onboard_desc: "不到一分鐘完成核心流程。",
+      onboard_step_1: "記錄活動，氣場會自動長期混色。",
+      onboard_step_2: "設定氣場可見性：所有人、附近範圍或信任聯絡人。",
+      onboard_step_3: "使用地圖篩選，快速查看人物、活動與服務。",
+      onboard_step_4: "發布任務或服務，並在同一區塊管理回應。",
       activity_tracking: "追蹤中：{text}",
       activity_label: "活動",
       activity_placeholder: "工作、通勤、健身、咖啡…",
@@ -635,6 +782,39 @@
       drop_market_list: "公開刊登",
       drop_post_events: "建立排程",
       drop_events_list: "即將開始",
+      filter_clear: "清除",
+      filter_results: "顯示 {shown} / {total}",
+      filter_results_none: "沒有符合結果，請調整篩選。",
+
+      filter_search_tasks_label: "搜尋任務",
+      filter_task_search_placeholder: "搜尋任務…",
+      filter_task_status_label: "任務狀態",
+      filter_task_status_all: "全部狀態",
+      filter_task_status_open: "開放",
+      filter_task_status_accepted: "已接受",
+      filter_task_status_completed: "已完成",
+      filter_task_status_closed: "已結案",
+
+      filter_search_market_label: "搜尋刊登",
+      filter_market_search_placeholder: "搜尋刊登…",
+      filter_market_kind_label: "刊登類型",
+      filter_market_kind_all: "全部類型",
+      filter_market_kind_product: "商品",
+      filter_market_kind_service: "服務",
+      filter_market_status_label: "刊登狀態",
+      filter_market_status_all: "全部狀態",
+      filter_market_status_open: "開放",
+      filter_market_status_sold: "已成交",
+      filter_market_status_closed: "已關閉",
+
+      filter_search_events_label: "搜尋活動",
+      filter_events_search_placeholder: "搜尋活動…",
+      filter_events_state_label: "活動狀態",
+      filter_events_state_all: "全部狀態",
+      filter_events_state_scheduled: "排程",
+      filter_events_state_live: "進行中",
+      filter_events_state_ended: "已結束",
+      filter_events_state_cancelled: "已取消",
 
       tasks_title: "任務",
       task_label: "任務",
@@ -773,6 +953,12 @@
       section_activity: "アクティビティ記録",
       section_map: "ライブマップ",
       section_marketplace: "タスクとマーケット",
+      quick_actions_label: "クイック操作",
+      quick_start_activity: "活動を開始",
+      quick_locate_me: "地図を中央へ",
+      quick_post_task: "タスク投稿",
+      quick_post_service: "サービス投稿",
+      quick_schedule_event: "予定を作成",
       net_online: "オンライン",
       net_offline: "オフライン",
       install_app: "アプリをインストール",
@@ -780,6 +966,12 @@
       data_import: "データをインポート",
       activity_title: "アクティビティ記録",
       activity_hint_idle: "いまの行動を記録。各アクティビティが固有の色を作り、時間で混ざります。",
+      onboard_title: "クイックスタート",
+      onboard_desc: "1分以内で主要フローを開始できます。",
+      onboard_step_1: "アクティビティを記録すると、オーラが長期的に自動ブレンドされます。",
+      onboard_step_2: "公開範囲を設定: 全員、近距離、または信頼済み連絡先。",
+      onboard_step_3: "地図フィルターで人、イベント、サービスを素早く切替。",
+      onboard_step_4: "タスクやサービスを投稿し、反応を一箇所で管理。",
       activity_tracking: "追跡中: {text}",
       activity_label: "アクティビティ",
       activity_placeholder: "仕事、通勤、ジム、コーヒー…",
@@ -889,6 +1081,39 @@
       drop_market_list: "公開掲載",
       drop_post_events: "予定を作成",
       drop_events_list: "まもなく開始",
+      filter_clear: "クリア",
+      filter_results: "{shown} / {total} を表示",
+      filter_results_none: "一致なし。フィルターを調整してください。",
+
+      filter_search_tasks_label: "タスク検索",
+      filter_task_search_placeholder: "タスクを検索…",
+      filter_task_status_label: "タスク状態",
+      filter_task_status_all: "すべての状態",
+      filter_task_status_open: "募集中",
+      filter_task_status_accepted: "受諾済み",
+      filter_task_status_completed: "完了",
+      filter_task_status_closed: "クローズ",
+
+      filter_search_market_label: "掲載検索",
+      filter_market_search_placeholder: "掲載を検索…",
+      filter_market_kind_label: "掲載タイプ",
+      filter_market_kind_all: "すべてのタイプ",
+      filter_market_kind_product: "商品",
+      filter_market_kind_service: "サービス",
+      filter_market_status_label: "掲載状態",
+      filter_market_status_all: "すべての状態",
+      filter_market_status_open: "公開中",
+      filter_market_status_sold: "成約済み",
+      filter_market_status_closed: "クローズ",
+
+      filter_search_events_label: "予定検索",
+      filter_events_search_placeholder: "予定を検索…",
+      filter_events_state_label: "予定状態",
+      filter_events_state_all: "すべての状態",
+      filter_events_state_scheduled: "予定",
+      filter_events_state_live: "開催中",
+      filter_events_state_ended: "終了",
+      filter_events_state_cancelled: "キャンセル",
 
       tasks_title: "タスク",
       task_label: "タスク",
@@ -1050,6 +1275,9 @@
     if (els.mapLayerFilters) {
       els.mapLayerFilters.setAttribute("aria-label", t("map_filters_label"));
     }
+    if (els.quickActions) {
+      els.quickActions.setAttribute("aria-label", t("quick_actions_label"));
+    }
 
     // Update any draft helpers that include translated labels.
     if (typeof renderActivityAssist === "function") renderActivityAssist();
@@ -1074,6 +1302,8 @@
         events: true,
         services: true
       },
+      listFilters: defaultUiListFilters(),
+      onboardingOpen: true,
       drops: {
         tasksPost: false,
         tasksList: false,
@@ -1293,6 +1523,8 @@
         ? String(merged.ui.marketTab || "")
         : "tasks";
       merged.ui.mapFilters = normalizeMapLayerFilters(merged.ui.mapFilters);
+      merged.ui.listFilters = normalizeUiListFilters(merged.ui.listFilters);
+      merged.ui.onboardingOpen = merged.ui.onboardingOpen !== false;
       merged.ui.drops = { ...defaultState().ui.drops, ...(merged.ui.drops && typeof merged.ui.drops === "object" ? merged.ui.drops : {}) };
 
       // Task draft route (stored as blurred area anchors).
@@ -3020,6 +3252,8 @@
       ? String(state.ui.section)
       : base.section;
     state.ui.mapFilters = normalizeMapLayerFilters(state.ui.mapFilters || base.mapFilters);
+    state.ui.listFilters = normalizeUiListFilters(state.ui.listFilters || base.listFilters);
+    state.ui.onboardingOpen = state.ui.onboardingOpen !== false;
     if (!state.ui.drops || typeof state.ui.drops !== "object") state.ui.drops = { ...base.drops };
     state.ui.drops = { ...base.drops, ...state.ui.drops };
     if (prevRev < base.rev) {
@@ -3045,6 +3279,41 @@
     setDetailsOpen(els.dropMarketList, state.ui.drops.marketList);
     setDetailsOpen(els.dropEventsPost, state.ui.drops.eventsPost);
     setDetailsOpen(els.dropEventsList, state.ui.drops.eventsList);
+  };
+
+  const renderOnboarding = () => {
+    ensureUiPrefs();
+    setDetailsOpen(els.onboardPanel, state.ui.onboardingOpen);
+  };
+
+  const renderListFilterMeta = (el, total, shown) => {
+    if (!el) return;
+    const totalN = Math.max(0, Number(total) || 0);
+    const shownN = Math.max(0, Number(shown) || 0);
+    if (totalN <= 0) {
+      el.textContent = "";
+      el.hidden = true;
+      return;
+    }
+    el.hidden = false;
+    el.textContent = shownN > 0 ? t("filter_results", { shown: shownN, total: totalN }) : t("filter_results_none");
+  };
+
+  const patchUiListFilter = (scope, patch) => {
+    ensureUiPrefs();
+    const s = String(scope || "").trim();
+    if (!["tasks", "market", "events"].includes(s)) return null;
+    const current = normalizeUiListFilters(state.ui.listFilters);
+    const next = {
+      ...current,
+      [s]: {
+        ...(current[s] || {}),
+        ...(patch && typeof patch === "object" ? patch : {})
+      }
+    };
+    state.ui.listFilters = normalizeUiListFilters(next);
+    saveState();
+    return state.ui.listFilters[s];
   };
 
   const setMarketTabSelected = (tab) => {
@@ -3108,6 +3377,14 @@
   const normalizeTaskStatus = (value) => {
     const v = String(value || "").trim().toLowerCase();
     return TASK_STATUS.includes(v) ? v : "open";
+  };
+
+  const matchesTaskFilterStatus = (status, filterStatus) => {
+    const st = normalizeTaskStatus(status);
+    const f = normalizeTaskListFilterStatus(filterStatus);
+    if (f === "all") return true;
+    if (f === "closed") return st === "expired" || st === "cancelled";
+    return st === f;
   };
 
   const normalizeTaskTitle = (value) => {
@@ -3754,7 +4031,20 @@
     els.taskList.replaceChildren();
 
     const now = nowMs();
-    const items = (state.tasks && Array.isArray(state.tasks.list) ? state.tasks.list : [])
+    ensureUiPrefs();
+    const baseTaskFilter = state.ui && state.ui.listFilters && state.ui.listFilters.tasks ? state.ui.listFilters.tasks : {};
+    const taskFilter = {
+      q: normalizeFilterQuery(baseTaskFilter.q, 72),
+      status: normalizeTaskListFilterStatus(baseTaskFilter.status)
+    };
+    if (els.taskSearchInput && els.taskSearchInput.value !== taskFilter.q) els.taskSearchInput.value = taskFilter.q;
+    if (els.taskStatusFilter && els.taskStatusFilter.value !== taskFilter.status) els.taskStatusFilter.value = taskFilter.status;
+    if (els.taskFilterClear) {
+      els.taskFilterClear.disabled = !taskFilter.q && taskFilter.status === "all";
+    }
+
+    const tokens = queryTokens(taskFilter.q);
+    const allItems = (state.tasks && Array.isArray(state.tasks.list) ? state.tasks.list : [])
       .slice()
       .sort((a, b) => {
         const order = (s) => (s === "accepted" ? 0 : s === "open" ? 1 : s === "completed" ? 2 : s === "expired" ? 3 : 4);
@@ -3762,13 +4052,22 @@
         const sb = order(normalizeTaskStatus(b && b.status));
         if (sa !== sb) return sa - sb;
         return (Number(b && b.createdAt) || 0) - (Number(a && a.createdAt) || 0);
-      })
-      .slice(0, 14);
+      });
+    const filteredItems = allItems
+      .filter((task) => {
+        if (!task || !task.id) return false;
+        if (!matchesTaskFilterStatus(task.status, taskFilter.status)) return false;
+        if (!tokens.length) return true;
+        const hay = `${String(task.title || "")} ${String(task.posterLabel || "")} ${String(task.workerLabel || "")}`;
+        return queryMatchesText(tokens, hay);
+      });
+    const items = filteredItems.slice(0, 14);
+    renderListFilterMeta(els.taskFilterMeta, allItems.length, items.length);
 
     if (!items.length) {
       const li = document.createElement("li");
       li.className = "taskItem taskItem--empty";
-      li.textContent = t("task_list_empty");
+      li.textContent = allItems.length > 0 ? t("filter_results_none") : t("task_list_empty");
       els.taskList.appendChild(li);
       return;
     }
@@ -4682,6 +4981,14 @@
     return MARKET_STATUS.includes(v) ? v : "open";
   };
 
+  const matchesMarketFilterStatus = (status, filterStatus) => {
+    const st = normalizeMarketStatus(status);
+    const f = normalizeMarketListFilterStatus(filterStatus);
+    if (f === "all") return true;
+    if (f === "closed") return st === "expired" || st === "cancelled";
+    return st === f;
+  };
+
   const ensureMarketPrefs = () => {
     if (!state.market || typeof state.market !== "object") state.market = defaultState().market;
     if (!Array.isArray(state.market.list)) state.market.list = [];
@@ -4877,18 +5184,43 @@
   const renderMarketList = () => {
     if (!els.marketList) return;
     ensureMarketPrefs();
+    ensureUiPrefs();
     els.marketList.replaceChildren();
 
     const now = nowMs();
-    const items = state.market.list
+    const baseFilter = state.ui && state.ui.listFilters && state.ui.listFilters.market ? state.ui.listFilters.market : {};
+    const marketFilter = {
+      q: normalizeFilterQuery(baseFilter.q, 72),
+      kind: normalizeMarketListFilterKind(baseFilter.kind),
+      status: normalizeMarketListFilterStatus(baseFilter.status)
+    };
+    if (els.marketSearchInput && els.marketSearchInput.value !== marketFilter.q) els.marketSearchInput.value = marketFilter.q;
+    if (els.marketKindFilter && els.marketKindFilter.value !== marketFilter.kind) els.marketKindFilter.value = marketFilter.kind;
+    if (els.marketStatusFilter && els.marketStatusFilter.value !== marketFilter.status) els.marketStatusFilter.value = marketFilter.status;
+    if (els.marketFilterClear) {
+      els.marketFilterClear.disabled = !marketFilter.q && marketFilter.kind === "all" && marketFilter.status === "all";
+    }
+    const tokens = queryTokens(marketFilter.q);
+
+    const allItems = state.market.list
       .slice()
-      .sort((a, b) => (Number(b && b.createdAt) || 0) - (Number(a && a.createdAt) || 0))
-      .slice(0, 14);
+      .sort((a, b) => (Number(b && b.createdAt) || 0) - (Number(a && a.createdAt) || 0));
+    const filtered = allItems
+      .filter((it) => {
+        if (!it || !it.id) return false;
+        if (marketFilter.kind !== "all" && normalizeMarketKind(it.kind) !== marketFilter.kind) return false;
+        if (!matchesMarketFilterStatus(it.status, marketFilter.status)) return false;
+        if (!tokens.length) return true;
+        const hay = `${String(it.title || "")} ${String(it.sellerLabel || "")} ${String(it.kind || "")}`;
+        return queryMatchesText(tokens, hay);
+      });
+    const items = filtered.slice(0, 14);
+    renderListFilterMeta(els.marketFilterMeta, allItems.length, items.length);
 
     if (!items.length) {
       const li = document.createElement("li");
       li.className = "marketItem marketItem--empty";
-      li.textContent = t("market_list_empty");
+      li.textContent = allItems.length > 0 ? t("filter_results_none") : t("market_list_empty");
       els.marketList.appendChild(li);
       return;
     }
@@ -5195,18 +5527,40 @@
   const renderEventsList = () => {
     if (!els.eventsList) return;
     ensureEventsPrefs();
+    ensureUiPrefs();
     els.eventsList.replaceChildren();
 
     const now = nowMs();
-    const items = state.events.list
+    const baseFilter = state.ui && state.ui.listFilters && state.ui.listFilters.events ? state.ui.listFilters.events : {};
+    const eventsFilter = {
+      q: normalizeFilterQuery(baseFilter.q, 72),
+      state: normalizeEventsListFilterState(baseFilter.state)
+    };
+    if (els.eventsSearchInput && els.eventsSearchInput.value !== eventsFilter.q) els.eventsSearchInput.value = eventsFilter.q;
+    if (els.eventsStateFilter && els.eventsStateFilter.value !== eventsFilter.state) els.eventsStateFilter.value = eventsFilter.state;
+    if (els.eventsFilterClear) {
+      els.eventsFilterClear.disabled = !eventsFilter.q && eventsFilter.state === "all";
+    }
+
+    const tokens = queryTokens(eventsFilter.q);
+    const allItems = state.events.list
       .slice()
-      .sort((a, b) => (Number(b && b.createdAt) || 0) - (Number(a && a.createdAt) || 0))
-      .slice(0, 14);
+      .sort((a, b) => (Number(b && b.createdAt) || 0) - (Number(a && a.createdAt) || 0));
+    const filtered = allItems.filter((ev) => {
+      if (!ev || !ev.id) return false;
+      const st = computeEventState(ev, now);
+      if (eventsFilter.state !== "all" && st !== eventsFilter.state) return false;
+      if (!tokens.length) return true;
+      const hay = `${String(ev.title || "")} ${String(ev.hostLabel || "")}`;
+      return queryMatchesText(tokens, hay);
+    });
+    const items = filtered.slice(0, 14);
+    renderListFilterMeta(els.eventsFilterMeta, allItems.length, items.length);
 
     if (!items.length) {
       const li = document.createElement("li");
       li.className = "eventItem eventItem--empty";
-      li.textContent = t("events_list_empty");
+      li.textContent = allItems.length > 0 ? t("filter_results_none") : t("events_list_empty");
       els.eventsList.appendChild(li);
       return;
     }
@@ -5389,6 +5743,7 @@
   // --- Render ---
 
   const render = () => {
+    renderOnboarding();
     renderActivity(true);
     renderMapLayerFilters();
     renderMarketplaceTabs();
@@ -8013,6 +8368,37 @@
 
   // --- Events ---
 
+  const focusElementSoon = (el) => {
+    if (!el || typeof window === "undefined") return;
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        try {
+          if (typeof el.focus === "function") el.focus({ preventScroll: true });
+        } catch {
+          try {
+            el.focus();
+          } catch {
+            // ignore
+          }
+        }
+      });
+    });
+  };
+
+  const openMarketplaceComposer = (tab, dropKey, focusEl, beforeOpen) => {
+    ensureUiPrefs();
+    if (typeof beforeOpen === "function") beforeOpen();
+    state.ui.marketTab = normalizeMarketTab(tab);
+    if (dropKey && state.ui.drops && Object.prototype.hasOwnProperty.call(state.ui.drops, dropKey)) {
+      state.ui.drops[dropKey] = true;
+    }
+    saveState();
+    renderMarketplaceTabs();
+    applyDropStates();
+    scrollToSection("marketplaceSection");
+    focusElementSoon(focusEl);
+  };
+
   if (els.activityForm) {
     els.activityForm.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -8045,6 +8431,28 @@
     const onTaskDist = () => renderTaskForm();
     els.taskDistanceLimit.addEventListener("input", onTaskDist);
     els.taskDistanceLimit.addEventListener("change", onTaskDist);
+  }
+
+  if (els.taskSearchInput) {
+    els.taskSearchInput.addEventListener("input", () => {
+      patchUiListFilter("tasks", { q: els.taskSearchInput.value });
+      renderTaskList();
+    });
+  }
+
+  if (els.taskStatusFilter) {
+    els.taskStatusFilter.addEventListener("change", () => {
+      patchUiListFilter("tasks", { status: els.taskStatusFilter.value });
+      renderTaskList();
+    });
+  }
+
+  if (els.taskFilterClear) {
+    els.taskFilterClear.addEventListener("click", () => {
+      patchUiListFilter("tasks", defaultUiListFilters().tasks);
+      renderTaskList();
+      focusElementSoon(els.taskSearchInput);
+    });
   }
 
   if (els.marketTabs) {
@@ -8111,6 +8519,17 @@
   };
 
   // Apply persisted dropdown state before binding toggle listeners.
+  renderOnboarding();
+  if (els.onboardPanel) {
+    els.onboardPanel.addEventListener("toggle", () => {
+      ensureUiPrefs();
+      const next = Boolean(els.onboardPanel.open);
+      if (state.ui.onboardingOpen === next) return;
+      state.ui.onboardingOpen = next;
+      saveState();
+    });
+  }
+
   applyDropStates();
   bindDropToggle(els.dropTasksPost, "tasksPost");
   bindDropToggle(els.dropTasksList, "tasksList");
@@ -8118,6 +8537,42 @@
   bindDropToggle(els.dropMarketList, "marketList");
   bindDropToggle(els.dropEventsPost, "eventsPost");
   bindDropToggle(els.dropEventsList, "eventsList");
+
+  if (els.qaStartActivity) {
+    els.qaStartActivity.addEventListener("click", () => {
+      scrollToSection("activitySection");
+      focusElementSoon(els.activityText);
+    });
+  }
+
+  if (els.qaLocateMap) {
+    els.qaLocateMap.addEventListener("click", () => {
+      scrollToSection("mapSection");
+      if (els.mapLocate) els.mapLocate.click();
+    });
+  }
+
+  if (els.qaPostTask) {
+    els.qaPostTask.addEventListener("click", () => {
+      openMarketplaceComposer("tasks", "tasksPost", els.taskText);
+    });
+  }
+
+  if (els.qaPostService) {
+    els.qaPostService.addEventListener("click", () => {
+      openMarketplaceComposer("market", "marketPost", els.marketText, () => {
+        ensureMarketPrefs();
+        state.market.prefs.kind = "service";
+        renderMarketForm();
+      });
+    });
+  }
+
+  if (els.qaScheduleEvent) {
+    els.qaScheduleEvent.addEventListener("click", () => {
+      openMarketplaceComposer("events", "eventsPost", els.eventsText);
+    });
+  }
 
   if (els.taskPickStart) els.taskPickStart.addEventListener("click", pickTaskStart);
   if (els.taskUseMyStart) els.taskUseMyStart.addEventListener("click", useMyAreaForTaskStart);
@@ -8154,6 +8609,35 @@
     els.marketDistanceLimit.addEventListener("change", onChange);
   }
 
+  if (els.marketSearchInput) {
+    els.marketSearchInput.addEventListener("input", () => {
+      patchUiListFilter("market", { q: els.marketSearchInput.value });
+      renderMarketList();
+    });
+  }
+
+  if (els.marketKindFilter) {
+    els.marketKindFilter.addEventListener("change", () => {
+      patchUiListFilter("market", { kind: els.marketKindFilter.value });
+      renderMarketList();
+    });
+  }
+
+  if (els.marketStatusFilter) {
+    els.marketStatusFilter.addEventListener("change", () => {
+      patchUiListFilter("market", { status: els.marketStatusFilter.value });
+      renderMarketList();
+    });
+  }
+
+  if (els.marketFilterClear) {
+    els.marketFilterClear.addEventListener("click", () => {
+      patchUiListFilter("market", defaultUiListFilters().market);
+      renderMarketList();
+      focusElementSoon(els.marketSearchInput);
+    });
+  }
+
   if (els.marketPickLocation) {
     els.marketPickLocation.addEventListener("click", () => {
       beginPickOnMap((ll) => setMarketDraftLoc(ll), { hudKey: "map_pick_hud_market" });
@@ -8183,6 +8667,28 @@
     const onChange = () => renderEventsForm();
     els.eventsDuration.addEventListener("input", onChange);
     els.eventsDuration.addEventListener("change", onChange);
+  }
+
+  if (els.eventsSearchInput) {
+    els.eventsSearchInput.addEventListener("input", () => {
+      patchUiListFilter("events", { q: els.eventsSearchInput.value });
+      renderEventsList();
+    });
+  }
+
+  if (els.eventsStateFilter) {
+    els.eventsStateFilter.addEventListener("change", () => {
+      patchUiListFilter("events", { state: els.eventsStateFilter.value });
+      renderEventsList();
+    });
+  }
+
+  if (els.eventsFilterClear) {
+    els.eventsFilterClear.addEventListener("click", () => {
+      patchUiListFilter("events", defaultUiListFilters().events);
+      renderEventsList();
+      focusElementSoon(els.eventsSearchInput);
+    });
   }
 
   if (els.eventsPickLocation) {

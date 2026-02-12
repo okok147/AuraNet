@@ -137,6 +137,27 @@
           <input type="file" id="dataImportInput" accept="application/json" hidden />
         </div>
       </div>
+
+      <div class="quickActions" id="quickActions" role="group" aria-label="Quick actions">
+        <div class="quickActions__label" data-i18n="quick_actions_label">Quick actions</div>
+        <div class="quickActions__list">
+          <button class="quickActionBtn" type="button" id="qaStartActivity">
+            <span data-i18n="quick_start_activity">Start activity</span>
+          </button>
+          <button class="quickActionBtn" type="button" id="qaLocateMap">
+            <span data-i18n="quick_locate_me">Center map</span>
+          </button>
+          <button class="quickActionBtn" type="button" id="qaPostTask">
+            <span data-i18n="quick_post_task">Post task</span>
+          </button>
+          <button class="quickActionBtn" type="button" id="qaPostService">
+            <span data-i18n="quick_post_service">Post service</span>
+          </button>
+          <button class="quickActionBtn" type="button" id="qaScheduleEvent">
+            <span data-i18n="quick_schedule_event">Schedule event</span>
+          </button>
+        </div>
+      </div>
     </header>
 
     <main class="shell" id="mainContent">
@@ -159,6 +180,31 @@
               Log what you’re doing. Your aura blends over time.
             </div>
           </div>
+
+          <details class="onboard" id="onboardPanel">
+            <summary class="onboard__summary">
+              <span class="onboard__title" data-i18n="onboard_title">Quick start</span>
+            </summary>
+            <div class="onboard__body">
+              <div class="onboard__desc" data-i18n="onboard_desc">
+                Core flow in less than a minute.
+              </div>
+              <ol class="onboard__list">
+                <li class="onboard__item" data-i18n="onboard_step_1">
+                  Log an activity and let your aura blend automatically.
+                </li>
+                <li class="onboard__item" data-i18n="onboard_step_2">
+                  Choose who can see your aura: everyone, nearby area, or trusted contacts.
+                </li>
+                <li class="onboard__item" data-i18n="onboard_step_3">
+                  Use map filters to focus on people, events, or services.
+                </li>
+                <li class="onboard__item" data-i18n="onboard_step_4">
+                  Post tasks or services and manage responses from one place.
+                </li>
+              </ol>
+            </div>
+          </details>
 
           <form class="activityForm" id="activityForm" autocomplete="off">
             <div class="activityForm__row">
@@ -577,6 +623,33 @@
                 <span class="drop__count" id="taskListCount">0</span>
               </summary>
               <div class="drop__body">
+                <div class="listTools" aria-label="Task filters">
+                  <label class="field listTools__field listTools__field--grow">
+                    <span class="sr-only" data-i18n="filter_search_tasks_label">Search tasks</span>
+                    <input
+                      class="input input--search"
+                      id="taskSearchInput"
+                      type="search"
+                      data-i18n-placeholder="filter_task_search_placeholder"
+                      placeholder="Search tasks…"
+                      maxlength="72"
+                    />
+                  </label>
+                  <label class="field listTools__field">
+                    <span class="sr-only" data-i18n="filter_task_status_label">Task status</span>
+                    <select class="select" id="taskStatusFilter">
+                      <option value="all" data-i18n="filter_task_status_all">All status</option>
+                      <option value="open" data-i18n="filter_task_status_open">Open</option>
+                      <option value="accepted" data-i18n="filter_task_status_accepted">Accepted</option>
+                      <option value="completed" data-i18n="filter_task_status_completed">Completed</option>
+                      <option value="closed" data-i18n="filter_task_status_closed">Closed</option>
+                    </select>
+                  </label>
+                  <button class="btn btn--ghost btn--compact listTools__clear" type="button" id="taskFilterClear">
+                    <span data-i18n="filter_clear">Clear</span>
+                  </button>
+                </div>
+                <div class="listTools__meta" id="taskFilterMeta" aria-live="polite"></div>
                 <ul class="taskList" id="taskList" aria-label="Tasks"></ul>
               </div>
             </details>
@@ -712,6 +785,40 @@
                 <span class="drop__count" id="marketListCount">0</span>
               </summary>
               <div class="drop__body">
+                <div class="listTools" aria-label="Market filters">
+                  <label class="field listTools__field listTools__field--grow">
+                    <span class="sr-only" data-i18n="filter_search_market_label">Search listings</span>
+                    <input
+                      class="input input--search"
+                      id="marketSearchInput"
+                      type="search"
+                      data-i18n-placeholder="filter_market_search_placeholder"
+                      placeholder="Search listings…"
+                      maxlength="72"
+                    />
+                  </label>
+                  <label class="field listTools__field">
+                    <span class="sr-only" data-i18n="filter_market_kind_label">Listing type</span>
+                    <select class="select" id="marketKindFilter">
+                      <option value="all" data-i18n="filter_market_kind_all">All types</option>
+                      <option value="product" data-i18n="filter_market_kind_product">Product</option>
+                      <option value="service" data-i18n="filter_market_kind_service">Service</option>
+                    </select>
+                  </label>
+                  <label class="field listTools__field">
+                    <span class="sr-only" data-i18n="filter_market_status_label">Listing status</span>
+                    <select class="select" id="marketStatusFilter">
+                      <option value="all" data-i18n="filter_market_status_all">All status</option>
+                      <option value="open" data-i18n="filter_market_status_open">Open</option>
+                      <option value="sold" data-i18n="filter_market_status_sold">Sold</option>
+                      <option value="closed" data-i18n="filter_market_status_closed">Closed</option>
+                    </select>
+                  </label>
+                  <button class="btn btn--ghost btn--compact listTools__clear" type="button" id="marketFilterClear">
+                    <span data-i18n="filter_clear">Clear</span>
+                  </button>
+                </div>
+                <div class="listTools__meta" id="marketFilterMeta" aria-live="polite"></div>
                 <ul class="marketList" id="marketList" aria-label="Market posts"></ul>
               </div>
             </details>
@@ -821,6 +928,33 @@
                 <span class="drop__count" id="eventsListCount">0</span>
               </summary>
               <div class="drop__body">
+                <div class="listTools" aria-label="Scheduled filters">
+                  <label class="field listTools__field listTools__field--grow">
+                    <span class="sr-only" data-i18n="filter_search_events_label">Search activities</span>
+                    <input
+                      class="input input--search"
+                      id="eventsSearchInput"
+                      type="search"
+                      data-i18n-placeholder="filter_events_search_placeholder"
+                      placeholder="Search activities…"
+                      maxlength="72"
+                    />
+                  </label>
+                  <label class="field listTools__field">
+                    <span class="sr-only" data-i18n="filter_events_state_label">Activity state</span>
+                    <select class="select" id="eventsStateFilter">
+                      <option value="all" data-i18n="filter_events_state_all">All state</option>
+                      <option value="scheduled" data-i18n="filter_events_state_scheduled">Scheduled</option>
+                      <option value="live" data-i18n="filter_events_state_live">Live</option>
+                      <option value="ended" data-i18n="filter_events_state_ended">Ended</option>
+                      <option value="cancelled" data-i18n="filter_events_state_cancelled">Cancelled</option>
+                    </select>
+                  </label>
+                  <button class="btn btn--ghost btn--compact listTools__clear" type="button" id="eventsFilterClear">
+                    <span data-i18n="filter_clear">Clear</span>
+                  </button>
+                </div>
+                <div class="listTools__meta" id="eventsFilterMeta" aria-live="polite"></div>
                 <ul class="eventsList" id="eventsList" aria-label="Scheduled activities"></ul>
               </div>
             </details>
