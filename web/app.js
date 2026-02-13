@@ -206,6 +206,20 @@
     return Math.max(min, Math.min(max, n));
   };
 
+  const clamp01 = (value) => {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return 0;
+    return Math.max(0, Math.min(1, n));
+  };
+
+  const fadeProgressByAge = (ageMs, holdMs, fadeMs) => {
+    const age = Math.max(0, Number(ageMs) || 0);
+    const hold = Math.max(0, Number(holdMs) || 0);
+    const fade = Math.max(1, Number(fadeMs) || 1);
+    if (age <= hold) return 0;
+    return clamp01((age - hold) / fade);
+  };
+
   const randomSubset = (items, count) => {
     const source = Array.isArray(items) ? items : [];
     const n = source.length;
@@ -254,6 +268,10 @@
   const AURA_RECOMPUTE_MS = 30_000;
   const AURA_STRENGTH_RECOMPUTE_MS = 60_000;
   const SAVE_DEBOUNCE_MS = 220;
+  const TASK_CLOSED_FADE_HOLD_MS = 4 * 60_000;
+  const TASK_CLOSED_FADE_MS = 8 * 60_000;
+  const ACTIVITY_LOG_FADE_HOLD_MS = 10 * 60_000;
+  const ACTIVITY_LOG_FADE_MS = 20 * 60_000;
 
   // --- i18n ---
 
@@ -1658,6 +1676,7 @@
           workerVerified: Boolean(x.workerVerified),
           acceptedAt: Number(x.acceptedAt) || 0,
           completedAt: Number(x.completedAt) || 0,
+          closedAt: Number(x.closedAt) || 0,
           review:
             x.review && typeof x.review === "object"
               ? {
@@ -3185,10 +3204,21 @@
     if (!els.activityList) return;
     els.activityList.replaceChildren();
 
-    const items = state.activity.log
+    const now = nowMs();
+    const entries = state.activity.log
       .slice()
-      .sort((a, b) => (b.endedAt || 0) - (a.endedAt || 0))
-      .slice(0, 10);
+      .sort((a, b) => (b.endedAt || 0) - (a.endedAt || 0));
+    const items = [];
+    for (const entry of entries) {
+      if (!entry || !entry.endedAt || !entry.startedAt) continue;
+      const endedAt = Number(entry.endedAt) || 0;
+      const startedAt = Number(entry.startedAt) || 0;
+      if (endedAt <= 0 || startedAt <= 0 || endedAt < startedAt) continue;
+      const fadeProgress = fadeProgressByAge(now - endedAt, ACTIVITY_LOG_FADE_HOLD_MS, ACTIVITY_LOG_FADE_MS);
+      if (fadeProgress >= 1) continue;
+      items.push({ entry, fadeProgress });
+      if (items.length >= 10) break;
+    }
 
     if (items.length === 0) {
       const li = document.createElement("li");
@@ -3198,7 +3228,8 @@
       return;
     }
 
-    for (const entry of items) {
+    for (const item of items) {
+      const entry = item.entry;
       if (!entry || !entry.endedAt || !entry.startedAt) continue;
       const text = normalizeActivityText(entry.text || "");
       const legacyType = entry.type ? normalizeActivityType(entry.type) : null;
@@ -3210,6 +3241,10 @@
 
       const li = document.createElement("li");
       li.className = "activityItem";
+      if (item.fadeProgress > 0) {
+        li.classList.add("activityItem--fading");
+        li.style.setProperty("--fade-progress", item.fadeProgress.toFixed(3));
+      }
 
       const left = document.createElement("div");
       left.className = "activityItem__main";
@@ -3388,6 +3423,52 @@
   const normalizeTaskStatus = (value) => {
     const v = String(value || "").trim().toLowerCase();
     return TASK_STATUS.includes(v) ? v : "open";
+  };
+
+  const taskClosedAtMs = (task, now = nowMs()) => {
+    if (!task || typeof task !== "object") return 0;
+    const explicit = Number(task.closedAt) || 0;
+    if (explicit > 0) return explicit;
+    const status = normalizeTaskStatus(task.status);
+    if (status === "expired") {
+      const expiresAt = Number(task.expiresAt) || 0;
+      if (expiresAt > 0) return expiresAt;
+    }
+    if (status === "cancelled") {
+      const completedAt = Number(task.completedAt) || 0;
+      if (completedAt > 0) return completedAt;
+    }
+    const createdAt = Number(task.createdAt) || 0;
+    return createdAt > 0 ? createdAt : now;
+  };
+
+  const taskFadeMeta = (task, now = nowMs()) => {
+    const status = normalizeTaskStatus(task && task.status);
+    if (status !== "expired" && status !== "cancelled") return { progress: 0, hidden: false };
+    const closedAt = taskClosedAtMs(task, now);
+    const progress = fadeProgressByAge(now - closedAt, TASK_CLOSED_FADE_HOLD_MS, TASK_CLOSED_FADE_MS);
+    return { progress, hidden: progress >= 1 };
+  };
+
+  const setTaskStatus = (task, status, now = nowMs()) => {
+    if (!task || typeof task !== "object") return;
+    const next = normalizeTaskStatus(status);
+    task.status = next;
+    if (next === "expired") {
+      const expiresAt = Number(task.expiresAt) || 0;
+      task.closedAt = expiresAt > 0 ? Math.min(now, expiresAt) : now;
+      return;
+    }
+    if (next === "cancelled") {
+      task.closedAt = now;
+      return;
+    }
+    if (next === "completed") {
+      if (!(Number(task.completedAt) > 0)) task.completedAt = now;
+      task.closedAt = Number(task.completedAt) || now;
+      return;
+    }
+    task.closedAt = 0;
   };
 
   const matchesTaskFilterStatus = (status, filterStatus) => {
@@ -4072,7 +4153,14 @@
         const hay = `${String(task.title || "")} ${String(task.posterLabel || "")} ${String(task.workerLabel || "")}`;
         return queryMatchesText(tokens, hay);
       });
-    const items = filteredItems.slice(0, 14);
+    const items = [];
+    for (const task of filteredItems) {
+      if (!task || !task.id) continue;
+      const fade = taskFadeMeta(task, now);
+      if (fade.hidden) continue;
+      items.push({ task, fadeProgress: fade.progress });
+      if (items.length >= 14) break;
+    }
     renderListFilterMeta(els.taskFilterMeta, allItems.length, items.length);
 
     if (!items.length) {
@@ -4083,7 +4171,8 @@
       return;
     }
 
-    for (const task of items) {
+    for (const item of items) {
+      const task = item.task;
       if (!task || !task.id) continue;
       const status = normalizeTaskStatus(task.status);
       const poster = task.poster;
@@ -4095,6 +4184,10 @@
 
       const li = document.createElement("li");
       li.className = "taskItem";
+      if (item.fadeProgress > 0) {
+        li.classList.add("taskItem--fading");
+        li.style.setProperty("--fade-progress", item.fadeProgress.toFixed(3));
+      }
 
       const top = document.createElement("div");
       top.className = "taskItem__top";
@@ -4377,6 +4470,7 @@
       workerVerified: false,
       acceptedAt: 0,
       completedAt: 0,
+      closedAt: 0,
       applicants: [],
       tetherFrom: null,
       tetherTo: null,
@@ -4435,7 +4529,7 @@
 
     const now = nowMs();
     if (task.expiresAt && now > task.expiresAt) {
-      task.status = "expired";
+      setTaskStatus(task, "expired", now);
       saveState();
       renderTasks();
       toast(t("toast_task_expired"));
@@ -4523,7 +4617,7 @@
 
     const now = nowMs();
     if (task.expiresAt && now > task.expiresAt) {
-      task.status = "expired";
+      setTaskStatus(task, "expired", now);
       saveState();
       renderTasks();
       if (canNotify) toast(t("toast_task_expired"));
@@ -4577,7 +4671,7 @@
       return;
     }
 
-    task.status = "accepted";
+    setTaskStatus(task, "accepted", now);
     task.acceptedBy = actor;
     task.workerLabel = (info && info.label) || task.workerLabel || "";
     task.workerVerified = Boolean(info && info.verified);
@@ -4611,15 +4705,14 @@
     const now = nowMs();
 
     if (task.expiresAt && now > task.expiresAt) {
-      task.status = "expired";
+      setTaskStatus(task, "expired", now);
       saveState();
       renderTasks();
       toast(t("toast_task_expired"));
       return;
     }
 
-    task.status = "completed";
-    task.completedAt = now;
+    setTaskStatus(task, "completed", now);
     saveState();
 
     // Completion boosts the worker aura like an activity log.
@@ -4674,7 +4767,7 @@
     const task = state.tasks.list.find((x) => x && x.id === id);
     if (!task) return;
     if (normalizeTaskStatus(task.status) !== "open") return;
-    task.status = "cancelled";
+    setTaskStatus(task, "cancelled", nowMs());
     saveState();
     renderTasks();
   };
@@ -4688,7 +4781,7 @@
       const status = normalizeTaskStatus(task.status);
       if (status === "completed" || status === "cancelled" || status === "expired") continue;
       if (task.expiresAt && now > task.expiresAt) {
-        task.status = "expired";
+        setTaskStatus(task, "expired", now);
         changed = true;
       }
     }
@@ -4953,6 +5046,7 @@
       workerVerified: false,
       acceptedAt: 0,
       completedAt: 0,
+      closedAt: 0,
       applicants: [],
       tetherFrom,
       tetherTo,
@@ -9102,6 +9196,11 @@
   mapApi = initPaperMap();
   applyI18n();
   renderClock();
-  window.setInterval(renderClock, 10_000);
+  window.setInterval(() => {
+    renderClock();
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+    renderActivityList();
+    renderTaskList();
+  }, 10_000);
   render();
 })();
