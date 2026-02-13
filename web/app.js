@@ -702,6 +702,11 @@
       toast_import_done: "Backup imported.",
       toast_import_invalid: "Invalid backup file.",
       toast_import_failed: "Could not import backup.",
+      toast_cloud_backup_saved: "Google backup updated.",
+      toast_cloud_backup_loaded: "Backup restored from Google.",
+      toast_cloud_backup_missing: "No Google backup found yet.",
+      toast_cloud_backup_unavailable: "Google backup unavailable. Enable Firestore.",
+      toast_cloud_backup_failed: "Google backup failed.",
       toast_app_installed: "App installed.",
       toast_pwa_unavailable: "Install prompt is not available right now.",
       toast_pwa_update_ready: "App update ready. Refresh to use the latest version.",
@@ -1014,6 +1019,11 @@
       toast_import_done: "已匯入備份。",
       toast_import_invalid: "備份檔格式無效。",
       toast_import_failed: "無法匯入備份。",
+      toast_cloud_backup_saved: "已更新 Google 備份。",
+      toast_cloud_backup_loaded: "已從 Google 還原備份。",
+      toast_cloud_backup_missing: "尚未找到 Google 備份。",
+      toast_cloud_backup_unavailable: "Google 備份不可用，請啟用 Firestore。",
+      toast_cloud_backup_failed: "Google 備份失敗。",
       toast_app_installed: "App 已安裝。",
       toast_pwa_unavailable: "目前無法顯示安裝提示。",
       toast_pwa_update_ready: "已有新版可用，重新整理即可更新。",
@@ -1326,6 +1336,11 @@
       toast_import_done: "バックアップを読み込みました。",
       toast_import_invalid: "バックアップファイルの形式が無効です。",
       toast_import_failed: "バックアップを読み込めませんでした。",
+      toast_cloud_backup_saved: "Google バックアップを更新しました。",
+      toast_cloud_backup_loaded: "Google からバックアップを復元しました。",
+      toast_cloud_backup_missing: "Google バックアップが見つかりません。",
+      toast_cloud_backup_unavailable: "Google バックアップは利用できません。Firestore を有効化してください。",
+      toast_cloud_backup_failed: "Google バックアップに失敗しました。",
       toast_app_installed: "アプリをインストールしました。",
       toast_pwa_unavailable: "今はインストールできません。",
       toast_pwa_update_ready: "新しいバージョンを利用できます。再読み込みしてください。",
@@ -2009,7 +2024,9 @@
   let i18nLang = normalizeLang(state.activity && state.activity.prefs && state.activity.prefs.lang);
   let firebaseAuthConfig = null;
   let firebaseAuth = null;
+  let firebaseDb = null;
   let firebaseAuthReady = false;
+  let firebaseCloudReady = false;
   let firebaseAuthBootstrapped = false;
 
   const sameAuthUser = (a, b) => {
@@ -2166,7 +2183,10 @@
 
   const initFirebaseAuth = () => {
     firebaseAuthConfig = readFirebaseAuthConfig();
+    firebaseAuth = null;
+    firebaseDb = null;
     firebaseAuthReady = false;
+    firebaseCloudReady = false;
     firebaseAuthBootstrapped = false;
     renderAuthUi();
     if (!firebaseAuthConfig) return;
@@ -2186,6 +2206,15 @@
       if (!firebaseAuth || typeof firebaseAuth.onAuthStateChanged !== "function") {
         throw new Error("firebase_auth_unavailable");
       }
+      if (typeof fb.firestore === "function") {
+        try {
+          firebaseDb = app && typeof app.firestore === "function" ? app.firestore() : fb.firestore();
+          firebaseCloudReady = Boolean(firebaseDb && typeof firebaseDb.collection === "function");
+        } catch {
+          firebaseDb = null;
+          firebaseCloudReady = false;
+        }
+      }
       firebaseAuthReady = true;
       renderAuthUi();
       firebaseAuth.onAuthStateChanged(
@@ -2199,7 +2228,9 @@
       );
     } catch {
       firebaseAuth = null;
+      firebaseDb = null;
       firebaseAuthReady = false;
+      firebaseCloudReady = false;
       renderAuthUi();
       toast(t("toast_auth_unavailable"));
     }
@@ -6146,28 +6177,150 @@
     return parsed;
   };
 
+  const currentSignedInUser = () => normalizeAuthUser(state && state.auth && state.auth.user);
+
+  const setDataToolsBusy = (busy) => {
+    const on = Boolean(busy);
+    if (els.dataExportBtn) els.dataExportBtn.disabled = on;
+    if (els.dataImportBtn) els.dataImportBtn.disabled = on;
+  };
+
+  const cloudBackupRefForCurrentUser = () => {
+    const authUser = currentSignedInUser();
+    if (!authUser || !firebaseCloudReady || !firebaseDb || typeof firebaseDb.collection !== "function") return null;
+    const docId = sanitizeProfileId(authUser.sub);
+    if (!docId) return null;
+    return {
+      authUser,
+      ref: firebaseDb.collection("auranet_backups").doc(docId)
+    };
+  };
+
+  const buildCloudBackupPayload = (authUser) => {
+    const backup = buildBackupPayload();
+    const payload = {
+      ...backup,
+      owner: {
+        sub: String(authUser && authUser.sub ? authUser.sub : ""),
+        name: String(authUser && authUser.name ? authUser.name : "").slice(0, 120),
+        email: String(authUser && authUser.email ? authUser.email : "").slice(0, 180)
+      },
+      updatedAtClient: new Date().toISOString()
+    };
+    try {
+      const fb = getFirebaseNamespace();
+      const serverTs =
+        fb &&
+        fb.firestore &&
+        fb.firestore.FieldValue &&
+        typeof fb.firestore.FieldValue.serverTimestamp === "function"
+          ? fb.firestore.FieldValue.serverTimestamp()
+          : null;
+      if (serverTs) payload.updatedAt = serverTs;
+    } catch {
+      // ignore
+    }
+    return payload;
+  };
+
+  const saveBackupToGoogle = async () => {
+    const cloud = cloudBackupRefForCurrentUser();
+    if (!cloud) return { ok: false, reason: "unavailable" };
+    try {
+      await cloud.ref.set(buildCloudBackupPayload(cloud.authUser), { merge: true });
+      return { ok: true, reason: "ok" };
+    } catch (err) {
+      console.error(err);
+      return { ok: false, reason: "failed" };
+    }
+  };
+
+  const loadBackupFromGoogle = async () => {
+    const cloud = cloudBackupRefForCurrentUser();
+    if (!cloud) return { ok: false, reason: "unavailable" };
+    try {
+      const snap = await cloud.ref.get();
+      if (!snap || !snap.exists) return { ok: false, reason: "missing" };
+      const raw = snap.data();
+      const candidate = normalizeBackupPayload(raw);
+      if (!candidate || Number(candidate.version) !== 1) return { ok: false, reason: "invalid" };
+      const ok = applyImportedState(candidate);
+      return { ok, reason: ok ? "ok" : "failed" };
+    } catch (err) {
+      console.error(err);
+      return { ok: false, reason: "failed" };
+    }
+  };
+
+  const openImportFileDialog = () => {
+    if (!els.dataImportInput) return;
+    try {
+      els.dataImportInput.click();
+    } catch {
+      // ignore
+    }
+  };
+
   const bindDataTools = () => {
     if (els.dataExportBtn) {
-      els.dataExportBtn.addEventListener("click", () => {
-        const stamp = fmtClock().replace(/[^0-9]/g, "").slice(0, 12);
-        downloadJson(`auranet-backup-${stamp}.json`, buildBackupPayload());
-        toast(t("toast_export_ready"));
+      els.dataExportBtn.addEventListener("click", async () => {
+        if (els.dataExportBtn.disabled) return;
+        setDataToolsBusy(true);
+        try {
+          const stamp = fmtClock().replace(/[^0-9]/g, "").slice(0, 12);
+          downloadJson(`auranet-backup-${stamp}.json`, buildBackupPayload());
+          const cloud = await saveBackupToGoogle();
+          if (cloud.ok) {
+            toast(t("toast_cloud_backup_saved"));
+            return;
+          }
+          if (currentSignedInUser()) {
+            toast(
+              cloud.reason === "failed"
+                ? t("toast_cloud_backup_failed")
+                : t("toast_cloud_backup_unavailable")
+            );
+            return;
+          }
+          toast(t("toast_export_ready"));
+        } finally {
+          setDataToolsBusy(false);
+        }
       });
     }
 
     if (els.dataImportBtn && els.dataImportInput) {
-      els.dataImportBtn.addEventListener("click", () => {
-        try {
-          els.dataImportInput.click();
-        } catch {
-          // ignore
+      els.dataImportBtn.addEventListener("click", async () => {
+        if (els.dataImportBtn.disabled) return;
+        const user = currentSignedInUser();
+        if (user) {
+          setDataToolsBusy(true);
+          try {
+            const cloud = await loadBackupFromGoogle();
+            if (cloud.ok) {
+              toast(t("toast_cloud_backup_loaded"));
+              return;
+            }
+            if (cloud.reason === "missing") toast(t("toast_cloud_backup_missing"));
+            else if (cloud.reason === "invalid") toast(t("toast_import_invalid"));
+            else if (cloud.reason === "failed") toast(t("toast_cloud_backup_failed"));
+            else toast(t("toast_cloud_backup_unavailable"));
+          } finally {
+            setDataToolsBusy(false);
+          }
         }
+        openImportFileDialog();
       });
 
       els.dataImportInput.addEventListener("change", async () => {
+        if (els.dataImportInput.disabled) return;
+        setDataToolsBusy(true);
         const file = els.dataImportInput.files && els.dataImportInput.files[0] ? els.dataImportInput.files[0] : null;
         els.dataImportInput.value = "";
-        if (!file) return;
+        if (!file) {
+          setDataToolsBusy(false);
+          return;
+        }
         try {
           const text = await readFileText(file);
           const parsed = JSON.parse(text);
@@ -6180,6 +6333,8 @@
           toast(ok ? t("toast_import_done") : t("toast_import_failed"));
         } catch {
           toast(t("toast_import_invalid"));
+        } finally {
+          setDataToolsBusy(false);
         }
       });
     }
