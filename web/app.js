@@ -2465,12 +2465,13 @@
       return derivedCache.auraStrength.data;
     }
 
-    // Strength is based on daily repetition (habit), not a single long session.
-    // We look at distinct active days per activity key in a recent window,
-    // then apply a saturating curve and blend the top few habits.
-    const windowDays = 21;
+    // Strength is based on long-horizon repetition (habit), not a single session.
+    // This intentionally uses a hard curve so only consistently active users
+    // build strong, zoom-visible aura over time.
+    const windowDays = 120;
     const minDurMs = 30_000;
     const perKeyDays = new Map(); // key -> Set(dayISO)
+    const allDays = new Set();
 
     for (const entry of state.activity.log) {
       if (!entry || !entry.endedAt || !entry.startedAt) continue;
@@ -2494,18 +2495,28 @@
       const set = perKeyDays.get(key) || new Set();
       set.add(dayId);
       perKeyDays.set(key, set);
+      allDays.add(dayId);
     }
 
     const counts = Array.from(perKeyDays.values())
       .map((s) => s.size)
       .sort((a, b) => b - a);
 
-    const curve = (days) => 1 - Math.exp(-Math.max(0, days) / 3); // 0..1, fast saturation
-    const c0 = curve(counts[0] || 0);
-    const c1 = curve(counts[1] || 0);
-    const c2 = curve(counts[2] || 0);
-    const strength = clamp(c0 * 0.62 + c1 * 0.26 + c2 * 0.12, 0, 1);
-    const result = { strength, counts };
+    const strictCurve = (days, targetDays, power) => {
+      const x = clamp((Number(days) || 0) / Math.max(1, Number(targetDays) || 1), 0, 1);
+      return Math.pow(x, Math.max(1.1, Number(power) || 2));
+    };
+
+    const c0 = counts[0] || 0;
+    const c1 = counts[1] || 0;
+    const c2 = counts[2] || 0;
+    const weightedTop3 = c0 + c1 * 0.72 + c2 * 0.48;
+
+    const habitScore = strictCurve(c0, 84, 3.4);
+    const consistencyScore = strictCurve(weightedTop3, 150, 3.0);
+    const breadthScore = strictCurve(allDays.size, 100, 2.8);
+    const strength = clamp(habitScore * 0.56 + consistencyScore * 0.32 + breadthScore * 0.12, 0, 1);
+    const result = { strength, counts, activeDays: allDays.size };
     derivedCache.auraStrength = { rev: activityLogRevision, bucket, data: result };
     return result;
   };
@@ -6435,8 +6446,13 @@
       [5 * DECAY_MINUTE_MS, 0.1],
       [6 * DECAY_MINUTE_MS, 0.05],
     ];
+    const connection =
+      (typeof navigator !== "undefined" && (navigator.connection || navigator.mozConnection || navigator.webkitConnection)) || null;
+    const dataSaverOn = Boolean(connection && connection.saveData);
+    const lowMemoryDevice = Boolean(typeof navigator !== "undefined" && Number.isFinite(Number(navigator.deviceMemory)) && Number(navigator.deviceMemory) <= 4);
+    const perfProfileScale = dataSaverOn || lowMemoryDevice ? 0.76 : 1;
     const OSRM_BASE = "https://router.project-osrm.org";
-    const ROUTE_POINT_LIMIT = 260;
+    const ROUTE_POINT_LIMIT = dataSaverOn ? 170 : lowMemoryDevice ? 200 : 260;
     const ROUTE_CACHE_MAX = 80;
     const ROUTE_FETCH_TIMEOUT_MS = 4500;
 
@@ -6470,6 +6486,65 @@
     };
 
     const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+
+    let mapInMotion = false;
+    let mapMotionCooldown = null;
+
+    const setMapInMotion = (next) => {
+      const on = Boolean(next);
+      if (mapInMotion === on) return;
+      mapInMotion = on;
+      refreshAgentDialogs();
+      syncMarketPosts();
+      syncEvents();
+    };
+
+    const scheduleMapMotionSettled = () => {
+      if (mapMotionCooldown) window.clearTimeout(mapMotionCooldown);
+      mapMotionCooldown = window.setTimeout(() => {
+        mapMotionCooldown = null;
+        setMapInMotion(false);
+      }, 220);
+    };
+
+    const zoomLodScale = () => {
+      const z = clamp(map.getZoom(), STREET_MIN_ZOOM, 18);
+      const t = (z - STREET_MIN_ZOOM) / (18 - STREET_MIN_ZOOM);
+      return 0.22 + 0.78 * Math.pow(t, 1.5);
+    };
+
+    const minAuraDotRadius = () => {
+      const z = map.getZoom();
+      if (z <= 13) return 2.1;
+      if (z <= 15) return 2.9;
+      if (z <= 17) return 3.7;
+      return 4.6;
+    };
+
+    const eliteFactor = (score, threshold = 0.84, power = 2.8) => {
+      const s = clamp(Number(score) || 0, 0, 1);
+      const x = clamp((s - threshold) / Math.max(1e-6, 1 - threshold), 0, 1);
+      return Math.pow(x, Math.max(1.05, Number(power) || 2.2));
+    };
+
+    const userProminenceScale = (strength) => {
+      const elite = eliteFactor(strength, 0.9, 3.2);
+      return 0.24 + elite * 2.9;
+    };
+
+    const agentPrestigeScore = (agent) => {
+      if (!agent || typeof agent !== "object") return 0;
+      const rating = clamp((Number(agent.rating) - 3.8) / 1.2, 0, 1);
+      const done = clamp(Math.log10(1 + Math.max(0, Number(agent.tasksDone) || 0)) / 2.4, 0, 1);
+      const onTime = clamp((Number(agent.onTimePct) - 80) / 20, 0, 1);
+      const verified = agent.verified ? 0.2 : 0;
+      return clamp(rating * 0.48 + done * 0.34 + onTime * 0.18 + verified, 0, 1);
+    };
+
+    const agentProminenceScale = (agent) => {
+      const elite = eliteFactor(agentPrestigeScore(agent), 0.82, 2.7);
+      return 0.24 + elite * 2.7;
+    };
 
     const wrapLng = (lng) => {
       const x = ((lng + 180) % 360 + 360) % 360 - 180;
@@ -6668,7 +6743,7 @@
 
     const agentDialogText = (agent) => {
       if (!agent) return "";
-      if (agent.state === "moving") return t("sim_doing_transit");
+      if (agent.state === "moving") return "";
       if (agent.stopType === "eat") return t("sim_doing_eating");
       if (agent.stopType === "transit") return t("sim_doing_transit");
       return t("sim_doing_resting");
@@ -6676,7 +6751,7 @@
 
     const syncAgentDialog = (agent) => {
       if (!agent || !agent.outer) return;
-      const want = map.getZoom() >= DIALOG_MIN_ZOOM;
+      const want = !mapInMotion && map.getZoom() >= DIALOG_MIN_ZOOM;
       const text = want ? agentDialogText(agent) : "";
 
       if (!text) {
@@ -6778,12 +6853,12 @@
     };
 
     const auraTargetCountForZoom = (zoom) => {
-      // Zoomed-out = wider view = more simulated auras.
+      // Zoomed-out = wider view = more simulated auras, but keep density manageable.
       const z = clamp(zoom, STREET_MIN_ZOOM, 18);
       const t = (18 - z) / (18 - STREET_MIN_ZOOM); // 0..1
-      const min = 14;
-      const max = 60;
-      return Math.round(min + t * (max - min));
+      const min = 10;
+      const max = 44;
+      return Math.max(6, Math.round((min + t * (max - min)) * perfProfileScale));
     };
 
     const createAuraLayer = (latLng, fill, radius, fillOpacity) => {
@@ -6812,16 +6887,20 @@
       const fill = mixHex(userAuraColor, GRAY_HEX, grayT);
       const bound = mixHex(fill, BOUND_MIX_HEX, 0.28);
       const radiusScale = radiusScaleFromDecay(decay);
-      const strengthScale = 0.84 + 0.58 * strength;
+      const strengthScale = 0.58 + 0.82 * Math.pow(strength, 1.35);
+      const lodScale = zoomLodScale();
+      const prominenceScale = userProminenceScale(strength);
       const strengthOpacity = 0.65 + 0.95 * strength;
       const rep = reputationFactorForKey(userKey);
-      const repScale = clamp(rep, 0.86, 1.16);
-      const repOpacity = clamp(1 + (repScale - 1) * 0.6, 0.86, 1.12);
+      const repScale = clamp(rep, 0.84, 1.22);
+      const repOpacity = clamp(1 + (repScale - 1) * 0.6, 0.84, 1.14);
       // Self view: opacity stays, only size decays.
       const opacityAgeFactor = selfPreciseMode ? 1 : decay;
+      const visibilityOpacityScale = clamp(0.4 + lodScale * 0.35 + Math.min(1, prominenceScale) * 0.4, 0.22, 1.15);
       // No center dot: layered haze only.
-      const baseOpacities = [0.06, 0.09, 0.12];
-      const baseRadii = [70, 52, 36];
+      const baseOpacities = [0.05, 0.075, 0.10];
+      const baseRadii = [56, 40, 27];
+      const minRadius = minAuraDotRadius();
       for (let i = 0; i < userAuraLayers.length; i++) {
         const isOuter = i === 0;
         const showBound = Boolean(userAuraVerified) && isOuter;
@@ -6833,9 +6912,9 @@
           weight: showBound ? 1.7 : 0,
           opacity: showBound ? (selfPreciseMode ? 0.72 : clamp(0.65 * opacityAgeFactor, 0.22, 0.78)) : 0,
           fillColor: fill,
-          fillOpacity: clamp(o * strengthOpacity * opacityAgeFactor * repOpacity, 0.012, 0.28)
+          fillOpacity: clamp(o * strengthOpacity * opacityAgeFactor * repOpacity * visibilityOpacityScale, 0.008, 0.24)
         });
-        userAuraLayers[i].setRadius(Math.max(10, r * strengthScale * radiusScale * repScale));
+        userAuraLayers[i].setRadius(Math.max(minRadius, r * strengthScale * radiusScale * repScale * lodScale * prominenceScale));
       }
     };
 
@@ -6843,9 +6922,9 @@
       if (!latLng) return;
       if (userAuraLayers.length === 0) {
         userAuraLayers = [
-          createAuraLayer(latLng, userAuraColor, 70, 0.06),
-          createAuraLayer(latLng, userAuraColor, 52, 0.09),
-          createAuraLayer(latLng, userAuraColor, 36, 0.12)
+          createAuraLayer(latLng, userAuraColor, 56, 0.05),
+          createAuraLayer(latLng, userAuraColor, 40, 0.075),
+          createAuraLayer(latLng, userAuraColor, 27, 0.10)
         ];
 
         const onClick = (e) => {
@@ -7161,10 +7240,14 @@
       fill = mixHex(fill, AURA_GRAY_HEX, grayT);
       const bound = mixHex(fill, BOUND_MIX_HEX, 0.28);
       const opacityScale = decay * opacityBoost;
+      const lodScale = zoomLodScale();
+      const prominenceScale = agentProminenceScale(agent);
       const repKey = `agent:${String(agent && agent.id ? agent.id : "")}`;
       const rep = reputationFactorForKey(repKey);
-      const repScale = clamp(rep, 0.86, 1.16);
-      const repOpacity = clamp(1 + (repScale - 1) * 0.6, 0.86, 1.12);
+      const repScale = clamp(rep, 0.84, 1.2);
+      const repOpacity = clamp(1 + (repScale - 1) * 0.6, 0.84, 1.14);
+      const visibilityOpacityScale = clamp(0.35 + lodScale * 0.4 + Math.min(1, prominenceScale) * 0.4, 0.2, 1.16);
+      const minRadius = minAuraDotRadius();
 
       const layers = Array.isArray(agent.layers) && agent.layers.length ? agent.layers : [agent.outer].filter(Boolean);
       const baseRadii = Array.isArray(agent.baseRadii) && agent.baseRadii.length
@@ -7187,9 +7270,9 @@
           weight: showBound ? 1.7 : 0,
           opacity: showBound ? clamp(0.65 * opacityScale, 0.18, 0.85) : 0,
           fillColor: fill,
-          fillOpacity: clamp(baseO * opacityScale * repOpacity, 0.012, 0.34)
+          fillOpacity: clamp(baseO * opacityScale * repOpacity * visibilityOpacityScale, 0.008, 0.26)
         });
-        layer.setRadius(Math.max(10, baseR * radiusScale * repScale));
+        layer.setRadius(Math.max(minRadius, baseR * radiusScale * repScale * lodScale * prominenceScale));
       }
     };
 
@@ -7303,9 +7386,9 @@
       const rating = Math.round(randBetween(verified ? 4.4 : 4.0, 5.0) * 10) / 10;
       const tasksDone = Math.round(randBetween(verified ? 12 : 0, verified ? 220 : 90));
       const onTimePct = Math.round(randBetween(verified ? 92 : 80, 99));
-      const baseOuterRadius = randBetween(44, 68);
-      const baseRadii = [baseOuterRadius, baseOuterRadius * 0.72, baseOuterRadius * 0.48];
-      const baseOpacities = [0.05, 0.08, 0.12];
+      const baseOuterRadius = randBetween(20, 36);
+      const baseRadii = [baseOuterRadius, baseOuterRadius * 0.68, baseOuterRadius * 0.44];
+      const baseOpacities = [0.045, 0.07, 0.1];
       const layers = baseRadii.map((r, i) =>
         createAuraLayer(route.points[0], persona.fill, r, baseOpacities[i] || 0.08)
       );
@@ -7740,7 +7823,21 @@
       els.mapLocate.addEventListener("click", showMyLocation);
     }
 
+    map.on("movestart zoomstart", () => {
+      if (mapMotionCooldown) {
+        window.clearTimeout(mapMotionCooldown);
+        mapMotionCooldown = null;
+      }
+      try {
+        map.closePopup();
+      } catch {
+        // ignore
+      }
+      setMapInMotion(true);
+    });
+
     map.on("moveend zoomend", () => {
+      scheduleMapMotionSettled();
       if (!sim.enabled) return;
       setSimUi();
 
@@ -7947,7 +8044,7 @@
       }
 
       const want = new Set();
-      const zoomOk = map.getZoom() >= DIALOG_MIN_ZOOM;
+      const zoomOk = !mapInMotion && map.getZoom() >= DIALOG_MIN_ZOOM;
       for (const post of marketForMap) {
         if (!post || !post.id) continue;
         const ll = toLatLngSafe(post.loc);
@@ -8038,7 +8135,7 @@
       }
 
       const want = new Set();
-      const zoomOk = map.getZoom() >= DIALOG_MIN_ZOOM;
+      const zoomOk = !mapInMotion && map.getZoom() >= DIALOG_MIN_ZOOM;
       const now = nowMs();
       for (const ev of eventsForMap) {
         if (!ev || !ev.id) continue;
