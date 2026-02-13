@@ -43,6 +43,12 @@
     mapHud: $("mapHud"),
     mapHudText: $("mapHudText"),
     mapHudCancel: $("mapHudCancel"),
+    mapDm: $("mapDm"),
+    mapDmTarget: $("mapDmTarget"),
+    mapDmList: $("mapDmList"),
+    mapDmForm: $("mapDmForm"),
+    mapDmInput: $("mapDmInput"),
+    mapDmSend: $("mapDmSend"),
 
     auraPill: $("auraPill"),
     activityForm: $("activityForm"),
@@ -361,6 +367,38 @@
     return out;
   };
 
+  const defaultMapDmState = () => ({
+    threads: {}
+  });
+
+  const normalizeMapDmState = (value) => {
+    const raw = value && typeof value === "object" ? value : {};
+    const threadsIn = raw.threads && typeof raw.threads === "object" ? raw.threads : {};
+    const threadsOut = {};
+    for (const [keyRaw, thread] of Object.entries(threadsIn)) {
+      const key = String(keyRaw || "").trim().slice(0, 120);
+      if (!key) continue;
+      const src = thread && typeof thread === "object" ? thread : {};
+      const label = String(src.label || "").trim().slice(0, 48);
+      const messagesIn = Array.isArray(src.messages) ? src.messages : [];
+      const messages = messagesIn
+        .filter((m) => m && typeof m === "object")
+        .map((m) => ({
+          id: String(m.id || ""),
+          from: String(m.from || "") === "peer" ? "peer" : "me",
+          text: String(m.text || "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, 240),
+          at: Number(m.at) || 0
+        }))
+        .filter((m) => m.id && m.text)
+        .slice(-120);
+      threadsOut[key] = { label, messages };
+    }
+    return { threads: threadsOut };
+  };
+
   const I18N = {
     en: {
       ui_language: "Language",
@@ -489,6 +527,19 @@
       sim_doing_eating: "Eating",
       sim_doing_transit: "Transit",
       sim_doing_resting: "Resting",
+      map_msg_title: "Map messages",
+      map_msg_placeholder: "Send a message…",
+      map_msg_send: "Send",
+      map_msg_empty: "No messages yet.",
+      map_msg_target_prefix: "To",
+      map_msg_target_unknown: "Select an aura to message.",
+      map_msg_target_unavailable: "Selected aura is unavailable right now.",
+      map_msg_reply_on_way: "On my way.",
+      map_msg_reply_busy: "I can do this soon.",
+      map_msg_reply_confirm: "Got it, thanks.",
+      toast_map_msg_empty: "Message can’t be empty.",
+      toast_map_msg_pick_target: "Select an aura first.",
+      toast_map_msg_sent: "Message sent.",
 
       marketplace_title: "Marketplace",
       marketplace_sub: "Post tasks, listings, and scheduled activities.",
@@ -788,6 +839,19 @@
       sim_doing_eating: "用餐中",
       sim_doing_transit: "移動中",
       sim_doing_resting: "休息中",
+      map_msg_title: "地圖訊息",
+      map_msg_placeholder: "傳送訊息…",
+      map_msg_send: "送出",
+      map_msg_empty: "尚無訊息。",
+      map_msg_target_prefix: "傳送給",
+      map_msg_target_unknown: "請先選擇要私訊的氣場。",
+      map_msg_target_unavailable: "目前無法連線到此氣場。",
+      map_msg_reply_on_way: "我正在前往。",
+      map_msg_reply_busy: "我晚點可以處理。",
+      map_msg_reply_confirm: "收到，謝謝。",
+      toast_map_msg_empty: "訊息不能空白。",
+      toast_map_msg_pick_target: "請先選擇一個氣場。",
+      toast_map_msg_sent: "已送出訊息。",
 
       marketplace_title: "市集",
       marketplace_sub: "發布任務、商品服務、以及排程活動。",
@@ -1087,6 +1151,19 @@
       sim_doing_eating: "食事中",
       sim_doing_transit: "移動中",
       sim_doing_resting: "休憩中",
+      map_msg_title: "地図メッセージ",
+      map_msg_placeholder: "メッセージを送信…",
+      map_msg_send: "送信",
+      map_msg_empty: "メッセージはまだありません。",
+      map_msg_target_prefix: "送信先",
+      map_msg_target_unknown: "まずオーラを選択してください。",
+      map_msg_target_unavailable: "このオーラには今は連絡できません。",
+      map_msg_reply_on_way: "向かっています。",
+      map_msg_reply_busy: "少ししたら対応できます。",
+      map_msg_reply_confirm: "了解しました。",
+      toast_map_msg_empty: "メッセージを入力してください。",
+      toast_map_msg_pick_target: "先にオーラを選択してください。",
+      toast_map_msg_sent: "メッセージを送信しました。",
 
       marketplace_title: "マーケット",
       marketplace_sub: "タスク、商品/サービス、予定アクティビティ。",
@@ -1321,6 +1398,7 @@
         services: true
       },
       listFilters: defaultUiListFilters(),
+      mapDm: defaultMapDmState(),
       onboardingOpen: true,
       drops: {
         tasksPost: false,
@@ -1542,6 +1620,7 @@
         : "tasks";
       merged.ui.mapFilters = normalizeMapLayerFilters(merged.ui.mapFilters);
       merged.ui.listFilters = normalizeUiListFilters(merged.ui.listFilters);
+      merged.ui.mapDm = normalizeMapDmState(merged.ui.mapDm);
       merged.ui.onboardingOpen = merged.ui.onboardingOpen !== false;
       merged.ui.drops = { ...defaultState().ui.drops, ...(merged.ui.drops && typeof merged.ui.drops === "object" ? merged.ui.drops : {}) };
 
@@ -3299,6 +3378,7 @@
       : base.section;
     state.ui.mapFilters = normalizeMapLayerFilters(state.ui.mapFilters || base.mapFilters);
     state.ui.listFilters = normalizeUiListFilters(state.ui.listFilters || base.listFilters);
+    state.ui.mapDm = normalizeMapDmState(state.ui.mapDm || base.mapDm);
     state.ui.onboardingOpen = state.ui.onboardingOpen !== false;
     if (!state.ui.drops || typeof state.ui.drops !== "object") state.ui.drops = { ...base.drops };
     state.ui.drops = { ...base.drops, ...state.ui.drops };
@@ -6377,6 +6457,13 @@
     };
     const agentsById = new Map();
     let agentSeq = 0;
+    let auraPopup = null;
+    let auraPopupTarget = null; // { kind: "user" } | { kind: "agent", id }
+    let auraPopupMutating = false;
+    let auraPopupSyncAt = 0;
+    let ignoreMapClickUntil = 0;
+    let mapDmTarget = null; // { kind, id }
+    const mapDmReplyTimers = new Set();
 
     const setGpsBadge = (message, kind = "off") => {
       if (!els.mapGps) return;
@@ -6427,6 +6514,82 @@
         }
       }
       return null;
+    };
+
+    const normalizeAuraTarget = (target) => {
+      if (!target || typeof target !== "object") return null;
+      const kind = String(target.kind || "").trim();
+      if (kind === "user") return { kind: "user" };
+      if (kind === "agent") {
+        const id = String(target.id || "").trim();
+        if (!id) return null;
+        return { kind: "agent", id };
+      }
+      return null;
+    };
+
+    const bumpMapClickIgnore = (ms = 320) => {
+      ignoreMapClickUntil = nowMs() + clampInt(ms, 80, 2000, 320);
+    };
+
+    const shouldIgnoreMapClick = () => nowMs() < ignoreMapClickUntil;
+
+    const actorLabelForMap = (actor) => {
+      if (!actor || typeof actor !== "object") return "—";
+      if (actor.kind === "user") return "@you";
+      if (actor.kind === "agent") {
+        const a = agentsById.get(String(actor.id || ""));
+        if (a && a.handle) return String(a.handle);
+        return "@sim";
+      }
+      return "—";
+    };
+
+    const ensureMapDmState = () => {
+      if (!state.ui || typeof state.ui !== "object") state.ui = {};
+      state.ui.mapDm = normalizeMapDmState(state.ui.mapDm);
+      return state.ui.mapDm;
+    };
+
+    const mapDmKeyForActor = (actor) => {
+      const a = normalizeAuraTarget(actor);
+      if (!a || a.kind !== "agent") return "";
+      return `agent:${a.id}`;
+    };
+
+    const ensureMapDmThread = (actor) => {
+      const key = mapDmKeyForActor(actor);
+      if (!key) return null;
+      const mapDmState = ensureMapDmState();
+      const threads = mapDmState.threads;
+      if (!threads[key] || typeof threads[key] !== "object") {
+        threads[key] = { label: actorLabelForMap(actor), messages: [] };
+      }
+      const thread = threads[key];
+      thread.label = actorLabelForMap(actor);
+      if (!Array.isArray(thread.messages)) thread.messages = [];
+      thread.messages = thread.messages
+        .filter((m) => m && typeof m === "object")
+        .map((m) => ({
+          id: String(m.id || ""),
+          from: String(m.from || "") === "peer" ? "peer" : "me",
+          text: String(m.text || "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, 240),
+          at: Number(m.at) || 0
+        }))
+        .filter((m) => m.id && m.text)
+        .slice(-120);
+      return { key, thread };
+    };
+
+    const mapDmTargetAvailable = (target) => {
+      const a = normalizeAuraTarget(target);
+      if (!a) return false;
+      if (a.kind === "user") return Boolean(lastUserLatLng);
+      if (a.kind === "agent") return Boolean(agentsById.get(a.id));
+      return false;
     };
 
     const taskLineStyle = (task) => {
@@ -6983,6 +7146,10 @@
     const removeUserAuraLayers = () => {
       for (const l of userAuraLayers) l.remove();
       userAuraLayers = [];
+      const target = normalizeAuraTarget(auraPopupTarget);
+      if (target && target.kind === "user") {
+        closeAuraPopup({ clearTarget: true });
+      }
     };
 
     const applyUserAuraStyle = () => {
@@ -7038,31 +7205,11 @@
 
         const onClick = (e) => {
           const llClick = e && e.latlng ? e.latlng : latLng;
-          const longTerm = computeLongTermAura(nowMs());
-          const parts = Array.isArray(longTerm.byActivity) ? longTerm.byActivity.slice(0, 6) : [];
-          const total = parts.reduce((acc, it) => acc + (Number(it && it.weight) || 0), 0) || 0;
-
-          const rows = total
-            ? parts
-                .map((it) => {
-                  const color = (it && it.colorHex) || "#FF6A00";
-                  const name = escapeHtml(normalizeActivityText((it && it.label) || "—"));
-                  const pct = Math.round(((Number(it && it.weight) || 0) / total) * 100);
-                  return `<div class="auraPop__row"><span class="auraPop__dot" style="background:${color}"></span><span class="auraPop__name">${name}</span><span class="auraPop__val">${pct}%</span></div>`;
-                })
-                .join("")
-            : `<div class="auraPop__empty">${escapeHtml(t("aura_no_history_short"))}</div>`;
-
-          const html = `<div class="auraPop"><div class="auraPop__title">${escapeHtml(
-            t("popup_aura_components")
-          )}</div><div class="auraPop__sub">${escapeHtml(t("popup_you"))}</div><div class="auraPop__hex">${escapeHtml(
-            longTerm.hex
-          )}</div>${rows}</div>`;
-
-          L.popup({ closeButton: true, autoPan: true, offset: [0, -6] })
-            .setLatLng(llClick)
-            .setContent(html)
-            .openOn(map);
+          if (e && e.originalEvent && typeof e.originalEvent.stopPropagation === "function") {
+            e.originalEvent.stopPropagation();
+          }
+          bumpMapClickIgnore(420);
+          openAuraPopupForTarget({ kind: "user" }, llClick);
         };
 
         for (const l of userAuraLayers) l.on("click", onClick);
@@ -7165,6 +7312,7 @@
       }
 
       if (tasksForLines.length) syncTaskLines(simNow());
+      if (auraPopupTarget) syncAuraPopup();
 
       // Privacy: do not render an accuracy ring.
       if (myAccuracyRing) {
@@ -7324,13 +7472,259 @@
       return `<div class="auraPop"><div class="auraPop__title">${escapeHtml(title)}</div><div class="auraPop__sub">${escapeHtml(who)} • ${escapeHtml(handle)}${verified}</div><div class="auraPop__hex">${escapeHtml(agent.auraHex || "#FF6A00")}</div>${rows || empty}</div>`;
     };
 
-    const openAgentPopup = (agent, latLng) => {
-      const html = agentPopupHtml(agent);
-      L.popup({ closeButton: true, autoPan: true, offset: [0, -6] })
-        .setLatLng(latLng)
-        .setContent(html)
-        .openOn(map);
+    const userPopupHtml = () => {
+      const longTerm = computeLongTermAura(nowMs());
+      const parts = Array.isArray(longTerm.byActivity) ? longTerm.byActivity.slice(0, 6) : [];
+      const total = parts.reduce((acc, it) => acc + (Number(it && it.weight) || 0), 0) || 0;
+      const rows = total
+        ? parts
+            .map((it) => {
+              const color = (it && it.colorHex) || "#FF6A00";
+              const name = escapeHtml(normalizeActivityText((it && it.label) || "—"));
+              const pct = Math.round(((Number(it && it.weight) || 0) / total) * 100);
+              return `<div class="auraPop__row"><span class="auraPop__dot" style="background:${color}"></span><span class="auraPop__name">${name}</span><span class="auraPop__val">${pct}%</span></div>`;
+            })
+            .join("")
+        : `<div class="auraPop__empty">${escapeHtml(t("aura_no_history_short"))}</div>`;
+
+      return `<div class="auraPop"><div class="auraPop__title">${escapeHtml(
+        t("popup_aura_components")
+      )}</div><div class="auraPop__sub">${escapeHtml(t("popup_you"))}</div><div class="auraPop__hex">${escapeHtml(
+        longTerm.hex
+      )}</div>${rows}</div>`;
     };
+
+    const mapDmRender = () => {
+      if (!els.mapDm || !els.mapDmTarget || !els.mapDmList) return;
+      const target = normalizeAuraTarget(mapDmTarget);
+      if (!target || target.kind !== "agent") {
+        els.mapDm.hidden = true;
+        if (els.mapDmTarget) els.mapDmTarget.textContent = "—";
+        if (els.mapDmInput) {
+          els.mapDmInput.value = "";
+          els.mapDmInput.disabled = true;
+          els.mapDmInput.placeholder = t("map_msg_target_unknown");
+        }
+        if (els.mapDmSend) els.mapDmSend.disabled = true;
+        if (els.mapDmList) els.mapDmList.textContent = "";
+        return;
+      }
+
+      const rec = ensureMapDmThread(target);
+      if (!rec) return;
+
+      const label = rec.thread.label || actorLabelForMap(target);
+      const available = mapDmTargetAvailable(target);
+      els.mapDm.hidden = false;
+      els.mapDmTarget.textContent = `${t("map_msg_target_prefix")}: ${label}`;
+
+      if (els.mapDmInput) {
+        els.mapDmInput.disabled = !available;
+        els.mapDmInput.placeholder = available ? t("map_msg_placeholder") : t("map_msg_target_unavailable");
+      }
+      if (els.mapDmSend) els.mapDmSend.disabled = !available;
+
+      const list = els.mapDmList;
+      list.textContent = "";
+
+      const messages = Array.isArray(rec.thread.messages) ? rec.thread.messages : [];
+      if (!available) {
+        const empty = document.createElement("div");
+        empty.className = "mapDm__empty";
+        empty.textContent = t("map_msg_target_unavailable");
+        list.appendChild(empty);
+        return;
+      }
+
+      if (!messages.length) {
+        const empty = document.createElement("div");
+        empty.className = "mapDm__empty";
+        empty.textContent = t("map_msg_empty");
+        list.appendChild(empty);
+        return;
+      }
+
+      for (const msg of messages) {
+        const row = document.createElement("div");
+        row.className = `mapDm__msg ${msg.from === "peer" ? "mapDm__msg--peer" : "mapDm__msg--me"}`;
+
+        const text = document.createElement("div");
+        text.className = "mapDm__msgText";
+        text.textContent = String(msg.text || "");
+
+        const meta = document.createElement("div");
+        meta.className = "mapDm__msgMeta";
+        meta.textContent = fmtHm(Number(msg.at) || nowMs());
+
+        row.appendChild(text);
+        row.appendChild(meta);
+        list.appendChild(row);
+      }
+
+      list.scrollTop = list.scrollHeight;
+    };
+
+    const setMapDmTarget = (actor) => {
+      const next = normalizeAuraTarget(actor);
+      if (!next || next.kind !== "agent") {
+        mapDmTarget = null;
+        mapDmRender();
+        return;
+      }
+      mapDmTarget = next;
+      ensureMapDmThread(next);
+      mapDmRender();
+    };
+
+    const pushMapDmMessage = (actor, { from = "me", text = "", at = nowMs() } = {}) => {
+      const target = normalizeAuraTarget(actor);
+      if (!target || target.kind !== "agent") return false;
+      const cleanText = String(text || "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 240);
+      if (!cleanText) return false;
+      const rec = ensureMapDmThread(target);
+      if (!rec) return false;
+      const msg = {
+        id: uid(),
+        from: from === "peer" ? "peer" : "me",
+        text: cleanText,
+        at: Number(at) || nowMs()
+      };
+      rec.thread.messages.push(msg);
+      rec.thread.messages = rec.thread.messages.slice(-120);
+      saveState();
+      mapDmRender();
+      return true;
+    };
+
+    const queueMapDmReply = (actor) => {
+      const target = normalizeAuraTarget(actor);
+      if (!target || target.kind !== "agent") return;
+      const id = window.setTimeout(() => {
+        mapDmReplyTimers.delete(id);
+        if (!mapDmTargetAvailable(target)) return;
+        const replies = [t("map_msg_reply_on_way"), t("map_msg_reply_busy"), t("map_msg_reply_confirm")];
+        const reply = replies[Math.floor(Math.random() * replies.length)] || t("map_msg_reply_confirm");
+        pushMapDmMessage(target, { from: "peer", text: reply, at: nowMs() });
+      }, 900 + Math.random() * 1800);
+      mapDmReplyTimers.add(id);
+    };
+
+    const sendMapDm = () => {
+      const target = normalizeAuraTarget(mapDmTarget);
+      if (!target || target.kind !== "agent") {
+        toast(t("toast_map_msg_pick_target"));
+        return;
+      }
+      if (!mapDmTargetAvailable(target)) {
+        toast(t("map_msg_target_unavailable"));
+        mapDmRender();
+        return;
+      }
+      const raw = els.mapDmInput ? els.mapDmInput.value : "";
+      const text = String(raw || "")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (!text) {
+        toast(t("toast_map_msg_empty"));
+        return;
+      }
+      if (!pushMapDmMessage(target, { from: "me", text, at: nowMs() })) {
+        toast(t("toast_map_msg_empty"));
+        return;
+      }
+      if (els.mapDmInput) els.mapDmInput.value = "";
+      toast(t("toast_map_msg_sent"));
+      queueMapDmReply(target);
+    };
+
+    const ensureAuraPopup = () => {
+      if (!auraPopup) {
+        auraPopup = L.popup({ closeButton: true, autoPan: true, offset: [0, -6] });
+      }
+      return auraPopup;
+    };
+
+    const auraPopupLatLngForTarget = (target) => {
+      const t0 = normalizeAuraTarget(target);
+      if (!t0) return null;
+      if (t0.kind === "user") return lastUserLatLng || null;
+      return actorLatLngFor(t0);
+    };
+
+    const auraPopupHtmlForTarget = (target) => {
+      const t0 = normalizeAuraTarget(target);
+      if (!t0) return "";
+      if (t0.kind === "user") return userPopupHtml();
+      const agent = agentsById.get(String(t0.id || ""));
+      if (!agent) return "";
+      return agentPopupHtml(agent);
+    };
+
+    const closeAuraPopup = ({ clearTarget = true } = {}) => {
+      if (auraPopup) {
+        auraPopupMutating = true;
+        try {
+          map.closePopup(auraPopup);
+        } catch {
+          // ignore
+        }
+        auraPopupMutating = false;
+      }
+      if (clearTarget) auraPopupTarget = null;
+      if (clearTarget) setMapDmTarget(null);
+    };
+
+    const openAuraPopupForTarget = (target, latLng = null) => {
+      const next = normalizeAuraTarget(target);
+      if (!next) return;
+      const ll = latLng || auraPopupLatLngForTarget(next);
+      if (!ll) return;
+      const html = auraPopupHtmlForTarget(next);
+      if (!html) return;
+      const popup = ensureAuraPopup();
+      auraPopupMutating = true;
+      popup.setLatLng(ll).setContent(html).openOn(map);
+      auraPopupMutating = false;
+      auraPopupTarget = next;
+      auraPopupSyncAt = nowMs();
+      if (next.kind === "agent") setMapDmTarget(next);
+      else setMapDmTarget(null);
+      bumpMapClickIgnore(360);
+    };
+
+    const syncAuraPopup = ({ force = false } = {}) => {
+      const target = normalizeAuraTarget(auraPopupTarget);
+      if (!target || !auraPopup) return;
+      const ll = auraPopupLatLngForTarget(target);
+      if (!ll) {
+        closeAuraPopup({ clearTarget: true });
+        return;
+      }
+      const now = nowMs();
+      const shouldRefresh = force || target.kind === "agent" || now - auraPopupSyncAt > 6_000;
+      auraPopupMutating = true;
+      auraPopup.setLatLng(ll);
+      if (shouldRefresh) {
+        const html = auraPopupHtmlForTarget(target);
+        if (html) {
+          auraPopup.setContent(html);
+          auraPopupSyncAt = now;
+        }
+      }
+      if (!map.hasLayer(auraPopup)) auraPopup.openOn(map);
+      auraPopupMutating = false;
+    };
+
+    if (els.mapDmForm) {
+      els.mapDmForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        sendMapDm();
+      });
+    }
+    mapDmRender();
 
     const applyAgentStyle = (agent, now) => {
       const tNow = Number.isFinite(Number(now)) ? Number(now) : simNow();
@@ -7438,6 +7832,10 @@
         }
       }
       sim.agents = [];
+      const target = normalizeAuraTarget(auraPopupTarget);
+      if (target && target.kind === "agent") {
+        closeAuraPopup({ clearTarget: true });
+      }
     };
 
     const stopSimInternal = () => {
@@ -7563,7 +7961,11 @@
 
       const onClick = (e) => {
         const llClick = e && e.latlng ? e.latlng : agent.outer.getLatLng();
-        openAgentPopup(agent, llClick);
+        if (e && e.originalEvent && typeof e.originalEvent.stopPropagation === "function") {
+          e.originalEvent.stopPropagation();
+        }
+        bumpMapClickIgnore(420);
+        openAuraPopupForTarget({ kind: "agent", id: agent.id }, llClick);
       };
       for (const l of layers) l.on("click", onClick);
       syncAgentDialog(agent);
@@ -7653,6 +8055,8 @@
 
         maybeUpdateAgentStyle(agent, now);
       }
+
+      if (auraPopupTarget) syncAuraPopup();
 
       if (tasksForLines.length && now - lastLineSyncAt > 120) {
         syncTaskLines(now);
@@ -7956,40 +8360,42 @@
         window.clearTimeout(mapMotionCooldown);
         mapMotionCooldown = null;
       }
-      try {
-        map.closePopup();
-      } catch {
-        // ignore
-      }
       setMapInMotion(true);
     });
 
     map.on("moveend zoomend", () => {
       scheduleMapMotionSettled();
-      if (!sim.enabled) return;
-      setSimUi();
+      if (sim.enabled) {
+        setSimUi();
 
-      if (map.getZoom() < STREET_MIN_ZOOM) {
-        syncSimForView();
-        return;
+        if (map.getZoom() < STREET_MIN_ZOOM) {
+          syncSimForView();
+        } else {
+          syncSimForView();
+
+          const movedM = map.distance(map.getCenter(), rebuildAnchor.center);
+          const zoomDelta = Math.abs(map.getZoom() - rebuildAnchor.zoom);
+          if (movedM > 1200 || zoomDelta >= 2) {
+            scheduleRebuild();
+          } else {
+            // Minor view change: keep routes and just scale aura count.
+          }
+        }
       }
-
-      syncSimForView();
-
-      const movedM = map.distance(map.getCenter(), rebuildAnchor.center);
-      const zoomChanged = map.getZoom() !== rebuildAnchor.zoom;
-      const zoomDelta = Math.abs(map.getZoom() - rebuildAnchor.zoom);
-      if (movedM > 1200 || zoomDelta >= 2) {
-        scheduleRebuild();
-      } else {
-        // Minor view change: keep routes and just scale aura count.
-      }
+      if (auraPopupTarget) syncAuraPopup({ force: true });
     });
 
     map.on("zoomend", () => {
       if (sim.enabled) refreshAgentDialogs();
       syncMarketPosts();
       syncEvents();
+    });
+
+    map.on("popupclose", (e) => {
+      if (!auraPopup || !e || e.popup !== auraPopup) return;
+      if (auraPopupMutating) return;
+      auraPopupTarget = null;
+      setMapDmTarget(null);
     });
 
     // --- Map picking + marketplace overlays (tasks route draft, market posts, scheduled auras) ---
@@ -8055,16 +8461,22 @@
       els.mapHudCancel.addEventListener("click", () => cancelPick({ resetStatus: true }));
     }
     map.on("click", (e) => {
-      if (!pickCb) return;
-      const cb = pickCb;
-      cancelPick({ resetStatus: true });
-      const ll = e && e.latlng ? e.latlng : null;
-      if (!ll) return;
-      try {
-        cb({ lat: ll.lat, lng: ll.lng });
-      } catch {
-        // ignore
+      if (pickCb) {
+        const cb = pickCb;
+        cancelPick({ resetStatus: true });
+        const ll = e && e.latlng ? e.latlng : null;
+        if (!ll) return;
+        try {
+          cb({ lat: ll.lat, lng: ll.lng });
+        } catch {
+          // ignore
+        }
+        return;
       }
+
+      if (shouldIgnoreMapClick()) return;
+      if (!auraPopupTarget && !mapDmTarget) return;
+      closeAuraPopup({ clearTarget: true });
     });
     window.addEventListener("keydown", (e) => {
       if (e && e.key === "Escape") cancelPick({ resetStatus: true });
@@ -8589,6 +9001,8 @@
         }
         syncMarketPosts();
         syncEvents();
+        mapDmRender();
+        if (auraPopupTarget) syncAuraPopup({ force: true });
       }
     };
 

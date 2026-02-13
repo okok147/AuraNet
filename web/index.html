@@ -436,6 +436,26 @@
               <span class="badge badge--ok" id="mapAuraCount">AURAS: 0</span>
             </div>
           </div>
+
+          <div class="mapDm" id="mapDm" hidden>
+            <div class="mapDm__head">
+              <div class="mapDm__title" data-i18n="map_msg_title">Map messages</div>
+              <div class="mapDm__target" id="mapDmTarget">—</div>
+            </div>
+            <div class="mapDm__list" id="mapDmList" aria-live="polite"></div>
+            <form class="mapDm__form" id="mapDmForm" autocomplete="off">
+              <input
+                class="input mapDm__input"
+                id="mapDmInput"
+                maxlength="240"
+                placeholder="Send a message..."
+                data-i18n-placeholder="map_msg_placeholder"
+              />
+              <button class="btn btn--primary btn--compact" type="submit" id="mapDmSend">
+                <span data-i18n="map_msg_send">Send</span>
+              </button>
+            </form>
+          </div>
         </section>
 
         <section
