@@ -410,6 +410,8 @@
       toast_contact_added: "Approved contact added.",
       toast_contact_exists: "Already approved.",
       toast_contact_removed: "Approved contact removed.",
+      toast_dm_saved: "Message saved for {handle}.",
+      toast_dm_empty: "Message can’t be empty.",
       activity_start: "Start",
       activity_stop_log: "Stop & log",
       activity_clear: "Clear log",
@@ -429,6 +431,9 @@
       popup_aura_components: "Aura components",
       popup_simulated_person: "Simulated person",
       popup_you: "You",
+      popup_action_message: "Message",
+      popup_action_add_friend: "Add friend",
+      popup_message_prompt: "Message to {handle}",
       gps_unsupported: "Geolocation not supported.",
       gps_denied: "Location permission denied.",
       gps_unavailable: "Location unavailable.",
@@ -709,6 +714,8 @@
       toast_contact_added: "已新增核准聯絡人。",
       toast_contact_exists: "已在核准名單中。",
       toast_contact_removed: "已移除核准聯絡人。",
+      toast_dm_saved: "已儲存給 {handle} 的訊息。",
+      toast_dm_empty: "訊息內容不能為空。",
       activity_start: "開始",
       activity_stop_log: "結束並紀錄",
       activity_clear: "清除紀錄",
@@ -728,6 +735,9 @@
       popup_aura_components: "氣場組成",
       popup_simulated_person: "模擬人物",
       popup_you: "你",
+      popup_action_message: "訊息",
+      popup_action_add_friend: "加好友",
+      popup_message_prompt: "傳送訊息給 {handle}",
       gps_unsupported: "此瀏覽器不支援定位。",
       gps_denied: "定位權限被拒絕。",
       gps_unavailable: "無法取得定位。",
@@ -1008,6 +1018,8 @@
       toast_contact_added: "承認済みに追加しました。",
       toast_contact_exists: "すでに承認済みです。",
       toast_contact_removed: "承認済みから削除しました。",
+      toast_dm_saved: "{handle} へのメッセージを保存しました。",
+      toast_dm_empty: "メッセージを入力してください。",
       activity_start: "開始",
       activity_stop_log: "停止して記録",
       activity_clear: "ログを消去",
@@ -1027,6 +1039,9 @@
       popup_aura_components: "オーラ構成",
       popup_simulated_person: "シミュレーション人物",
       popup_you: "あなた",
+      popup_action_message: "メッセージ",
+      popup_action_add_friend: "友だち追加",
+      popup_message_prompt: "{handle} へのメッセージ",
       gps_unsupported: "位置情報に対応していません。",
       gps_denied: "位置情報の許可が拒否されました。",
       gps_unavailable: "位置情報を取得できません。",
@@ -1358,6 +1373,9 @@
     },
     auth: {
       user: null
+    },
+    social: {
+      sent: []
     }
   });
 
@@ -1457,6 +1475,10 @@
         auth: {
           ...base.auth,
           ...((parsed.auth && typeof parsed.auth === "object") ? parsed.auth : {})
+        },
+        social: {
+          ...base.social,
+          ...((parsed.social && typeof parsed.social === "object") ? parsed.social : {})
         }
       };
       // Drop legacy timer state (previous versions).
@@ -1600,6 +1622,20 @@
 
       if (!merged.auth || typeof merged.auth !== "object") merged.auth = defaultState().auth;
       merged.auth.user = normalizeAuthUser(merged.auth.user);
+
+      if (!merged.social || typeof merged.social !== "object") merged.social = defaultState().social;
+      if (!Array.isArray(merged.social.sent)) merged.social.sent = [];
+      merged.social.sent = merged.social.sent
+        .filter((m) => m && typeof m === "object")
+        .map((m) => ({
+          id: String(m.id || ""),
+          to: normalizeContactHandle(m.to),
+          text: String(m.text || "").slice(0, 280),
+          from: String(m.from || "").slice(0, 64),
+          sentAt: Number(m.sentAt) || 0
+        }))
+        .filter((m) => m.id && m.to && m.text)
+        .slice(0, 400);
 
       // Normalize task rooms (messages).
       {
@@ -3168,6 +3204,41 @@
     }
 
     renderApprovedList();
+  };
+
+  const ensureApprovedContact = (value, { notify = true, rerender = true } = {}) => {
+    const handle = normalizeContactHandle(value);
+    if (!handle) return { ok: false, reason: "invalid", handle: "" };
+    if (!Array.isArray(state.activity.prefs.allowlist)) state.activity.prefs.allowlist = [];
+    if (state.activity.prefs.allowlist.includes(handle)) {
+      if (notify) toast(t("toast_contact_exists"));
+      return { ok: false, reason: "exists", handle };
+    }
+    state.activity.prefs.allowlist.unshift(handle);
+    state.activity.prefs.allowlist = state.activity.prefs.allowlist.slice(0, 200);
+    saveState();
+    if (rerender) renderActivity(false);
+    if (notify) toast(t("toast_contact_added"));
+    return { ok: true, reason: "added", handle };
+  };
+
+  const saveDirectMessage = (toHandleRaw, messageRaw) => {
+    const to = normalizeContactHandle(toHandleRaw);
+    if (!to) return { ok: false, reason: "invalid_handle", handle: "" };
+    const text = normalizeActivityText(messageRaw).slice(0, 280);
+    if (!text) return { ok: false, reason: "empty", handle: to };
+    if (!state.social || typeof state.social !== "object") state.social = { sent: [] };
+    if (!Array.isArray(state.social.sent)) state.social.sent = [];
+    state.social.sent.unshift({
+      id: uid(),
+      to,
+      text,
+      from: userKey,
+      sentAt: nowMs()
+    });
+    state.social.sent = state.social.sent.slice(0, 400);
+    saveState();
+    return { ok: true, handle: to };
   };
 
   const renderActivityList = () => {
@@ -6236,7 +6307,9 @@
       offsetEastM: randomPrivacyOffsetM(initialGridM),
       offsetNorthM: randomPrivacyOffsetM(initialGridM)
     };
-    const simRenderer = L.canvas({ padding: 0.5 });
+    const auraPane = map.createPane("auraPane");
+    auraPane.style.zIndex = "450";
+    const simRenderer = L.canvas({ padding: 0.5, pane: "auraPane" });
     const selfAuraPane = map.createPane("selfAuraPane");
     // Keep self aura above the paper texture overlay so it stays visible.
     selfAuraPane.style.zIndex = "460";
@@ -6262,6 +6335,20 @@
     };
     const agentsById = new Map();
     let agentSeq = 0;
+    let selectedAgentId = "";
+    let selectedAgentPopup = null;
+
+    const clearSelectedAgentPopupIfMissing = () => {
+      if (!selectedAgentPopup || !selectedAgentId) return;
+      if (agentsById.has(selectedAgentId)) return;
+      try {
+        map.closePopup(selectedAgentPopup);
+      } catch {
+        // ignore
+      }
+      selectedAgentPopup = null;
+      selectedAgentId = "";
+    };
 
     const setGpsBadge = (message, kind = "off") => {
       if (!els.mapGps) return;
@@ -6798,7 +6885,9 @@
         radius,
         stroke: false,
         fillColor: fill,
-        fillOpacity
+        fillOpacity,
+        interactive: true,
+        bubblingMouseEvents: false
       }).addTo(map);
     };
 
@@ -7173,16 +7262,65 @@
             .join("")
         : "";
       const empty = `<div class="auraPop__empty">${escapeHtml(t("aura_no_history_short"))}</div>`;
+      const actions = `<div class="auraPop__actions"><button type="button" class="auraPop__action auraPop__action--primary" data-aura-action="message">${escapeHtml(
+        t("popup_action_message")
+      )}</button><button type="button" class="auraPop__action" data-aura-action="add-friend">${escapeHtml(
+        t("popup_action_add_friend")
+      )}</button></div>`;
 
-      return `<div class="auraPop"><div class="auraPop__title">${escapeHtml(title)}</div><div class="auraPop__sub">${escapeHtml(who)} • ${escapeHtml(handle)}${verified}</div><div class="auraPop__hex">${escapeHtml(agent.auraHex || "#FF6A00")}</div>${rows || empty}</div>`;
+      return `<div class="auraPop"><div class="auraPop__title">${escapeHtml(title)}</div><div class="auraPop__sub">${escapeHtml(who)} • ${escapeHtml(handle)}${verified}</div><div class="auraPop__hex">${escapeHtml(agent.auraHex || "#FF6A00")}</div>${rows || empty}${actions}</div>`;
+    };
+
+    const bindAgentPopupActions = (popup, agent) => {
+      if (!popup || !agent) return;
+      const root = typeof popup.getElement === "function" ? popup.getElement() : null;
+      if (!root) return;
+      const handle = normalizeContactHandle(agent && agent.handle ? agent.handle : "@sim");
+
+      const addFriendBtn = root.querySelector('button[data-aura-action="add-friend"]');
+      if (addFriendBtn) {
+        addFriendBtn.addEventListener("click", (ev) => {
+          if (ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+          }
+          ensureApprovedContact(handle, { notify: true, rerender: true });
+        });
+      }
+
+      const messageBtn = root.querySelector('button[data-aura-action="message"]');
+      if (messageBtn) {
+        messageBtn.addEventListener("click", (ev) => {
+          if (ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+          }
+          const msg = window.prompt(t("popup_message_prompt", { handle }), "");
+          if (msg === null) return;
+          const res = saveDirectMessage(handle, msg);
+          if (!res.ok) {
+            if (res.reason === "empty") toast(t("toast_dm_empty"));
+            return;
+          }
+          toast(t("toast_dm_saved", { handle: res.handle }));
+        });
+      }
     };
 
     const openAgentPopup = (agent, latLng) => {
       const html = agentPopupHtml(agent);
-      L.popup({ closeButton: true, autoPan: true, offset: [0, -6] })
+      const popup = L.popup({ closeButton: true, autoPan: true, offset: [0, -6] })
         .setLatLng(latLng)
         .setContent(html)
         .openOn(map);
+      selectedAgentId = String(agent && agent.id ? agent.id : "");
+      selectedAgentPopup = popup;
+      popup.on("remove", () => {
+        if (selectedAgentPopup !== popup) return;
+        selectedAgentPopup = null;
+        selectedAgentId = "";
+      });
+      window.requestAnimationFrame(() => bindAgentPopupActions(popup, agent));
     };
 
     const applyAgentStyle = (agent, now) => {
@@ -7287,6 +7425,7 @@
         }
       }
       sim.agents = [];
+      clearSelectedAgentPopupIfMissing();
     };
 
     const stopSimInternal = () => {
@@ -7410,11 +7549,27 @@
       agent.auraHex = mixWeightedHex(agent.mix);
       applyAgentStyle(agent, now);
 
+      const stopAuraEvent = (e) => {
+        const oe = e && e.originalEvent ? e.originalEvent : null;
+        if (!oe) return;
+        try {
+          oe.preventDefault();
+          oe.stopPropagation();
+        } catch {
+          // ignore
+        }
+      };
+
       const onClick = (e) => {
+        stopAuraEvent(e);
         const llClick = e && e.latlng ? e.latlng : agent.outer.getLatLng();
         openAgentPopup(agent, llClick);
       };
-      for (const l of layers) l.on("click", onClick);
+      for (const l of layers) {
+        l.on("mousedown", stopAuraEvent);
+        l.on("touchstart", stopAuraEvent);
+        l.on("click", onClick);
+      }
       syncAgentDialog(agent);
       agentsById.set(agent.id, agent);
       return agent;
@@ -7499,6 +7654,13 @@
         } else {
           agent.outer.setLatLng(ll);
         }
+        if (selectedAgentPopup && selectedAgentId && selectedAgentId === String(agent.id || "")) {
+          try {
+            selectedAgentPopup.setLatLng(ll);
+          } catch {
+            // ignore
+          }
+        }
 
         maybeUpdateAgentStyle(agent, now);
       }
@@ -7565,6 +7727,7 @@
           agent.outer.remove();
         }
       }
+      clearSelectedAgentPopupIfMissing();
     };
 
     const rebuildSim = async () => {
@@ -7623,6 +7786,7 @@
             a.outer.remove();
           }
         }
+        clearSelectedAgentPopupIfMissing();
 
         sim.loading = false;
         setSimUi();
@@ -8933,17 +9097,12 @@
 
   const addApproved = () => {
     if (!els.approvedInput) return;
-    const handle = normalizeContactHandle(els.approvedInput.value);
-    if (!handle) return;
-    if (state.activity.prefs.allowlist.includes(handle)) {
-      toast(t("toast_contact_exists"));
-      return;
-    }
-    state.activity.prefs.allowlist.unshift(handle);
+    const result = ensureApprovedContact(els.approvedInput.value, {
+      notify: true,
+      rerender: true
+    });
+    if (!result.ok) return;
     els.approvedInput.value = "";
-    saveState();
-    renderActivity(false);
-    toast(t("toast_contact_added"));
   };
 
   if (els.approvedAdd) {

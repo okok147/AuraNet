@@ -2441,6 +2441,53 @@ body > main.shell {
   text-transform: uppercase;
 }
 
+.auraPop__actions {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.auraPop__action {
+  border: 1px solid rgba(32, 24, 18, 0.16);
+  background: rgba(255, 255, 255, 0.62);
+  color: rgba(32, 24, 18, 0.9);
+  border-radius: 10px;
+  min-height: 34px;
+  padding: 8px 10px;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    transform var(--motion-fast) ease,
+    border-color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease,
+    box-shadow var(--motion-base) var(--ease-smooth);
+}
+
+.auraPop__action:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 106, 0, 0.3);
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 8px 14px rgba(24, 16, 10, 0.1);
+}
+
+.auraPop__action:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(255, 106, 0, 0.2),
+    0 8px 14px rgba(24, 16, 10, 0.1);
+}
+
+.auraPop__action--primary {
+  border-color: rgba(255, 106, 0, 0.38);
+  background: linear-gradient(180deg, rgba(255, 106, 0, 0.9), rgba(255, 149, 69, 0.94));
+  color: rgba(32, 24, 18, 0.94);
+}
+
 .mapFilters {
   margin-top: 12px;
   display: flex;
