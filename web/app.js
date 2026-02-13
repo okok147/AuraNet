@@ -6309,11 +6309,11 @@
     };
     const auraPane = map.createPane("auraPane");
     auraPane.style.zIndex = "450";
-    const simRenderer = L.canvas({ padding: 0.5, pane: "auraPane" });
+    const simRenderer = L.canvas({ padding: 0.5, pane: "auraPane", tolerance: 8 });
     const selfAuraPane = map.createPane("selfAuraPane");
     // Keep self aura above the paper texture overlay so it stays visible.
     selfAuraPane.style.zIndex = "460";
-    const selfAuraRenderer = L.canvas({ padding: 0.5, pane: "selfAuraPane" });
+    const selfAuraRenderer = L.canvas({ padding: 0.5, pane: "selfAuraPane", tolerance: 8 });
     const taskPane = map.createPane("taskPane");
     // Above the paper texture + aura haze so accepted-task tethers stay visible.
     taskPane.style.zIndex = "520";
@@ -7309,7 +7309,7 @@
 
     const openAgentPopup = (agent, latLng) => {
       const html = agentPopupHtml(agent);
-      const popup = L.popup({ closeButton: true, autoPan: true, offset: [0, -6] })
+      const popup = L.popup({ closeButton: true, autoPan: true, closeOnClick: false, offset: [0, -6] })
         .setLatLng(latLng)
         .setContent(html)
         .openOn(map);
@@ -7549,25 +7549,19 @@
       agent.auraHex = mixWeightedHex(agent.mix);
       applyAgentStyle(agent, now);
 
-      const stopAuraEvent = (e) => {
-        const oe = e && e.originalEvent ? e.originalEvent : null;
-        if (!oe) return;
-        try {
-          oe.preventDefault();
-          oe.stopPropagation();
-        } catch {
-          // ignore
-        }
-      };
-
       const onClick = (e) => {
-        stopAuraEvent(e);
+        const oe = e && e.originalEvent ? e.originalEvent : null;
+        if (oe && L && L.DomEvent && typeof L.DomEvent.stop === "function") {
+          try {
+            L.DomEvent.stop(oe);
+          } catch {
+            // ignore
+          }
+        }
         const llClick = e && e.latlng ? e.latlng : agent.outer.getLatLng();
         openAgentPopup(agent, llClick);
       };
       for (const l of layers) {
-        l.on("mousedown", stopAuraEvent);
-        l.on("touchstart", stopAuraEvent);
         l.on("click", onClick);
       }
       syncAgentDialog(agent);
