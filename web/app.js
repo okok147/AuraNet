@@ -4509,25 +4509,30 @@
     toast(t("toast_task_applied"));
   };
 
-  const acceptTask = (taskId, actor) => {
+  const acceptTask = (taskId, actor, opts = {}) => {
     ensureTaskPrefs();
     const id = String(taskId || "");
     const task = state.tasks.list.find((x) => x && x.id === id);
     if (!task) return;
     if (normalizeTaskStatus(task.status) !== "open") return;
+    const automated = Boolean(opts && opts.automated);
+    const actorK = actorKeyLocal(actor);
+    const posterK = actorKeyLocal(task.poster);
+    const userInvolved = actorK === userKey || posterK === userKey;
+    const canNotify = !automated || userInvolved;
 
     const now = nowMs();
     if (task.expiresAt && now > task.expiresAt) {
       task.status = "expired";
       saveState();
       renderTasks();
-      toast(t("toast_task_expired"));
+      if (canNotify) toast(t("toast_task_expired"));
       return;
     }
 
     const info = getActorInfoSafe(actor);
     if (!info.verified) {
-      toast(t("toast_task_not_verified"));
+      if (canNotify) toast(t("toast_task_not_verified"));
       return;
     }
 
@@ -4558,17 +4563,17 @@
     }
 
     if (!startArea) {
-      toast(t("toast_task_poster_unavailable"));
+      if (canNotify) toast(t("toast_task_poster_unavailable"));
       return;
     }
     if (!llWorker) {
-      toast(t("toast_task_worker_unavailable"));
+      if (canNotify) toast(t("toast_task_worker_unavailable"));
       return;
     }
 
     const d = haversineM(llWorker, startArea);
     if (d > (Number(task.distanceLimitM) || 0)) {
-      toast(t("toast_task_too_far"));
+      if (canNotify) toast(t("toast_task_too_far"));
       return;
     }
 
@@ -4594,7 +4599,7 @@
 
     saveState();
     renderTasks();
-    toast(t("toast_task_accepted"));
+    if (canNotify) toast(t("toast_task_accepted"));
   };
 
   const finishTask = (taskId) => {
@@ -4897,7 +4902,7 @@
       }
 
       if (!best) continue;
-      acceptTask(task.id, best);
+      acceptTask(task.id, best, { automated: true });
     }
   };
 
