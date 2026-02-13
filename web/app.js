@@ -7046,6 +7046,19 @@
       }
     };
 
+    // Self-view must remain precise so users can reliably see their own aura location.
+    const enableSelfPreciseMode = () => {
+      if (selfPreciseMode) return;
+      selfPreciseMode = true;
+      if (!lastUserLatLngRaw) return;
+      lastUserLatLng = lastUserLatLngRaw;
+      if (userAuraEnabled) {
+        ensureUserAuraLayers(lastUserLatLng);
+        for (const l of userAuraLayers) l.setLatLng(lastUserLatLng);
+        applyUserAuraStyle();
+      }
+    };
+
     const setUserLatLng = (lat, lng, accuracyM, { ensureRing = false } = {}) => {
       lastUserLatLngRaw = L.latLng(clamp(lat, -85, 85), wrapLng(lng));
       lastUserLatLngBlurred = blurUserLatLng(lastUserLatLngRaw);
@@ -7726,19 +7739,7 @@
       syncSimForView();
     };
 
-    const applyPeopleLayerFilter = () => {
-      const showPeople = Boolean(mapLayerFilters.people);
-      if (!showPeople) {
-        stopSimInternal();
-        setSimUi();
-        userAuraEnabled = false;
-        stopUserWatch();
-        removeUserAuraLayers();
-        setGpsBadge(t("map_gps_off"), "off");
-        return;
-      }
-
-      startSim();
+    const syncUserAuraRequestedState = () => {
       const wantAura = Boolean(userAuraRequested);
       if (!wantAura) {
         userAuraEnabled = false;
@@ -7748,12 +7749,30 @@
         return;
       }
 
+      enableSelfPreciseMode();
       userAuraEnabled = true;
+      if (!lastUserLatLng && lastUserLatLngRaw) {
+        lastUserLatLng = lastUserLatLngRaw;
+      }
       if (lastUserLatLng) {
         ensureUserAuraLayers(lastUserLatLng);
         for (const l of userAuraLayers) l.setLatLng(lastUserLatLng);
       }
       startUserWatch();
+    };
+
+    const applyPeopleLayerFilter = () => {
+      const showPeople = Boolean(mapLayerFilters.people);
+      if (!showPeople) {
+        stopSimInternal();
+        setSimUi();
+        // Keep self aura available when the user explicitly turns it on.
+        syncUserAuraRequestedState();
+        return;
+      }
+
+      startSim();
+      syncUserAuraRequestedState();
     };
 
     if (els.mapReset) {
@@ -7800,7 +7819,7 @@
           const lng = pos.coords.longitude;
           const accuracy = Number(pos.coords.accuracy) || 0;
 
-          selfPreciseMode = true;
+          enableSelfPreciseMode();
           setUserLatLng(lat, lng, accuracy, { ensureRing: false });
           maybeSaveHomeFromRaw(lastUserLatLngRaw);
           map.flyTo([clamp(lat, -85, 85), wrapLng(lng)], Math.max(map.getZoom(), 16), {
@@ -8287,7 +8306,7 @@
         }
 
         userAuraRequested = Boolean(enabled);
-        const want = userAuraRequested && Boolean(mapLayerFilters.people);
+        const want = userAuraRequested;
         if (!want) {
           userAuraEnabled = false;
           stopUserWatch();
@@ -8296,7 +8315,11 @@
           return;
         }
 
+        enableSelfPreciseMode();
         userAuraEnabled = true;
+        if (!lastUserLatLng && lastUserLatLngRaw) {
+          lastUserLatLng = lastUserLatLngRaw;
+        }
         if (lastUserLatLng) {
           ensureUserAuraLayers(lastUserLatLng);
           for (const l of userAuraLayers) l.setLatLng(lastUserLatLng);
