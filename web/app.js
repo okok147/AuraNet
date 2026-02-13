@@ -5780,12 +5780,22 @@
       { id: "marketplaceSection", el: els.sectionTabMarket }
     ].filter((x) => x.el);
 
+  const setSectionCardActive = (sectionId) => {
+    const active = normalizeSectionTarget(sectionId);
+    for (const id of SECTION_TARGETS) {
+      const sectionEl = document.getElementById(id);
+      if (!sectionEl) continue;
+      sectionEl.classList.toggle("card--active", id === active);
+    }
+  };
+
   const setSectionTabSelected = (sectionId, { persist = false } = {}) => {
     const active = normalizeSectionTarget(sectionId);
     for (const { id, el } of sectionTabElements()) {
       const on = id === active;
       el.setAttribute("aria-pressed", on ? "true" : "false");
     }
+    setSectionCardActive(active);
     if (persist) {
       ensureUiPrefs();
       if (state.ui.section !== active) {
