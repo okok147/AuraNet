@@ -43,12 +43,6 @@
     mapHud: $("mapHud"),
     mapHudText: $("mapHudText"),
     mapHudCancel: $("mapHudCancel"),
-    mapDm: $("mapDm"),
-    mapDmTarget: $("mapDmTarget"),
-    mapDmList: $("mapDmList"),
-    mapDmForm: $("mapDmForm"),
-    mapDmInput: $("mapDmInput"),
-    mapDmSend: $("mapDmSend"),
 
     auraPill: $("auraPill"),
     activityForm: $("activityForm"),
@@ -212,20 +206,6 @@
     return Math.max(min, Math.min(max, n));
   };
 
-  const clamp01 = (value) => {
-    const n = Number(value);
-    if (!Number.isFinite(n)) return 0;
-    return Math.max(0, Math.min(1, n));
-  };
-
-  const fadeProgressByAge = (ageMs, holdMs, fadeMs) => {
-    const age = Math.max(0, Number(ageMs) || 0);
-    const hold = Math.max(0, Number(holdMs) || 0);
-    const fade = Math.max(1, Number(fadeMs) || 1);
-    if (age <= hold) return 0;
-    return clamp01((age - hold) / fade);
-  };
-
   const randomSubset = (items, count) => {
     const source = Array.isArray(items) ? items : [];
     const n = source.length;
@@ -274,10 +254,6 @@
   const AURA_RECOMPUTE_MS = 30_000;
   const AURA_STRENGTH_RECOMPUTE_MS = 60_000;
   const SAVE_DEBOUNCE_MS = 220;
-  const TASK_CLOSED_FADE_HOLD_MS = 4 * 60_000;
-  const TASK_CLOSED_FADE_MS = 8 * 60_000;
-  const ACTIVITY_LOG_FADE_HOLD_MS = 10 * 60_000;
-  const ACTIVITY_LOG_FADE_MS = 20 * 60_000;
 
   // --- i18n ---
 
@@ -365,38 +341,6 @@
     out.events.state = normalizeEventsListFilterState(events.state);
 
     return out;
-  };
-
-  const defaultMapDmState = () => ({
-    threads: {}
-  });
-
-  const normalizeMapDmState = (value) => {
-    const raw = value && typeof value === "object" ? value : {};
-    const threadsIn = raw.threads && typeof raw.threads === "object" ? raw.threads : {};
-    const threadsOut = {};
-    for (const [keyRaw, thread] of Object.entries(threadsIn)) {
-      const key = String(keyRaw || "").trim().slice(0, 120);
-      if (!key) continue;
-      const src = thread && typeof thread === "object" ? thread : {};
-      const label = String(src.label || "").trim().slice(0, 48);
-      const messagesIn = Array.isArray(src.messages) ? src.messages : [];
-      const messages = messagesIn
-        .filter((m) => m && typeof m === "object")
-        .map((m) => ({
-          id: String(m.id || ""),
-          from: String(m.from || "") === "peer" ? "peer" : "me",
-          text: String(m.text || "")
-            .replace(/\s+/g, " ")
-            .trim()
-            .slice(0, 240),
-          at: Number(m.at) || 0
-        }))
-        .filter((m) => m.id && m.text)
-        .slice(-120);
-      threadsOut[key] = { label, messages };
-    }
-    return { threads: threadsOut };
   };
 
   const I18N = {
@@ -527,19 +471,6 @@
       sim_doing_eating: "Eating",
       sim_doing_transit: "Transit",
       sim_doing_resting: "Resting",
-      map_msg_title: "Map messages",
-      map_msg_placeholder: "Send a message…",
-      map_msg_send: "Send",
-      map_msg_empty: "No messages yet.",
-      map_msg_target_prefix: "To",
-      map_msg_target_unknown: "Select an aura to message.",
-      map_msg_target_unavailable: "Selected aura is unavailable right now.",
-      map_msg_reply_on_way: "On my way.",
-      map_msg_reply_busy: "I can do this soon.",
-      map_msg_reply_confirm: "Got it, thanks.",
-      toast_map_msg_empty: "Message can’t be empty.",
-      toast_map_msg_pick_target: "Select an aura first.",
-      toast_map_msg_sent: "Message sent.",
 
       marketplace_title: "Marketplace",
       marketplace_sub: "Post tasks, listings, and scheduled activities.",
@@ -702,11 +633,6 @@
       toast_import_done: "Backup imported.",
       toast_import_invalid: "Invalid backup file.",
       toast_import_failed: "Could not import backup.",
-      toast_cloud_backup_saved: "Google backup updated.",
-      toast_cloud_backup_loaded: "Backup restored from Google.",
-      toast_cloud_backup_missing: "No Google backup found yet.",
-      toast_cloud_backup_unavailable: "Google backup unavailable. Enable Firestore.",
-      toast_cloud_backup_failed: "Google backup failed.",
       toast_app_installed: "App installed.",
       toast_pwa_unavailable: "Install prompt is not available right now.",
       toast_pwa_update_ready: "App update ready. Refresh to use the latest version.",
@@ -844,19 +770,6 @@
       sim_doing_eating: "用餐中",
       sim_doing_transit: "移動中",
       sim_doing_resting: "休息中",
-      map_msg_title: "地圖訊息",
-      map_msg_placeholder: "傳送訊息…",
-      map_msg_send: "送出",
-      map_msg_empty: "尚無訊息。",
-      map_msg_target_prefix: "傳送給",
-      map_msg_target_unknown: "請先選擇要私訊的氣場。",
-      map_msg_target_unavailable: "目前無法連線到此氣場。",
-      map_msg_reply_on_way: "我正在前往。",
-      map_msg_reply_busy: "我晚點可以處理。",
-      map_msg_reply_confirm: "收到，謝謝。",
-      toast_map_msg_empty: "訊息不能空白。",
-      toast_map_msg_pick_target: "請先選擇一個氣場。",
-      toast_map_msg_sent: "已送出訊息。",
 
       marketplace_title: "市集",
       marketplace_sub: "發布任務、商品服務、以及排程活動。",
@@ -1019,11 +932,6 @@
       toast_import_done: "已匯入備份。",
       toast_import_invalid: "備份檔格式無效。",
       toast_import_failed: "無法匯入備份。",
-      toast_cloud_backup_saved: "已更新 Google 備份。",
-      toast_cloud_backup_loaded: "已從 Google 還原備份。",
-      toast_cloud_backup_missing: "尚未找到 Google 備份。",
-      toast_cloud_backup_unavailable: "Google 備份不可用，請啟用 Firestore。",
-      toast_cloud_backup_failed: "Google 備份失敗。",
       toast_app_installed: "App 已安裝。",
       toast_pwa_unavailable: "目前無法顯示安裝提示。",
       toast_pwa_update_ready: "已有新版可用，重新整理即可更新。",
@@ -1161,19 +1069,6 @@
       sim_doing_eating: "食事中",
       sim_doing_transit: "移動中",
       sim_doing_resting: "休憩中",
-      map_msg_title: "地図メッセージ",
-      map_msg_placeholder: "メッセージを送信…",
-      map_msg_send: "送信",
-      map_msg_empty: "メッセージはまだありません。",
-      map_msg_target_prefix: "送信先",
-      map_msg_target_unknown: "まずオーラを選択してください。",
-      map_msg_target_unavailable: "このオーラには今は連絡できません。",
-      map_msg_reply_on_way: "向かっています。",
-      map_msg_reply_busy: "少ししたら対応できます。",
-      map_msg_reply_confirm: "了解しました。",
-      toast_map_msg_empty: "メッセージを入力してください。",
-      toast_map_msg_pick_target: "先にオーラを選択してください。",
-      toast_map_msg_sent: "メッセージを送信しました。",
 
       marketplace_title: "マーケット",
       marketplace_sub: "タスク、商品/サービス、予定アクティビティ。",
@@ -1336,11 +1231,6 @@
       toast_import_done: "バックアップを読み込みました。",
       toast_import_invalid: "バックアップファイルの形式が無効です。",
       toast_import_failed: "バックアップを読み込めませんでした。",
-      toast_cloud_backup_saved: "Google バックアップを更新しました。",
-      toast_cloud_backup_loaded: "Google からバックアップを復元しました。",
-      toast_cloud_backup_missing: "Google バックアップが見つかりません。",
-      toast_cloud_backup_unavailable: "Google バックアップは利用できません。Firestore を有効化してください。",
-      toast_cloud_backup_failed: "Google バックアップに失敗しました。",
       toast_app_installed: "アプリをインストールしました。",
       toast_pwa_unavailable: "今はインストールできません。",
       toast_pwa_update_ready: "新しいバージョンを利用できます。再読み込みしてください。",
@@ -1413,7 +1303,6 @@
         services: true
       },
       listFilters: defaultUiListFilters(),
-      mapDm: defaultMapDmState(),
       onboardingOpen: true,
       drops: {
         tasksPost: false,
@@ -1635,7 +1524,6 @@
         : "tasks";
       merged.ui.mapFilters = normalizeMapLayerFilters(merged.ui.mapFilters);
       merged.ui.listFilters = normalizeUiListFilters(merged.ui.listFilters);
-      merged.ui.mapDm = normalizeMapDmState(merged.ui.mapDm);
       merged.ui.onboardingOpen = merged.ui.onboardingOpen !== false;
       merged.ui.drops = { ...defaultState().ui.drops, ...(merged.ui.drops && typeof merged.ui.drops === "object" ? merged.ui.drops : {}) };
 
@@ -1770,7 +1658,6 @@
           workerVerified: Boolean(x.workerVerified),
           acceptedAt: Number(x.acceptedAt) || 0,
           completedAt: Number(x.completedAt) || 0,
-          closedAt: Number(x.closedAt) || 0,
           review:
             x.review && typeof x.review === "object"
               ? {
@@ -2024,9 +1911,7 @@
   let i18nLang = normalizeLang(state.activity && state.activity.prefs && state.activity.prefs.lang);
   let firebaseAuthConfig = null;
   let firebaseAuth = null;
-  let firebaseDb = null;
   let firebaseAuthReady = false;
-  let firebaseCloudReady = false;
   let firebaseAuthBootstrapped = false;
 
   const sameAuthUser = (a, b) => {
@@ -2183,10 +2068,7 @@
 
   const initFirebaseAuth = () => {
     firebaseAuthConfig = readFirebaseAuthConfig();
-    firebaseAuth = null;
-    firebaseDb = null;
     firebaseAuthReady = false;
-    firebaseCloudReady = false;
     firebaseAuthBootstrapped = false;
     renderAuthUi();
     if (!firebaseAuthConfig) return;
@@ -2206,15 +2088,6 @@
       if (!firebaseAuth || typeof firebaseAuth.onAuthStateChanged !== "function") {
         throw new Error("firebase_auth_unavailable");
       }
-      if (typeof fb.firestore === "function") {
-        try {
-          firebaseDb = app && typeof app.firestore === "function" ? app.firestore() : fb.firestore();
-          firebaseCloudReady = Boolean(firebaseDb && typeof firebaseDb.collection === "function");
-        } catch {
-          firebaseDb = null;
-          firebaseCloudReady = false;
-        }
-      }
       firebaseAuthReady = true;
       renderAuthUi();
       firebaseAuth.onAuthStateChanged(
@@ -2228,9 +2101,7 @@
       );
     } catch {
       firebaseAuth = null;
-      firebaseDb = null;
       firebaseAuthReady = false;
-      firebaseCloudReady = false;
       renderAuthUi();
       toast(t("toast_auth_unavailable"));
     }
@@ -2594,13 +2465,12 @@
       return derivedCache.auraStrength.data;
     }
 
-    // Strength is based on long-horizon repetition (habit), not a single session.
-    // This intentionally uses a hard curve so only consistently active users
-    // build strong, zoom-visible aura over time.
-    const windowDays = 120;
+    // Strength is based on daily repetition (habit), not a single long session.
+    // We look at distinct active days per activity key in a recent window,
+    // then apply a saturating curve and blend the top few habits.
+    const windowDays = 21;
     const minDurMs = 30_000;
     const perKeyDays = new Map(); // key -> Set(dayISO)
-    const allDays = new Set();
 
     for (const entry of state.activity.log) {
       if (!entry || !entry.endedAt || !entry.startedAt) continue;
@@ -2624,28 +2494,18 @@
       const set = perKeyDays.get(key) || new Set();
       set.add(dayId);
       perKeyDays.set(key, set);
-      allDays.add(dayId);
     }
 
     const counts = Array.from(perKeyDays.values())
       .map((s) => s.size)
       .sort((a, b) => b - a);
 
-    const strictCurve = (days, targetDays, power) => {
-      const x = clamp((Number(days) || 0) / Math.max(1, Number(targetDays) || 1), 0, 1);
-      return Math.pow(x, Math.max(1.1, Number(power) || 2));
-    };
-
-    const c0 = counts[0] || 0;
-    const c1 = counts[1] || 0;
-    const c2 = counts[2] || 0;
-    const weightedTop3 = c0 + c1 * 0.72 + c2 * 0.48;
-
-    const habitScore = strictCurve(c0, 84, 3.4);
-    const consistencyScore = strictCurve(weightedTop3, 150, 3.0);
-    const breadthScore = strictCurve(allDays.size, 100, 2.8);
-    const strength = clamp(habitScore * 0.56 + consistencyScore * 0.32 + breadthScore * 0.12, 0, 1);
-    const result = { strength, counts, activeDays: allDays.size };
+    const curve = (days) => 1 - Math.exp(-Math.max(0, days) / 3); // 0..1, fast saturation
+    const c0 = curve(counts[0] || 0);
+    const c1 = curve(counts[1] || 0);
+    const c2 = curve(counts[2] || 0);
+    const strength = clamp(c0 * 0.62 + c1 * 0.26 + c2 * 0.12, 0, 1);
+    const result = { strength, counts };
     derivedCache.auraStrength = { rev: activityLogRevision, bucket, data: result };
     return result;
   };
@@ -2670,41 +2530,11 @@
     const strokeW = 12;
     const circ = 2 * Math.PI * r;
 
-    const mkSvg = (tag, attrs) => {
-      const el = document.createElementNS(NS, tag);
+    const mkCircle = (attrs) => {
+      const el = document.createElementNS(NS, "circle");
       for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, String(v));
       return el;
     };
-    const mkCircle = (attrs) => mkSvg("circle", attrs);
-
-    const sketchFilterId = "auraChartSketchFilter";
-    const defs = mkSvg("defs", {});
-    const sketchFilter = mkSvg("filter", {
-      id: sketchFilterId,
-      x: "-22%",
-      y: "-22%",
-      width: "144%",
-      height: "144%",
-      "color-interpolation-filters": "sRGB"
-    });
-    const turb = mkSvg("feTurbulence", {
-      type: "fractalNoise",
-      baseFrequency: "0.86",
-      numOctaves: "2",
-      seed: "8",
-      result: "noise"
-    });
-    const displace = mkSvg("feDisplacementMap", {
-      in: "SourceGraphic",
-      in2: "noise",
-      scale: "0.85",
-      xChannelSelector: "R",
-      yChannelSelector: "G"
-    });
-    sketchFilter.appendChild(turb);
-    sketchFilter.appendChild(displace);
-    defs.appendChild(sketchFilter);
-    svg.appendChild(defs);
 
     const base = mkCircle({
       cx,
@@ -2712,23 +2542,9 @@
       r,
       fill: "none",
       stroke: "rgba(32, 24, 18, 0.10)",
-      "stroke-width": strokeW,
-      class: "auraChart__ringBase",
-      filter: `url(#${sketchFilterId})`
-    });
-    const baseEcho = mkCircle({
-      cx,
-      cy,
-      r,
-      fill: "none",
-      stroke: "rgba(80, 58, 36, 0.20)",
-      "stroke-width": strokeW * 0.76,
-      "stroke-dasharray": "3.2 2.4",
-      class: "auraChart__ringBase auraChart__ringBase--echo",
-      filter: `url(#${sketchFilterId})`
+      "stroke-width": strokeW
     });
     svg.appendChild(base);
-    svg.appendChild(baseEcho);
 
     if (total <= 0) {
       const li = document.createElement("li");
@@ -2762,41 +2578,19 @@
       const len = Math.max(0, frac * circ);
       if (len < 1.2) continue;
 
-      const color = String((entry && entry.colorHex) || "#FF6A00");
-      const strokeOpacity = Number.isFinite(Number(entry && entry.strokeOpacity)) ? Number(entry.strokeOpacity) : 1;
-      const sketchOffset = clamp(len * 0.02, 0.8, 2.2);
-
-      const segEcho = mkCircle({
-        cx,
-        cy,
-        r,
-        fill: "none",
-        stroke: mixHex(color, "#4D3A28", 0.22),
-        "stroke-opacity": clamp(strokeOpacity * 0.46, 0.18, 0.72),
-        "stroke-width": strokeW * 0.74,
-        "stroke-linecap": "round",
-        "stroke-dasharray": `${Math.max(0.1, len - 0.7)} ${Math.max(0.1, circ - len + 0.7)}`,
-        "stroke-dashoffset": `${-offset - sketchOffset}`,
-        transform: `rotate(-90 ${cx} ${cy})`,
-        class: "auraChart__segEcho",
-        filter: `url(#${sketchFilterId})`
-      });
       const seg = mkCircle({
         cx,
         cy,
         r,
         fill: "none",
-        stroke: color,
-        "stroke-opacity": strokeOpacity,
+        stroke: (entry && entry.colorHex) || "#FF6A00",
+        "stroke-opacity": Number.isFinite(Number(entry && entry.strokeOpacity)) ? Number(entry.strokeOpacity) : 1,
         "stroke-width": strokeW,
-        "stroke-linecap": "round",
+        "stroke-linecap": "butt",
         "stroke-dasharray": `${len} ${circ - len}`,
         "stroke-dashoffset": `${-offset}`,
-        transform: `rotate(-90 ${cx} ${cy})`,
-        class: "auraChart__seg",
-        filter: `url(#${sketchFilterId})`
+        transform: `rotate(-90 ${cx} ${cy})`
       });
-      svg.appendChild(segEcho);
       svg.appendChild(seg);
       offset += len;
     }
@@ -3380,21 +3174,10 @@
     if (!els.activityList) return;
     els.activityList.replaceChildren();
 
-    const now = nowMs();
-    const entries = state.activity.log
+    const items = state.activity.log
       .slice()
-      .sort((a, b) => (b.endedAt || 0) - (a.endedAt || 0));
-    const items = [];
-    for (const entry of entries) {
-      if (!entry || !entry.endedAt || !entry.startedAt) continue;
-      const endedAt = Number(entry.endedAt) || 0;
-      const startedAt = Number(entry.startedAt) || 0;
-      if (endedAt <= 0 || startedAt <= 0 || endedAt < startedAt) continue;
-      const fadeProgress = fadeProgressByAge(now - endedAt, ACTIVITY_LOG_FADE_HOLD_MS, ACTIVITY_LOG_FADE_MS);
-      if (fadeProgress >= 1) continue;
-      items.push({ entry, fadeProgress });
-      if (items.length >= 10) break;
-    }
+      .sort((a, b) => (b.endedAt || 0) - (a.endedAt || 0))
+      .slice(0, 10);
 
     if (items.length === 0) {
       const li = document.createElement("li");
@@ -3404,8 +3187,7 @@
       return;
     }
 
-    for (const item of items) {
-      const entry = item.entry;
+    for (const entry of items) {
       if (!entry || !entry.endedAt || !entry.startedAt) continue;
       const text = normalizeActivityText(entry.text || "");
       const legacyType = entry.type ? normalizeActivityType(entry.type) : null;
@@ -3417,10 +3199,6 @@
 
       const li = document.createElement("li");
       li.className = "activityItem";
-      if (item.fadeProgress > 0) {
-        li.classList.add("activityItem--fading");
-        li.style.setProperty("--fade-progress", item.fadeProgress.toFixed(3));
-      }
 
       const left = document.createElement("div");
       left.className = "activityItem__main";
@@ -3459,27 +3237,6 @@
   // --- Marketplace Tabs (Tasks / Market / Scheduled) ---
 
   const MARKET_TABS = ["tasks", "market", "events"];
-  const DROP_GROUP_KEYS = {
-    tasks: ["tasksPost", "tasksList"],
-    market: ["marketPost", "marketList"],
-    events: ["eventsPost", "eventsList"]
-  };
-  const DROP_KEY_TO_TAB = {
-    tasksPost: "tasks",
-    tasksList: "tasks",
-    marketPost: "market",
-    marketList: "market",
-    eventsPost: "events",
-    eventsList: "events"
-  };
-  const DROP_ID_BY_KEY = {
-    tasksPost: "dropTasksPost",
-    tasksList: "dropTasksList",
-    marketPost: "dropMarketPost",
-    marketList: "dropMarketList",
-    eventsPost: "dropEventsPost",
-    eventsList: "dropEventsList"
-  };
 
   const normalizeMarketTab = (value) => {
     const v = String(value || "").trim().toLowerCase();
@@ -3496,7 +3253,6 @@
       : base.section;
     state.ui.mapFilters = normalizeMapLayerFilters(state.ui.mapFilters || base.mapFilters);
     state.ui.listFilters = normalizeUiListFilters(state.ui.listFilters || base.listFilters);
-    state.ui.mapDm = normalizeMapDmState(state.ui.mapDm || base.mapDm);
     state.ui.onboardingOpen = state.ui.onboardingOpen !== false;
     if (!state.ui.drops || typeof state.ui.drops !== "object") state.ui.drops = { ...base.drops };
     state.ui.drops = { ...base.drops, ...state.ui.drops };
@@ -3515,40 +3271,6 @@
     el.open = want;
   };
 
-  const openDropIdForTab = (tab) => {
-    const t = normalizeMarketTab(tab);
-    const keys = DROP_GROUP_KEYS[t] || [];
-    for (const key of keys) {
-      const id = DROP_ID_BY_KEY[key];
-      const el = id ? document.getElementById(id) : null;
-      if (el && el.open) return id;
-    }
-    return "";
-  };
-
-  const ensureSingleOpenDropForTab = (tab, preferredDropId = "", { persist = false } = {}) => {
-    const t = normalizeMarketTab(tab);
-    const keys = DROP_GROUP_KEYS[t] || [];
-    if (!keys.length) return "";
-
-    const ids = keys.map((key) => DROP_ID_BY_KEY[key]).filter((x) => x);
-    const preferred = ids.includes(preferredDropId) ? preferredDropId : "";
-    const currentOpen = openDropIdForTab(t);
-    const chosen = preferred || currentOpen || ids[0] || "";
-    if (!chosen) return "";
-
-    for (const key of keys) {
-      const id = DROP_ID_BY_KEY[key];
-      const el = id ? document.getElementById(id) : null;
-      if (el) setDetailsOpen(el, id === chosen);
-      if (persist && state.ui && state.ui.drops) {
-        state.ui.drops[key] = id === chosen;
-      }
-    }
-    if (persist) saveState();
-    return chosen;
-  };
-
   const applyDropStates = () => {
     ensureUiPrefs();
     setDetailsOpen(els.dropTasksPost, state.ui.drops.tasksPost);
@@ -3557,8 +3279,6 @@
     setDetailsOpen(els.dropMarketList, state.ui.drops.marketList);
     setDetailsOpen(els.dropEventsPost, state.ui.drops.eventsPost);
     setDetailsOpen(els.dropEventsList, state.ui.drops.eventsList);
-    ensureSingleOpenDropForTab(normalizeMarketTab(state.ui.marketTab || "tasks"));
-    renderAttentionFocus();
   };
 
   const renderOnboarding = () => {
@@ -3615,8 +3335,6 @@
     ensureUiPrefs();
     state.ui.marketTab = normalizeMarketTab(state.ui.marketTab);
     setMarketTabSelected(state.ui.marketTab);
-    ensureSingleOpenDropForTab(state.ui.marketTab);
-    renderAttentionFocus();
   };
 
   const mapFilterEntries = () => [
@@ -3659,52 +3377,6 @@
   const normalizeTaskStatus = (value) => {
     const v = String(value || "").trim().toLowerCase();
     return TASK_STATUS.includes(v) ? v : "open";
-  };
-
-  const taskClosedAtMs = (task, now = nowMs()) => {
-    if (!task || typeof task !== "object") return 0;
-    const explicit = Number(task.closedAt) || 0;
-    if (explicit > 0) return explicit;
-    const status = normalizeTaskStatus(task.status);
-    if (status === "expired") {
-      const expiresAt = Number(task.expiresAt) || 0;
-      if (expiresAt > 0) return expiresAt;
-    }
-    if (status === "cancelled") {
-      const completedAt = Number(task.completedAt) || 0;
-      if (completedAt > 0) return completedAt;
-    }
-    const createdAt = Number(task.createdAt) || 0;
-    return createdAt > 0 ? createdAt : now;
-  };
-
-  const taskFadeMeta = (task, now = nowMs()) => {
-    const status = normalizeTaskStatus(task && task.status);
-    if (status !== "expired" && status !== "cancelled") return { progress: 0, hidden: false };
-    const closedAt = taskClosedAtMs(task, now);
-    const progress = fadeProgressByAge(now - closedAt, TASK_CLOSED_FADE_HOLD_MS, TASK_CLOSED_FADE_MS);
-    return { progress, hidden: progress >= 1 };
-  };
-
-  const setTaskStatus = (task, status, now = nowMs()) => {
-    if (!task || typeof task !== "object") return;
-    const next = normalizeTaskStatus(status);
-    task.status = next;
-    if (next === "expired") {
-      const expiresAt = Number(task.expiresAt) || 0;
-      task.closedAt = expiresAt > 0 ? Math.min(now, expiresAt) : now;
-      return;
-    }
-    if (next === "cancelled") {
-      task.closedAt = now;
-      return;
-    }
-    if (next === "completed") {
-      if (!(Number(task.completedAt) > 0)) task.completedAt = now;
-      task.closedAt = Number(task.completedAt) || now;
-      return;
-    }
-    task.closedAt = 0;
   };
 
   const matchesTaskFilterStatus = (status, filterStatus) => {
@@ -4389,14 +4061,7 @@
         const hay = `${String(task.title || "")} ${String(task.posterLabel || "")} ${String(task.workerLabel || "")}`;
         return queryMatchesText(tokens, hay);
       });
-    const items = [];
-    for (const task of filteredItems) {
-      if (!task || !task.id) continue;
-      const fade = taskFadeMeta(task, now);
-      if (fade.hidden) continue;
-      items.push({ task, fadeProgress: fade.progress });
-      if (items.length >= 14) break;
-    }
+    const items = filteredItems.slice(0, 14);
     renderListFilterMeta(els.taskFilterMeta, allItems.length, items.length);
 
     if (!items.length) {
@@ -4407,8 +4072,7 @@
       return;
     }
 
-    for (const item of items) {
-      const task = item.task;
+    for (const task of items) {
       if (!task || !task.id) continue;
       const status = normalizeTaskStatus(task.status);
       const poster = task.poster;
@@ -4420,10 +4084,6 @@
 
       const li = document.createElement("li");
       li.className = "taskItem";
-      if (item.fadeProgress > 0) {
-        li.classList.add("taskItem--fading");
-        li.style.setProperty("--fade-progress", item.fadeProgress.toFixed(3));
-      }
 
       const top = document.createElement("div");
       top.className = "taskItem__top";
@@ -4706,7 +4366,6 @@
       workerVerified: false,
       acceptedAt: 0,
       completedAt: 0,
-      closedAt: 0,
       applicants: [],
       tetherFrom: null,
       tetherTo: null,
@@ -4765,7 +4424,7 @@
 
     const now = nowMs();
     if (task.expiresAt && now > task.expiresAt) {
-      setTaskStatus(task, "expired", now);
+      task.status = "expired";
       saveState();
       renderTasks();
       toast(t("toast_task_expired"));
@@ -4839,30 +4498,25 @@
     toast(t("toast_task_applied"));
   };
 
-  const acceptTask = (taskId, actor, opts = {}) => {
+  const acceptTask = (taskId, actor) => {
     ensureTaskPrefs();
     const id = String(taskId || "");
     const task = state.tasks.list.find((x) => x && x.id === id);
     if (!task) return;
     if (normalizeTaskStatus(task.status) !== "open") return;
-    const automated = Boolean(opts && opts.automated);
-    const actorK = actorKeyLocal(actor);
-    const posterK = actorKeyLocal(task.poster);
-    const userInvolved = actorK === userKey || posterK === userKey;
-    const canNotify = !automated || userInvolved;
 
     const now = nowMs();
     if (task.expiresAt && now > task.expiresAt) {
-      setTaskStatus(task, "expired", now);
+      task.status = "expired";
       saveState();
       renderTasks();
-      if (canNotify) toast(t("toast_task_expired"));
+      toast(t("toast_task_expired"));
       return;
     }
 
     const info = getActorInfoSafe(actor);
     if (!info.verified) {
-      if (canNotify) toast(t("toast_task_not_verified"));
+      toast(t("toast_task_not_verified"));
       return;
     }
 
@@ -4893,21 +4547,21 @@
     }
 
     if (!startArea) {
-      if (canNotify) toast(t("toast_task_poster_unavailable"));
+      toast(t("toast_task_poster_unavailable"));
       return;
     }
     if (!llWorker) {
-      if (canNotify) toast(t("toast_task_worker_unavailable"));
+      toast(t("toast_task_worker_unavailable"));
       return;
     }
 
     const d = haversineM(llWorker, startArea);
     if (d > (Number(task.distanceLimitM) || 0)) {
-      if (canNotify) toast(t("toast_task_too_far"));
+      toast(t("toast_task_too_far"));
       return;
     }
 
-    setTaskStatus(task, "accepted", now);
+    task.status = "accepted";
     task.acceptedBy = actor;
     task.workerLabel = (info && info.label) || task.workerLabel || "";
     task.workerVerified = Boolean(info && info.verified);
@@ -4929,7 +4583,7 @@
 
     saveState();
     renderTasks();
-    if (canNotify) toast(t("toast_task_accepted"));
+    toast(t("toast_task_accepted"));
   };
 
   const finishTask = (taskId) => {
@@ -4941,14 +4595,15 @@
     const now = nowMs();
 
     if (task.expiresAt && now > task.expiresAt) {
-      setTaskStatus(task, "expired", now);
+      task.status = "expired";
       saveState();
       renderTasks();
       toast(t("toast_task_expired"));
       return;
     }
 
-    setTaskStatus(task, "completed", now);
+    task.status = "completed";
+    task.completedAt = now;
     saveState();
 
     // Completion boosts the worker aura like an activity log.
@@ -5003,7 +4658,7 @@
     const task = state.tasks.list.find((x) => x && x.id === id);
     if (!task) return;
     if (normalizeTaskStatus(task.status) !== "open") return;
-    setTaskStatus(task, "cancelled", nowMs());
+    task.status = "cancelled";
     saveState();
     renderTasks();
   };
@@ -5017,7 +4672,7 @@
       const status = normalizeTaskStatus(task.status);
       if (status === "completed" || status === "cancelled" || status === "expired") continue;
       if (task.expiresAt && now > task.expiresAt) {
-        setTaskStatus(task, "expired", now);
+        task.status = "expired";
         changed = true;
       }
     }
@@ -5231,7 +4886,7 @@
       }
 
       if (!best) continue;
-      acceptTask(task.id, best, { automated: true });
+      acceptTask(task.id, best);
     }
   };
 
@@ -5282,7 +4937,6 @@
       workerVerified: false,
       acceptedAt: 0,
       completedAt: 0,
-      closedAt: 0,
       applicants: [],
       tetherFrom,
       tetherTo,
@@ -6084,7 +5738,6 @@
     syncUserAuraOnMap(nowMs(), auraHex);
 
     if (full) renderActivityList();
-    renderAttentionFocus();
   };
 
   // --- Render ---
@@ -6098,7 +5751,6 @@
     renderTasks();
     renderMarket();
     renderEvents();
-    renderAttentionFocus();
     startTaskEngine();
   };
 
@@ -6110,76 +5762,6 @@
     return SECTION_TARGETS.includes(v) ? v : "activitySection";
   };
 
-  const isFocusTargetVisible = (el) => {
-    if (!el || typeof el !== "object") return false;
-    if (el.hidden) return false;
-    const hiddenParent = typeof el.closest === "function" ? el.closest("[hidden]") : null;
-    if (hiddenParent && hiddenParent !== el) return false;
-    if (typeof window === "undefined" || typeof window.getComputedStyle !== "function") return true;
-    const cs = window.getComputedStyle(el);
-    if (!cs) return true;
-    return cs.display !== "none" && cs.visibility !== "hidden";
-  };
-
-  const setFocusTargetInScope = (scopeEl, preferredFocusId = "") => {
-    if (!scopeEl) return;
-    const targets = Array.from(scopeEl.querySelectorAll(".focusTarget[data-focus-id]"));
-    if (!targets.length) return;
-
-    const preferred = String(preferredFocusId || "").trim();
-    const preferredEl = preferred
-      ? targets.find((el) => String(el.getAttribute("data-focus-id") || "") === preferred)
-      : null;
-    const visibleTargets = targets.filter((el) => isFocusTargetVisible(el));
-    const activeEl = (preferredEl && isFocusTargetVisible(preferredEl) ? preferredEl : null) || visibleTargets[0] || targets[0];
-    const activeId = String((activeEl && activeEl.getAttribute("data-focus-id")) || "");
-
-    if (activeId) scopeEl.setAttribute("data-focus-active", activeId);
-    else scopeEl.removeAttribute("data-focus-active");
-
-    for (const target of targets) {
-      const on = target === activeEl;
-      const visible = isFocusTargetVisible(target);
-      target.classList.toggle("focusTarget--active", on);
-      target.classList.toggle("focusTarget--muted", !on && visible);
-      if (!visible) target.classList.remove("focusTarget--muted");
-    }
-  };
-
-  const activityFocusId = () => {
-    if (state.activity && state.activity.active) return "activityForm";
-    const firstEntry = state.activity && Array.isArray(state.activity.log) ? state.activity.log[0] : null;
-    const endedAt = Number(firstEntry && firstEntry.endedAt) || 0;
-    if (endedAt > 0 && nowMs() - endedAt <= 90_000) return "auraViz";
-    const hasHistory = Boolean(firstEntry);
-    const onboardOpen = Boolean(els.onboardPanel && els.onboardPanel.open);
-    if (!hasHistory && onboardOpen) return "onboardPanel";
-    return "activityForm";
-  };
-
-  const mapFocusId = () => {
-    if (els.mapDm && !els.mapDm.hidden) return "mapDm";
-    return "mapWrap";
-  };
-
-  const marketFocusId = () => {
-    ensureUiPrefs();
-    const tab = normalizeMarketTab(state.ui.marketTab);
-    const openId = ensureSingleOpenDropForTab(tab);
-    return openId || "marketTabs";
-  };
-
-  const renderAttentionFocus = () => {
-    ensureUiPrefs();
-    const activeSection = normalizeSectionTarget(state.ui.section);
-    if (typeof document !== "undefined" && document.body) {
-      document.body.setAttribute("data-focus-section", activeSection);
-    }
-    setFocusTargetInScope(document.getElementById("activitySection"), activityFocusId());
-    setFocusTargetInScope(document.getElementById("mapSection"), mapFocusId());
-    setFocusTargetInScope(document.getElementById("marketplaceSection"), marketFocusId());
-  };
-
   const sectionTabElements = () =>
     [
       { id: "activitySection", el: els.sectionTabActivity },
@@ -6187,22 +5769,12 @@
       { id: "marketplaceSection", el: els.sectionTabMarket }
     ].filter((x) => x.el);
 
-  const setSectionCardActive = (sectionId) => {
-    const active = normalizeSectionTarget(sectionId);
-    for (const id of SECTION_TARGETS) {
-      const sectionEl = document.getElementById(id);
-      if (!sectionEl) continue;
-      sectionEl.classList.toggle("card--active", id === active);
-    }
-  };
-
   const setSectionTabSelected = (sectionId, { persist = false } = {}) => {
     const active = normalizeSectionTarget(sectionId);
     for (const { id, el } of sectionTabElements()) {
       const on = id === active;
       el.setAttribute("aria-pressed", on ? "true" : "false");
     }
-    setSectionCardActive(active);
     if (persist) {
       ensureUiPrefs();
       if (state.ui.section !== active) {
@@ -6210,7 +5782,6 @@
         saveState();
       }
     }
-    renderAttentionFocus();
   };
 
   const scrollToSection = (sectionId) => {
@@ -6375,150 +5946,28 @@
     return parsed;
   };
 
-  const currentSignedInUser = () => normalizeAuthUser(state && state.auth && state.auth.user);
-
-  const setDataToolsBusy = (busy) => {
-    const on = Boolean(busy);
-    if (els.dataExportBtn) els.dataExportBtn.disabled = on;
-    if (els.dataImportBtn) els.dataImportBtn.disabled = on;
-  };
-
-  const cloudBackupRefForCurrentUser = () => {
-    const authUser = currentSignedInUser();
-    if (!authUser || !firebaseCloudReady || !firebaseDb || typeof firebaseDb.collection !== "function") return null;
-    const docId = sanitizeProfileId(authUser.sub);
-    if (!docId) return null;
-    return {
-      authUser,
-      ref: firebaseDb.collection("auranet_backups").doc(docId)
-    };
-  };
-
-  const buildCloudBackupPayload = (authUser) => {
-    const backup = buildBackupPayload();
-    const payload = {
-      ...backup,
-      owner: {
-        sub: String(authUser && authUser.sub ? authUser.sub : ""),
-        name: String(authUser && authUser.name ? authUser.name : "").slice(0, 120),
-        email: String(authUser && authUser.email ? authUser.email : "").slice(0, 180)
-      },
-      updatedAtClient: new Date().toISOString()
-    };
-    try {
-      const fb = getFirebaseNamespace();
-      const serverTs =
-        fb &&
-        fb.firestore &&
-        fb.firestore.FieldValue &&
-        typeof fb.firestore.FieldValue.serverTimestamp === "function"
-          ? fb.firestore.FieldValue.serverTimestamp()
-          : null;
-      if (serverTs) payload.updatedAt = serverTs;
-    } catch {
-      // ignore
-    }
-    return payload;
-  };
-
-  const saveBackupToGoogle = async () => {
-    const cloud = cloudBackupRefForCurrentUser();
-    if (!cloud) return { ok: false, reason: "unavailable" };
-    try {
-      await cloud.ref.set(buildCloudBackupPayload(cloud.authUser), { merge: true });
-      return { ok: true, reason: "ok" };
-    } catch (err) {
-      console.error(err);
-      return { ok: false, reason: "failed" };
-    }
-  };
-
-  const loadBackupFromGoogle = async () => {
-    const cloud = cloudBackupRefForCurrentUser();
-    if (!cloud) return { ok: false, reason: "unavailable" };
-    try {
-      const snap = await cloud.ref.get();
-      if (!snap || !snap.exists) return { ok: false, reason: "missing" };
-      const raw = snap.data();
-      const candidate = normalizeBackupPayload(raw);
-      if (!candidate || Number(candidate.version) !== 1) return { ok: false, reason: "invalid" };
-      const ok = applyImportedState(candidate);
-      return { ok, reason: ok ? "ok" : "failed" };
-    } catch (err) {
-      console.error(err);
-      return { ok: false, reason: "failed" };
-    }
-  };
-
-  const openImportFileDialog = () => {
-    if (!els.dataImportInput) return;
-    try {
-      els.dataImportInput.click();
-    } catch {
-      // ignore
-    }
-  };
-
   const bindDataTools = () => {
     if (els.dataExportBtn) {
-      els.dataExportBtn.addEventListener("click", async () => {
-        if (els.dataExportBtn.disabled) return;
-        setDataToolsBusy(true);
-        try {
-          const stamp = fmtClock().replace(/[^0-9]/g, "").slice(0, 12);
-          downloadJson(`auranet-backup-${stamp}.json`, buildBackupPayload());
-          const cloud = await saveBackupToGoogle();
-          if (cloud.ok) {
-            toast(t("toast_cloud_backup_saved"));
-            return;
-          }
-          if (currentSignedInUser()) {
-            toast(
-              cloud.reason === "failed"
-                ? t("toast_cloud_backup_failed")
-                : t("toast_cloud_backup_unavailable")
-            );
-            return;
-          }
-          toast(t("toast_export_ready"));
-        } finally {
-          setDataToolsBusy(false);
-        }
+      els.dataExportBtn.addEventListener("click", () => {
+        const stamp = fmtClock().replace(/[^0-9]/g, "").slice(0, 12);
+        downloadJson(`auranet-backup-${stamp}.json`, buildBackupPayload());
+        toast(t("toast_export_ready"));
       });
     }
 
     if (els.dataImportBtn && els.dataImportInput) {
-      els.dataImportBtn.addEventListener("click", async () => {
-        if (els.dataImportBtn.disabled) return;
-        const user = currentSignedInUser();
-        if (user) {
-          setDataToolsBusy(true);
-          try {
-            const cloud = await loadBackupFromGoogle();
-            if (cloud.ok) {
-              toast(t("toast_cloud_backup_loaded"));
-              return;
-            }
-            if (cloud.reason === "missing") toast(t("toast_cloud_backup_missing"));
-            else if (cloud.reason === "invalid") toast(t("toast_import_invalid"));
-            else if (cloud.reason === "failed") toast(t("toast_cloud_backup_failed"));
-            else toast(t("toast_cloud_backup_unavailable"));
-          } finally {
-            setDataToolsBusy(false);
-          }
+      els.dataImportBtn.addEventListener("click", () => {
+        try {
+          els.dataImportInput.click();
+        } catch {
+          // ignore
         }
-        openImportFileDialog();
       });
 
       els.dataImportInput.addEventListener("change", async () => {
-        if (els.dataImportInput.disabled) return;
-        setDataToolsBusy(true);
         const file = els.dataImportInput.files && els.dataImportInput.files[0] ? els.dataImportInput.files[0] : null;
         els.dataImportInput.value = "";
-        if (!file) {
-          setDataToolsBusy(false);
-          return;
-        }
+        if (!file) return;
         try {
           const text = await readFileText(file);
           const parsed = JSON.parse(text);
@@ -6531,8 +5980,6 @@
           toast(ok ? t("toast_import_done") : t("toast_import_failed"));
         } catch {
           toast(t("toast_import_invalid"));
-        } finally {
-          setDataToolsBusy(false);
         }
       });
     }
@@ -6760,7 +6207,6 @@
     let userAuraVerified = Boolean(state && state.tasks && state.tasks.prefs && state.tasks.prefs.userVerified);
     let userAuraRequested = false;
     let userWatchId = null;
-    let userWatchRetryTimer = null;
     let lastUserLatLng = null;
     let lastUserLatLngRaw = null;
     let lastUserLatLngBlurred = null;
@@ -6811,13 +6257,6 @@
     };
     const agentsById = new Map();
     let agentSeq = 0;
-    let auraPopup = null;
-    let auraPopupTarget = null; // { kind: "user" } | { kind: "agent", id }
-    let auraPopupMutating = false;
-    let auraPopupSyncAt = 0;
-    let ignoreMapClickUntil = 0;
-    let mapDmTarget = null; // { kind, id }
-    const mapDmReplyTimers = new Set();
 
     const setGpsBadge = (message, kind = "off") => {
       if (!els.mapGps) return;
@@ -6868,82 +6307,6 @@
         }
       }
       return null;
-    };
-
-    const normalizeAuraTarget = (target) => {
-      if (!target || typeof target !== "object") return null;
-      const kind = String(target.kind || "").trim();
-      if (kind === "user") return { kind: "user" };
-      if (kind === "agent") {
-        const id = String(target.id || "").trim();
-        if (!id) return null;
-        return { kind: "agent", id };
-      }
-      return null;
-    };
-
-    const bumpMapClickIgnore = (ms = 320) => {
-      ignoreMapClickUntil = nowMs() + clampInt(ms, 80, 2000, 320);
-    };
-
-    const shouldIgnoreMapClick = () => nowMs() < ignoreMapClickUntil;
-
-    const actorLabelForMap = (actor) => {
-      if (!actor || typeof actor !== "object") return "—";
-      if (actor.kind === "user") return "@you";
-      if (actor.kind === "agent") {
-        const a = agentsById.get(String(actor.id || ""));
-        if (a && a.handle) return String(a.handle);
-        return "@sim";
-      }
-      return "—";
-    };
-
-    const ensureMapDmState = () => {
-      if (!state.ui || typeof state.ui !== "object") state.ui = {};
-      state.ui.mapDm = normalizeMapDmState(state.ui.mapDm);
-      return state.ui.mapDm;
-    };
-
-    const mapDmKeyForActor = (actor) => {
-      const a = normalizeAuraTarget(actor);
-      if (!a || a.kind !== "agent") return "";
-      return `agent:${a.id}`;
-    };
-
-    const ensureMapDmThread = (actor) => {
-      const key = mapDmKeyForActor(actor);
-      if (!key) return null;
-      const mapDmState = ensureMapDmState();
-      const threads = mapDmState.threads;
-      if (!threads[key] || typeof threads[key] !== "object") {
-        threads[key] = { label: actorLabelForMap(actor), messages: [] };
-      }
-      const thread = threads[key];
-      thread.label = actorLabelForMap(actor);
-      if (!Array.isArray(thread.messages)) thread.messages = [];
-      thread.messages = thread.messages
-        .filter((m) => m && typeof m === "object")
-        .map((m) => ({
-          id: String(m.id || ""),
-          from: String(m.from || "") === "peer" ? "peer" : "me",
-          text: String(m.text || "")
-            .replace(/\s+/g, " ")
-            .trim()
-            .slice(0, 240),
-          at: Number(m.at) || 0
-        }))
-        .filter((m) => m.id && m.text)
-        .slice(-120);
-      return { key, thread };
-    };
-
-    const mapDmTargetAvailable = (target) => {
-      const a = normalizeAuraTarget(target);
-      if (!a) return false;
-      if (a.kind === "user") return Boolean(lastUserLatLng);
-      if (a.kind === "agent") return Boolean(agentsById.get(a.id));
-      return false;
     };
 
     const taskLineStyle = (task) => {
@@ -7072,13 +6435,8 @@
       [5 * DECAY_MINUTE_MS, 0.1],
       [6 * DECAY_MINUTE_MS, 0.05],
     ];
-    const connection =
-      (typeof navigator !== "undefined" && (navigator.connection || navigator.mozConnection || navigator.webkitConnection)) || null;
-    const dataSaverOn = Boolean(connection && connection.saveData);
-    const lowMemoryDevice = Boolean(typeof navigator !== "undefined" && Number.isFinite(Number(navigator.deviceMemory)) && Number(navigator.deviceMemory) <= 4);
-    const perfProfileScale = dataSaverOn || lowMemoryDevice ? 0.76 : 1;
     const OSRM_BASE = "https://router.project-osrm.org";
-    const ROUTE_POINT_LIMIT = dataSaverOn ? 170 : lowMemoryDevice ? 200 : 260;
+    const ROUTE_POINT_LIMIT = 260;
     const ROUTE_CACHE_MAX = 80;
     const ROUTE_FETCH_TIMEOUT_MS = 4500;
 
@@ -7112,65 +6470,6 @@
     };
 
     const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
-
-    let mapInMotion = false;
-    let mapMotionCooldown = null;
-
-    const setMapInMotion = (next) => {
-      const on = Boolean(next);
-      if (mapInMotion === on) return;
-      mapInMotion = on;
-      refreshAgentDialogs();
-      syncMarketPosts();
-      syncEvents();
-    };
-
-    const scheduleMapMotionSettled = () => {
-      if (mapMotionCooldown) window.clearTimeout(mapMotionCooldown);
-      mapMotionCooldown = window.setTimeout(() => {
-        mapMotionCooldown = null;
-        setMapInMotion(false);
-      }, 220);
-    };
-
-    const zoomLodScale = () => {
-      const z = clamp(map.getZoom(), STREET_MIN_ZOOM, 18);
-      const t = (z - STREET_MIN_ZOOM) / (18 - STREET_MIN_ZOOM);
-      return 0.22 + 0.78 * Math.pow(t, 1.5);
-    };
-
-    const minAuraDotRadius = () => {
-      const z = map.getZoom();
-      if (z <= 13) return 2.1;
-      if (z <= 15) return 2.9;
-      if (z <= 17) return 3.7;
-      return 4.6;
-    };
-
-    const eliteFactor = (score, threshold = 0.84, power = 2.8) => {
-      const s = clamp(Number(score) || 0, 0, 1);
-      const x = clamp((s - threshold) / Math.max(1e-6, 1 - threshold), 0, 1);
-      return Math.pow(x, Math.max(1.05, Number(power) || 2.2));
-    };
-
-    const userProminenceScale = (strength) => {
-      const elite = eliteFactor(strength, 0.9, 3.2);
-      return 0.24 + elite * 2.9;
-    };
-
-    const agentPrestigeScore = (agent) => {
-      if (!agent || typeof agent !== "object") return 0;
-      const rating = clamp((Number(agent.rating) - 3.8) / 1.2, 0, 1);
-      const done = clamp(Math.log10(1 + Math.max(0, Number(agent.tasksDone) || 0)) / 2.4, 0, 1);
-      const onTime = clamp((Number(agent.onTimePct) - 80) / 20, 0, 1);
-      const verified = agent.verified ? 0.2 : 0;
-      return clamp(rating * 0.48 + done * 0.34 + onTime * 0.18 + verified, 0, 1);
-    };
-
-    const agentProminenceScale = (agent) => {
-      const elite = eliteFactor(agentPrestigeScore(agent), 0.82, 2.7);
-      return 0.24 + elite * 2.7;
-    };
 
     const wrapLng = (lng) => {
       const x = ((lng + 180) % 360 + 360) % 360 - 180;
@@ -7369,7 +6668,7 @@
 
     const agentDialogText = (agent) => {
       if (!agent) return "";
-      if (agent.state === "moving") return "";
+      if (agent.state === "moving") return t("sim_doing_transit");
       if (agent.stopType === "eat") return t("sim_doing_eating");
       if (agent.stopType === "transit") return t("sim_doing_transit");
       return t("sim_doing_resting");
@@ -7377,7 +6676,7 @@
 
     const syncAgentDialog = (agent) => {
       if (!agent || !agent.outer) return;
-      const want = !mapInMotion && map.getZoom() >= DIALOG_MIN_ZOOM;
+      const want = map.getZoom() >= DIALOG_MIN_ZOOM;
       const text = want ? agentDialogText(agent) : "";
 
       if (!text) {
@@ -7479,12 +6778,12 @@
     };
 
     const auraTargetCountForZoom = (zoom) => {
-      // Zoomed-out = wider view = more simulated auras, but keep density manageable.
+      // Zoomed-out = wider view = more simulated auras.
       const z = clamp(zoom, STREET_MIN_ZOOM, 18);
       const t = (18 - z) / (18 - STREET_MIN_ZOOM); // 0..1
-      const min = 10;
-      const max = 44;
-      return Math.max(6, Math.round((min + t * (max - min)) * perfProfileScale));
+      const min = 14;
+      const max = 60;
+      return Math.round(min + t * (max - min));
     };
 
     const createAuraLayer = (latLng, fill, radius, fillOpacity) => {
@@ -7500,10 +6799,6 @@
     const removeUserAuraLayers = () => {
       for (const l of userAuraLayers) l.remove();
       userAuraLayers = [];
-      const target = normalizeAuraTarget(auraPopupTarget);
-      if (target && target.kind === "user") {
-        closeAuraPopup({ clearTarget: true });
-      }
     };
 
     const applyUserAuraStyle = () => {
@@ -7517,20 +6812,16 @@
       const fill = mixHex(userAuraColor, GRAY_HEX, grayT);
       const bound = mixHex(fill, BOUND_MIX_HEX, 0.28);
       const radiusScale = radiusScaleFromDecay(decay);
-      const strengthScale = 0.58 + 0.82 * Math.pow(strength, 1.35);
-      const lodScale = zoomLodScale();
-      const prominenceScale = userProminenceScale(strength);
+      const strengthScale = 0.84 + 0.58 * strength;
       const strengthOpacity = 0.65 + 0.95 * strength;
       const rep = reputationFactorForKey(userKey);
-      const repScale = clamp(rep, 0.84, 1.22);
-      const repOpacity = clamp(1 + (repScale - 1) * 0.6, 0.84, 1.14);
+      const repScale = clamp(rep, 0.86, 1.16);
+      const repOpacity = clamp(1 + (repScale - 1) * 0.6, 0.86, 1.12);
       // Self view: opacity stays, only size decays.
       const opacityAgeFactor = selfPreciseMode ? 1 : decay;
-      const visibilityOpacityScale = clamp(0.4 + lodScale * 0.35 + Math.min(1, prominenceScale) * 0.4, 0.22, 1.15);
       // No center dot: layered haze only.
-      const baseOpacities = [0.05, 0.075, 0.10];
-      const baseRadii = [56, 40, 27];
-      const minRadius = minAuraDotRadius();
+      const baseOpacities = [0.06, 0.09, 0.12];
+      const baseRadii = [70, 52, 36];
       for (let i = 0; i < userAuraLayers.length; i++) {
         const isOuter = i === 0;
         const showBound = Boolean(userAuraVerified) && isOuter;
@@ -7542,9 +6833,9 @@
           weight: showBound ? 1.7 : 0,
           opacity: showBound ? (selfPreciseMode ? 0.72 : clamp(0.65 * opacityAgeFactor, 0.22, 0.78)) : 0,
           fillColor: fill,
-          fillOpacity: clamp(o * strengthOpacity * opacityAgeFactor * repOpacity * visibilityOpacityScale, 0.008, 0.24)
+          fillOpacity: clamp(o * strengthOpacity * opacityAgeFactor * repOpacity, 0.012, 0.28)
         });
-        userAuraLayers[i].setRadius(Math.max(minRadius, r * strengthScale * radiusScale * repScale * lodScale * prominenceScale));
+        userAuraLayers[i].setRadius(Math.max(10, r * strengthScale * radiusScale * repScale));
       }
     };
 
@@ -7552,18 +6843,38 @@
       if (!latLng) return;
       if (userAuraLayers.length === 0) {
         userAuraLayers = [
-          createAuraLayer(latLng, userAuraColor, 56, 0.05),
-          createAuraLayer(latLng, userAuraColor, 40, 0.075),
-          createAuraLayer(latLng, userAuraColor, 27, 0.10)
+          createAuraLayer(latLng, userAuraColor, 70, 0.06),
+          createAuraLayer(latLng, userAuraColor, 52, 0.09),
+          createAuraLayer(latLng, userAuraColor, 36, 0.12)
         ];
 
         const onClick = (e) => {
           const llClick = e && e.latlng ? e.latlng : latLng;
-          if (e && e.originalEvent && typeof e.originalEvent.stopPropagation === "function") {
-            e.originalEvent.stopPropagation();
-          }
-          bumpMapClickIgnore(420);
-          openAuraPopupForTarget({ kind: "user" }, llClick);
+          const longTerm = computeLongTermAura(nowMs());
+          const parts = Array.isArray(longTerm.byActivity) ? longTerm.byActivity.slice(0, 6) : [];
+          const total = parts.reduce((acc, it) => acc + (Number(it && it.weight) || 0), 0) || 0;
+
+          const rows = total
+            ? parts
+                .map((it) => {
+                  const color = (it && it.colorHex) || "#FF6A00";
+                  const name = escapeHtml(normalizeActivityText((it && it.label) || "—"));
+                  const pct = Math.round(((Number(it && it.weight) || 0) / total) * 100);
+                  return `<div class="auraPop__row"><span class="auraPop__dot" style="background:${color}"></span><span class="auraPop__name">${name}</span><span class="auraPop__val">${pct}%</span></div>`;
+                })
+                .join("")
+            : `<div class="auraPop__empty">${escapeHtml(t("aura_no_history_short"))}</div>`;
+
+          const html = `<div class="auraPop"><div class="auraPop__title">${escapeHtml(
+            t("popup_aura_components")
+          )}</div><div class="auraPop__sub">${escapeHtml(t("popup_you"))}</div><div class="auraPop__hex">${escapeHtml(
+            longTerm.hex
+          )}</div>${rows}</div>`;
+
+          L.popup({ closeButton: true, autoPan: true, offset: [0, -6] })
+            .setLatLng(llClick)
+            .setContent(html)
+            .openOn(map);
         };
 
         for (const l of userAuraLayers) l.on("click", onClick);
@@ -7641,19 +6952,6 @@
       }
     };
 
-    // Self-view must remain precise so users can reliably see their own aura location.
-    const enableSelfPreciseMode = () => {
-      if (selfPreciseMode) return;
-      selfPreciseMode = true;
-      if (!lastUserLatLngRaw) return;
-      lastUserLatLng = lastUserLatLngRaw;
-      if (userAuraEnabled) {
-        ensureUserAuraLayers(lastUserLatLng);
-        for (const l of userAuraLayers) l.setLatLng(lastUserLatLng);
-        applyUserAuraStyle();
-      }
-    };
-
     const setUserLatLng = (lat, lng, accuracyM, { ensureRing = false } = {}) => {
       lastUserLatLngRaw = L.latLng(clamp(lat, -85, 85), wrapLng(lng));
       lastUserLatLngBlurred = blurUserLatLng(lastUserLatLngRaw);
@@ -7666,7 +6964,6 @@
       }
 
       if (tasksForLines.length) syncTaskLines(simNow());
-      if (auraPopupTarget) syncAuraPopup();
 
       // Privacy: do not render an accuracy ring.
       if (myAccuracyRing) {
@@ -7675,87 +6972,7 @@
       }
     };
 
-    const gpsMessageFromError = (err) => {
-      const code = err && typeof err.code === "number" ? err.code : 0;
-      let msg = t("gps_error");
-      if (code === 1) msg = t("gps_denied");
-      if (code === 2) msg = t("gps_unavailable");
-      if (code === 3) msg = t("gps_timeout");
-      return msg;
-    };
-
-    const getCurrentPositionOnce = (options) =>
-      new Promise((resolve, reject) => {
-        try {
-          navigator.geolocation.getCurrentPosition(resolve, reject, options);
-        } catch (err) {
-          reject(err);
-        }
-      });
-
-    const requestUserGpsFix = async ({ preferFresh = false } = {}) => {
-      if (!navigator.geolocation) {
-        const err = new Error("geolocation unsupported");
-        err.code = 0;
-        throw err;
-      }
-
-      const attempts = [
-        {
-          enableHighAccuracy: true,
-          timeout: preferFresh ? 16_000 : 12_000,
-          maximumAge: preferFresh ? 10_000 : 60_000
-        },
-        {
-          enableHighAccuracy: false,
-          timeout: 24_000,
-          maximumAge: preferFresh ? 45_000 : 300_000
-        }
-      ];
-
-      let lastErr = null;
-      for (const opts of attempts) {
-        try {
-          const pos = await getCurrentPositionOnce(opts);
-          const lat = Number(pos && pos.coords && pos.coords.latitude);
-          const lng = Number(pos && pos.coords && pos.coords.longitude);
-          if (Number.isFinite(lat) && Number.isFinite(lng)) {
-            const accuracy = Number(pos.coords && pos.coords.accuracy) || 0;
-            return { lat, lng, accuracy };
-          }
-          lastErr = { code: 2 };
-        } catch (err) {
-          lastErr = err;
-          const code = err && typeof err.code === "number" ? err.code : 0;
-          // Permission denied is final; other failures get one fallback attempt.
-          if (code === 1) break;
-        }
-      }
-
-      if (lastErr) throw lastErr;
-      const fallbackErr = new Error("gps unavailable");
-      fallbackErr.code = 2;
-      throw fallbackErr;
-    };
-
-    const clearUserWatchRetry = () => {
-      if (userWatchRetryTimer === null) return;
-      window.clearTimeout(userWatchRetryTimer);
-      userWatchRetryTimer = null;
-    };
-
-    const scheduleUserWatchRetry = (delayMs = 3_200) => {
-      if (!userAuraRequested) return;
-      if (userWatchRetryTimer !== null) return;
-      userWatchRetryTimer = window.setTimeout(() => {
-        userWatchRetryTimer = null;
-        if (!userAuraRequested || userWatchId !== null) return;
-        startUserWatch();
-      }, Math.max(1200, Number(delayMs) || 3200));
-    };
-
-    const stopUserWatch = ({ clearRetry = true } = {}) => {
-      if (clearRetry) clearUserWatchRetry();
+    const stopUserWatch = () => {
       if (userWatchId === null) return;
       try {
         navigator.geolocation.clearWatch(userWatchId);
@@ -7782,27 +6999,21 @@
           setUserLatLng(lat, lng, accuracy, { ensureRing: false });
           maybeSaveHomeFromRaw(lastUserLatLngRaw);
           setGpsBadge(t("map_gps_on"), "ok");
-          clearUserWatchRetry();
         },
         (err) => {
           const code = err && typeof err.code === "number" ? err.code : 0;
-          const msg = gpsMessageFromError(err);
-          const badge = code === 1 ? t("map_gps_off") : t("map_gps_error");
-          setGpsBadge(badge, "warn");
+          let msg = t("gps_error");
+          if (code === 1) msg = t("gps_denied");
+          if (code === 2) msg = t("gps_unavailable");
+          if (code === 3) msg = t("gps_timeout");
+          setGpsBadge(t("map_gps_off"), "warn");
           setMapStatus(msg, true);
-          if (code === 1) {
-            // User denied permission: don't auto-retry.
-            stopUserWatch();
-            return;
-          }
-          // Temporary signal issues: retry watch automatically.
-          stopUserWatch({ clearRetry: false });
-          scheduleUserWatchRetry(code === 3 ? 4200 : 3200);
+          stopUserWatch();
         },
         {
           enableHighAccuracy: true,
-          timeout: 18_000,
-          maximumAge: 60_000
+          timeout: 10_000,
+          maximumAge: 20_000
         }
       );
     };
@@ -7912,266 +7123,13 @@
       return `<div class="auraPop"><div class="auraPop__title">${escapeHtml(title)}</div><div class="auraPop__sub">${escapeHtml(who)} • ${escapeHtml(handle)}${verified}</div><div class="auraPop__hex">${escapeHtml(agent.auraHex || "#FF6A00")}</div>${rows || empty}</div>`;
     };
 
-    const userPopupHtml = () => {
-      const longTerm = computeLongTermAura(nowMs());
-      const parts = Array.isArray(longTerm.byActivity) ? longTerm.byActivity.slice(0, 6) : [];
-      const total = parts.reduce((acc, it) => acc + (Number(it && it.weight) || 0), 0) || 0;
-      const rows = total
-        ? parts
-            .map((it) => {
-              const color = (it && it.colorHex) || "#FF6A00";
-              const name = escapeHtml(normalizeActivityText((it && it.label) || "—"));
-              const pct = Math.round(((Number(it && it.weight) || 0) / total) * 100);
-              return `<div class="auraPop__row"><span class="auraPop__dot" style="background:${color}"></span><span class="auraPop__name">${name}</span><span class="auraPop__val">${pct}%</span></div>`;
-            })
-            .join("")
-        : `<div class="auraPop__empty">${escapeHtml(t("aura_no_history_short"))}</div>`;
-
-      return `<div class="auraPop"><div class="auraPop__title">${escapeHtml(
-        t("popup_aura_components")
-      )}</div><div class="auraPop__sub">${escapeHtml(t("popup_you"))}</div><div class="auraPop__hex">${escapeHtml(
-        longTerm.hex
-      )}</div>${rows}</div>`;
+    const openAgentPopup = (agent, latLng) => {
+      const html = agentPopupHtml(agent);
+      L.popup({ closeButton: true, autoPan: true, offset: [0, -6] })
+        .setLatLng(latLng)
+        .setContent(html)
+        .openOn(map);
     };
-
-    const mapDmRender = () => {
-      const notifyAttention = () => {
-        if (typeof renderAttentionFocus === "function") renderAttentionFocus();
-      };
-      if (!els.mapDm || !els.mapDmTarget || !els.mapDmList) return;
-      const target = normalizeAuraTarget(mapDmTarget);
-      if (!target || target.kind !== "agent") {
-        els.mapDm.hidden = true;
-        if (els.mapDmTarget) els.mapDmTarget.textContent = "—";
-        if (els.mapDmInput) {
-          els.mapDmInput.value = "";
-          els.mapDmInput.disabled = true;
-          els.mapDmInput.placeholder = t("map_msg_target_unknown");
-        }
-        if (els.mapDmSend) els.mapDmSend.disabled = true;
-        if (els.mapDmList) els.mapDmList.textContent = "";
-        notifyAttention();
-        return;
-      }
-
-      const rec = ensureMapDmThread(target);
-      if (!rec) return;
-
-      const label = rec.thread.label || actorLabelForMap(target);
-      const available = mapDmTargetAvailable(target);
-      els.mapDm.hidden = false;
-      els.mapDmTarget.textContent = `${t("map_msg_target_prefix")}: ${label}`;
-
-      if (els.mapDmInput) {
-        els.mapDmInput.disabled = !available;
-        els.mapDmInput.placeholder = available ? t("map_msg_placeholder") : t("map_msg_target_unavailable");
-      }
-      if (els.mapDmSend) els.mapDmSend.disabled = !available;
-
-      const list = els.mapDmList;
-      list.textContent = "";
-
-      const messages = Array.isArray(rec.thread.messages) ? rec.thread.messages : [];
-      if (!available) {
-        const empty = document.createElement("div");
-        empty.className = "mapDm__empty";
-        empty.textContent = t("map_msg_target_unavailable");
-        list.appendChild(empty);
-        notifyAttention();
-        return;
-      }
-
-      if (!messages.length) {
-        const empty = document.createElement("div");
-        empty.className = "mapDm__empty";
-        empty.textContent = t("map_msg_empty");
-        list.appendChild(empty);
-        notifyAttention();
-        return;
-      }
-
-      for (const msg of messages) {
-        const row = document.createElement("div");
-        row.className = `mapDm__msg ${msg.from === "peer" ? "mapDm__msg--peer" : "mapDm__msg--me"}`;
-
-        const text = document.createElement("div");
-        text.className = "mapDm__msgText";
-        text.textContent = String(msg.text || "");
-
-        const meta = document.createElement("div");
-        meta.className = "mapDm__msgMeta";
-        meta.textContent = fmtHm(Number(msg.at) || nowMs());
-
-        row.appendChild(text);
-        row.appendChild(meta);
-        list.appendChild(row);
-      }
-
-      list.scrollTop = list.scrollHeight;
-      notifyAttention();
-    };
-
-    const setMapDmTarget = (actor) => {
-      const next = normalizeAuraTarget(actor);
-      if (!next || next.kind !== "agent") {
-        mapDmTarget = null;
-        mapDmRender();
-        return;
-      }
-      mapDmTarget = next;
-      ensureMapDmThread(next);
-      mapDmRender();
-    };
-
-    const pushMapDmMessage = (actor, { from = "me", text = "", at = nowMs() } = {}) => {
-      const target = normalizeAuraTarget(actor);
-      if (!target || target.kind !== "agent") return false;
-      const cleanText = String(text || "")
-        .replace(/\s+/g, " ")
-        .trim()
-        .slice(0, 240);
-      if (!cleanText) return false;
-      const rec = ensureMapDmThread(target);
-      if (!rec) return false;
-      const msg = {
-        id: uid(),
-        from: from === "peer" ? "peer" : "me",
-        text: cleanText,
-        at: Number(at) || nowMs()
-      };
-      rec.thread.messages.push(msg);
-      rec.thread.messages = rec.thread.messages.slice(-120);
-      saveState();
-      mapDmRender();
-      return true;
-    };
-
-    const queueMapDmReply = (actor) => {
-      const target = normalizeAuraTarget(actor);
-      if (!target || target.kind !== "agent") return;
-      const id = window.setTimeout(() => {
-        mapDmReplyTimers.delete(id);
-        if (!mapDmTargetAvailable(target)) return;
-        const replies = [t("map_msg_reply_on_way"), t("map_msg_reply_busy"), t("map_msg_reply_confirm")];
-        const reply = replies[Math.floor(Math.random() * replies.length)] || t("map_msg_reply_confirm");
-        pushMapDmMessage(target, { from: "peer", text: reply, at: nowMs() });
-      }, 900 + Math.random() * 1800);
-      mapDmReplyTimers.add(id);
-    };
-
-    const sendMapDm = () => {
-      const target = normalizeAuraTarget(mapDmTarget);
-      if (!target || target.kind !== "agent") {
-        toast(t("toast_map_msg_pick_target"));
-        return;
-      }
-      if (!mapDmTargetAvailable(target)) {
-        toast(t("map_msg_target_unavailable"));
-        mapDmRender();
-        return;
-      }
-      const raw = els.mapDmInput ? els.mapDmInput.value : "";
-      const text = String(raw || "")
-        .replace(/\s+/g, " ")
-        .trim();
-      if (!text) {
-        toast(t("toast_map_msg_empty"));
-        return;
-      }
-      if (!pushMapDmMessage(target, { from: "me", text, at: nowMs() })) {
-        toast(t("toast_map_msg_empty"));
-        return;
-      }
-      if (els.mapDmInput) els.mapDmInput.value = "";
-      toast(t("toast_map_msg_sent"));
-      queueMapDmReply(target);
-    };
-
-    const ensureAuraPopup = () => {
-      if (!auraPopup) {
-        auraPopup = L.popup({ closeButton: true, autoPan: true, offset: [0, -6] });
-      }
-      return auraPopup;
-    };
-
-    const auraPopupLatLngForTarget = (target) => {
-      const t0 = normalizeAuraTarget(target);
-      if (!t0) return null;
-      if (t0.kind === "user") return lastUserLatLng || null;
-      return actorLatLngFor(t0);
-    };
-
-    const auraPopupHtmlForTarget = (target) => {
-      const t0 = normalizeAuraTarget(target);
-      if (!t0) return "";
-      if (t0.kind === "user") return userPopupHtml();
-      const agent = agentsById.get(String(t0.id || ""));
-      if (!agent) return "";
-      return agentPopupHtml(agent);
-    };
-
-    const closeAuraPopup = ({ clearTarget = true } = {}) => {
-      if (auraPopup) {
-        auraPopupMutating = true;
-        try {
-          map.closePopup(auraPopup);
-        } catch {
-          // ignore
-        }
-        auraPopupMutating = false;
-      }
-      if (clearTarget) auraPopupTarget = null;
-      if (clearTarget) setMapDmTarget(null);
-    };
-
-    const openAuraPopupForTarget = (target, latLng = null) => {
-      const next = normalizeAuraTarget(target);
-      if (!next) return;
-      const ll = latLng || auraPopupLatLngForTarget(next);
-      if (!ll) return;
-      const html = auraPopupHtmlForTarget(next);
-      if (!html) return;
-      const popup = ensureAuraPopup();
-      auraPopupMutating = true;
-      popup.setLatLng(ll).setContent(html).openOn(map);
-      auraPopupMutating = false;
-      auraPopupTarget = next;
-      auraPopupSyncAt = nowMs();
-      if (next.kind === "agent") setMapDmTarget(next);
-      else setMapDmTarget(null);
-      bumpMapClickIgnore(360);
-    };
-
-    const syncAuraPopup = ({ force = false } = {}) => {
-      const target = normalizeAuraTarget(auraPopupTarget);
-      if (!target || !auraPopup) return;
-      const ll = auraPopupLatLngForTarget(target);
-      if (!ll) {
-        closeAuraPopup({ clearTarget: true });
-        return;
-      }
-      const now = nowMs();
-      const shouldRefresh = force || target.kind === "agent" || now - auraPopupSyncAt > 6_000;
-      auraPopupMutating = true;
-      auraPopup.setLatLng(ll);
-      if (shouldRefresh) {
-        const html = auraPopupHtmlForTarget(target);
-        if (html) {
-          auraPopup.setContent(html);
-          auraPopupSyncAt = now;
-        }
-      }
-      if (!map.hasLayer(auraPopup)) auraPopup.openOn(map);
-      auraPopupMutating = false;
-    };
-
-    if (els.mapDmForm) {
-      els.mapDmForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        sendMapDm();
-      });
-    }
-    mapDmRender();
 
     const applyAgentStyle = (agent, now) => {
       const tNow = Number.isFinite(Number(now)) ? Number(now) : simNow();
@@ -8203,14 +7161,10 @@
       fill = mixHex(fill, AURA_GRAY_HEX, grayT);
       const bound = mixHex(fill, BOUND_MIX_HEX, 0.28);
       const opacityScale = decay * opacityBoost;
-      const lodScale = zoomLodScale();
-      const prominenceScale = agentProminenceScale(agent);
       const repKey = `agent:${String(agent && agent.id ? agent.id : "")}`;
       const rep = reputationFactorForKey(repKey);
-      const repScale = clamp(rep, 0.84, 1.2);
-      const repOpacity = clamp(1 + (repScale - 1) * 0.6, 0.84, 1.14);
-      const visibilityOpacityScale = clamp(0.35 + lodScale * 0.4 + Math.min(1, prominenceScale) * 0.4, 0.2, 1.16);
-      const minRadius = minAuraDotRadius();
+      const repScale = clamp(rep, 0.86, 1.16);
+      const repOpacity = clamp(1 + (repScale - 1) * 0.6, 0.86, 1.12);
 
       const layers = Array.isArray(agent.layers) && agent.layers.length ? agent.layers : [agent.outer].filter(Boolean);
       const baseRadii = Array.isArray(agent.baseRadii) && agent.baseRadii.length
@@ -8233,9 +7187,9 @@
           weight: showBound ? 1.7 : 0,
           opacity: showBound ? clamp(0.65 * opacityScale, 0.18, 0.85) : 0,
           fillColor: fill,
-          fillOpacity: clamp(baseO * opacityScale * repOpacity * visibilityOpacityScale, 0.008, 0.26)
+          fillOpacity: clamp(baseO * opacityScale * repOpacity, 0.012, 0.34)
         });
-        layer.setRadius(Math.max(minRadius, baseR * radiusScale * repScale * lodScale * prominenceScale));
+        layer.setRadius(Math.max(10, baseR * radiusScale * repScale));
       }
     };
 
@@ -8279,10 +7233,6 @@
         }
       }
       sim.agents = [];
-      const target = normalizeAuraTarget(auraPopupTarget);
-      if (target && target.kind === "agent") {
-        closeAuraPopup({ clearTarget: true });
-      }
     };
 
     const stopSimInternal = () => {
@@ -8353,9 +7303,9 @@
       const rating = Math.round(randBetween(verified ? 4.4 : 4.0, 5.0) * 10) / 10;
       const tasksDone = Math.round(randBetween(verified ? 12 : 0, verified ? 220 : 90));
       const onTimePct = Math.round(randBetween(verified ? 92 : 80, 99));
-      const baseOuterRadius = randBetween(20, 36);
-      const baseRadii = [baseOuterRadius, baseOuterRadius * 0.68, baseOuterRadius * 0.44];
-      const baseOpacities = [0.045, 0.07, 0.1];
+      const baseOuterRadius = randBetween(44, 68);
+      const baseRadii = [baseOuterRadius, baseOuterRadius * 0.72, baseOuterRadius * 0.48];
+      const baseOpacities = [0.05, 0.08, 0.12];
       const layers = baseRadii.map((r, i) =>
         createAuraLayer(route.points[0], persona.fill, r, baseOpacities[i] || 0.08)
       );
@@ -8408,11 +7358,7 @@
 
       const onClick = (e) => {
         const llClick = e && e.latlng ? e.latlng : agent.outer.getLatLng();
-        if (e && e.originalEvent && typeof e.originalEvent.stopPropagation === "function") {
-          e.originalEvent.stopPropagation();
-        }
-        bumpMapClickIgnore(420);
-        openAuraPopupForTarget({ kind: "agent", id: agent.id }, llClick);
+        openAgentPopup(agent, llClick);
       };
       for (const l of layers) l.on("click", onClick);
       syncAgentDialog(agent);
@@ -8502,8 +7448,6 @@
 
         maybeUpdateAgentStyle(agent, now);
       }
-
-      if (auraPopupTarget) syncAuraPopup();
 
       if (tasksForLines.length && now - lastLineSyncAt > 120) {
         syncTaskLines(now);
@@ -8684,7 +7628,19 @@
       syncSimForView();
     };
 
-    const syncUserAuraRequestedState = () => {
+    const applyPeopleLayerFilter = () => {
+      const showPeople = Boolean(mapLayerFilters.people);
+      if (!showPeople) {
+        stopSimInternal();
+        setSimUi();
+        userAuraEnabled = false;
+        stopUserWatch();
+        removeUserAuraLayers();
+        setGpsBadge(t("map_gps_off"), "off");
+        return;
+      }
+
+      startSim();
       const wantAura = Boolean(userAuraRequested);
       if (!wantAura) {
         userAuraEnabled = false;
@@ -8694,30 +7650,12 @@
         return;
       }
 
-      enableSelfPreciseMode();
       userAuraEnabled = true;
-      if (!lastUserLatLng && lastUserLatLngRaw) {
-        lastUserLatLng = lastUserLatLngRaw;
-      }
       if (lastUserLatLng) {
         ensureUserAuraLayers(lastUserLatLng);
         for (const l of userAuraLayers) l.setLatLng(lastUserLatLng);
       }
       startUserWatch();
-    };
-
-    const applyPeopleLayerFilter = () => {
-      const showPeople = Boolean(mapLayerFilters.people);
-      if (!showPeople) {
-        stopSimInternal();
-        setSimUi();
-        // Keep self aura available when the user explicitly turns it on.
-        syncUserAuraRequestedState();
-        return;
-      }
-
-      startSim();
-      syncUserAuraRequestedState();
     };
 
     if (els.mapReset) {
@@ -8745,7 +7683,7 @@
       });
     }
 
-    const showMyLocation = async () => {
+    const showMyLocation = () => {
       if (!els.mapLocate) return;
       if (!navigator.geolocation) {
         setGpsBadge(t("map_gps_unsupported"), "warn");
@@ -8757,76 +7695,76 @@
       els.mapLocate.disabled = true;
       setGpsBadge(t("map_gps_request"), "off");
       setMapStatus(t("map_status_requesting_gps"));
-      try {
-        const { lat, lng, accuracy } = await requestUserGpsFix({ preferFresh: true });
-        enableSelfPreciseMode();
-        setUserLatLng(lat, lng, accuracy, { ensureRing: false });
-        maybeSaveHomeFromRaw(lastUserLatLngRaw);
-        map.flyTo([clamp(lat, -85, 85), wrapLng(lng)], Math.max(map.getZoom(), 16), {
-          duration: 0.8
-        });
 
-        setGpsBadge(t("map_gps_on"), "ok");
-        setMapStatus(t("map_status_gps_private"));
-        toast(t("gps_ready"));
-        window.requestAnimationFrame(() => map.invalidateSize());
-      } catch (err) {
-        const code = err && typeof err.code === "number" ? err.code : 0;
-        const msg = gpsMessageFromError(err);
-        const badge = code === 1 ? t("map_gps_off") : t("map_gps_error");
-        setGpsBadge(badge, "warn");
-        setMapStatus(msg, true);
-        toast(msg);
-      } finally {
-        els.mapLocate.disabled = false;
-      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          const accuracy = Number(pos.coords.accuracy) || 0;
+
+          selfPreciseMode = true;
+          setUserLatLng(lat, lng, accuracy, { ensureRing: false });
+          maybeSaveHomeFromRaw(lastUserLatLngRaw);
+          map.flyTo([clamp(lat, -85, 85), wrapLng(lng)], Math.max(map.getZoom(), 16), {
+            duration: 0.8
+          });
+
+          setGpsBadge(t("map_gps_on"), "ok");
+          setMapStatus(t("map_status_gps_private"));
+          toast(t("gps_ready"));
+
+          window.requestAnimationFrame(() => map.invalidateSize());
+          els.mapLocate.disabled = false;
+        },
+        (err) => {
+          const code = err && typeof err.code === "number" ? err.code : 0;
+          let msg = t("gps_error");
+          if (code === 1) msg = t("gps_denied");
+          if (code === 2) msg = t("gps_unavailable");
+          if (code === 3) msg = t("gps_timeout");
+
+          setGpsBadge(t("map_gps_off"), "warn");
+          setMapStatus(msg, true);
+          toast(msg);
+          els.mapLocate.disabled = false;
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10_000,
+          maximumAge: 60_000
+        }
+      );
     };
 
     if (els.mapLocate) {
       els.mapLocate.addEventListener("click", showMyLocation);
     }
 
-    map.on("movestart zoomstart", () => {
-      if (mapMotionCooldown) {
-        window.clearTimeout(mapMotionCooldown);
-        mapMotionCooldown = null;
-      }
-      setMapInMotion(true);
-    });
-
     map.on("moveend zoomend", () => {
-      scheduleMapMotionSettled();
-      if (sim.enabled) {
-        setSimUi();
+      if (!sim.enabled) return;
+      setSimUi();
 
-        if (map.getZoom() < STREET_MIN_ZOOM) {
-          syncSimForView();
-        } else {
-          syncSimForView();
-
-          const movedM = map.distance(map.getCenter(), rebuildAnchor.center);
-          const zoomDelta = Math.abs(map.getZoom() - rebuildAnchor.zoom);
-          if (movedM > 1200 || zoomDelta >= 2) {
-            scheduleRebuild();
-          } else {
-            // Minor view change: keep routes and just scale aura count.
-          }
-        }
+      if (map.getZoom() < STREET_MIN_ZOOM) {
+        syncSimForView();
+        return;
       }
-      if (auraPopupTarget) syncAuraPopup({ force: true });
+
+      syncSimForView();
+
+      const movedM = map.distance(map.getCenter(), rebuildAnchor.center);
+      const zoomChanged = map.getZoom() !== rebuildAnchor.zoom;
+      const zoomDelta = Math.abs(map.getZoom() - rebuildAnchor.zoom);
+      if (movedM > 1200 || zoomDelta >= 2) {
+        scheduleRebuild();
+      } else {
+        // Minor view change: keep routes and just scale aura count.
+      }
     });
 
     map.on("zoomend", () => {
       if (sim.enabled) refreshAgentDialogs();
       syncMarketPosts();
       syncEvents();
-    });
-
-    map.on("popupclose", (e) => {
-      if (!auraPopup || !e || e.popup !== auraPopup) return;
-      if (auraPopupMutating) return;
-      auraPopupTarget = null;
-      setMapDmTarget(null);
     });
 
     // --- Map picking + marketplace overlays (tasks route draft, market posts, scheduled auras) ---
@@ -8892,22 +7830,16 @@
       els.mapHudCancel.addEventListener("click", () => cancelPick({ resetStatus: true }));
     }
     map.on("click", (e) => {
-      if (pickCb) {
-        const cb = pickCb;
-        cancelPick({ resetStatus: true });
-        const ll = e && e.latlng ? e.latlng : null;
-        if (!ll) return;
-        try {
-          cb({ lat: ll.lat, lng: ll.lng });
-        } catch {
-          // ignore
-        }
-        return;
+      if (!pickCb) return;
+      const cb = pickCb;
+      cancelPick({ resetStatus: true });
+      const ll = e && e.latlng ? e.latlng : null;
+      if (!ll) return;
+      try {
+        cb({ lat: ll.lat, lng: ll.lng });
+      } catch {
+        // ignore
       }
-
-      if (shouldIgnoreMapClick()) return;
-      if (!auraPopupTarget && !mapDmTarget) return;
-      closeAuraPopup({ clearTarget: true });
     });
     window.addEventListener("keydown", (e) => {
       if (e && e.key === "Escape") cancelPick({ resetStatus: true });
@@ -9015,7 +7947,7 @@
       }
 
       const want = new Set();
-      const zoomOk = !mapInMotion && map.getZoom() >= DIALOG_MIN_ZOOM;
+      const zoomOk = map.getZoom() >= DIALOG_MIN_ZOOM;
       for (const post of marketForMap) {
         if (!post || !post.id) continue;
         const ll = toLatLngSafe(post.loc);
@@ -9106,7 +8038,7 @@
       }
 
       const want = new Set();
-      const zoomOk = !mapInMotion && map.getZoom() >= DIALOG_MIN_ZOOM;
+      const zoomOk = map.getZoom() >= DIALOG_MIN_ZOOM;
       const now = nowMs();
       for (const ev of eventsForMap) {
         if (!ev || !ev.id) continue;
@@ -9243,7 +8175,7 @@
         }
 
         userAuraRequested = Boolean(enabled);
-        const want = userAuraRequested;
+        const want = userAuraRequested && Boolean(mapLayerFilters.people);
         if (!want) {
           userAuraEnabled = false;
           stopUserWatch();
@@ -9252,43 +8184,51 @@
           return;
         }
 
-        enableSelfPreciseMode();
         userAuraEnabled = true;
-        if (!lastUserLatLng && lastUserLatLngRaw) {
-          lastUserLatLng = lastUserLatLngRaw;
-        }
         if (lastUserLatLng) {
           ensureUserAuraLayers(lastUserLatLng);
           for (const l of userAuraLayers) l.setLatLng(lastUserLatLng);
         }
         startUserWatch();
       },
-      requestGpsOnce: async () => {
-        if (!navigator.geolocation) {
-          setGpsBadge(t("map_gps_unsupported"), "warn");
-          const err = new Error("geolocation unsupported");
-          err.code = 0;
-          throw err;
-        }
-        setGpsBadge(t("map_gps_request"), "off");
-        setMapStatus(t("map_status_requesting_gps"));
-        try {
-          const { lat, lng, accuracy } = await requestUserGpsFix({ preferFresh: false });
-          setUserLatLng(lat, lng, accuracy, { ensureRing: false });
-          maybeSaveHomeFromRaw(lastUserLatLngRaw);
-          setGpsBadge(t("map_gps_on"), "ok");
-          setMapStatus(t("map_status_ready"));
-          return { lat, lng, accuracy };
-        } catch (err) {
-          const code = err && typeof err.code === "number" ? err.code : 0;
-          const msg = gpsMessageFromError(err);
-          const badge = code === 1 ? t("map_gps_off") : t("map_gps_error");
-          setGpsBadge(badge, "warn");
-          setMapStatus(msg, true);
-          const wrapped = new Error(msg);
-          wrapped.code = code;
-          throw wrapped;
-        }
+      requestGpsOnce: () => {
+        return new Promise((resolve, reject) => {
+          if (!navigator.geolocation) {
+            setGpsBadge(t("map_gps_unsupported"), "warn");
+            reject(new Error("geolocation unsupported"));
+            return;
+          }
+
+          setGpsBadge(t("map_gps_request"), "off");
+          setMapStatus(t("map_status_requesting_gps"));
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              const lat = pos.coords.latitude;
+              const lng = pos.coords.longitude;
+              const accuracy = Number(pos.coords.accuracy) || 0;
+              setUserLatLng(lat, lng, accuracy, { ensureRing: false });
+              maybeSaveHomeFromRaw(lastUserLatLngRaw);
+              setGpsBadge(t("map_gps_on"), "ok");
+              setMapStatus(t("map_status_ready"));
+              resolve({ lat, lng, accuracy });
+            },
+            (err) => {
+              const code = err && typeof err.code === "number" ? err.code : 0;
+              let msg = t("gps_error");
+              if (code === 1) msg = t("gps_denied");
+              if (code === 2) msg = t("gps_unavailable");
+              if (code === 3) msg = t("gps_timeout");
+              setGpsBadge(t("map_gps_off"), "warn");
+              setMapStatus(msg, true);
+              reject(new Error(msg));
+            },
+            {
+              enableHighAccuracy: true,
+              timeout: 10_000,
+              maximumAge: 60_000
+            }
+          );
+        });
       },
       setTasks: (tasks) => {
         tasksForLines = Array.isArray(tasks) ? tasks.slice() : [];
@@ -9420,8 +8360,6 @@
         }
         syncMarketPosts();
         syncEvents();
-        mapDmRender();
-        if (auraPopupTarget) syncAuraPopup({ force: true });
       }
     };
 
@@ -9574,27 +8512,9 @@
       const k = String(key || "");
       if (!k) return;
       const next = Boolean(el.open);
-      const tab = DROP_KEY_TO_TAB[k] || "";
-      const groupKeys = tab ? DROP_GROUP_KEYS[tab] || [] : [];
-
-      if (next && tab && groupKeys.length) {
-        for (const gk of groupKeys) {
-          const on = gk === k;
-          state.ui.drops[gk] = on;
-          const id = DROP_ID_BY_KEY[gk];
-          const otherEl = id ? document.getElementById(id) : null;
-          if (otherEl && otherEl !== el) setDetailsOpen(otherEl, on);
-        }
-      } else {
-        if (Boolean(state.ui.drops[k]) === next) {
-          renderAttentionFocus();
-          return;
-        }
-        state.ui.drops[k] = next;
-      }
+      if (Boolean(state.ui.drops[k]) === next) return;
+      state.ui.drops[k] = next;
       saveState();
-      if (tab) ensureSingleOpenDropForTab(tab);
-      renderAttentionFocus();
     });
   };
 
@@ -9607,7 +8527,6 @@
       if (state.ui.onboardingOpen === next) return;
       state.ui.onboardingOpen = next;
       saveState();
-      renderAttentionFocus();
     });
   }
 
@@ -10048,11 +8967,6 @@
   mapApi = initPaperMap();
   applyI18n();
   renderClock();
-  window.setInterval(() => {
-    renderClock();
-    if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
-    renderActivityList();
-    renderTaskList();
-  }, 10_000);
+  window.setInterval(renderClock, 10_000);
   render();
 })();
