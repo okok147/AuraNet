@@ -2670,11 +2670,41 @@
     const strokeW = 12;
     const circ = 2 * Math.PI * r;
 
-    const mkCircle = (attrs) => {
-      const el = document.createElementNS(NS, "circle");
+    const mkSvg = (tag, attrs) => {
+      const el = document.createElementNS(NS, tag);
       for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, String(v));
       return el;
     };
+    const mkCircle = (attrs) => mkSvg("circle", attrs);
+
+    const sketchFilterId = "auraChartSketchFilter";
+    const defs = mkSvg("defs", {});
+    const sketchFilter = mkSvg("filter", {
+      id: sketchFilterId,
+      x: "-22%",
+      y: "-22%",
+      width: "144%",
+      height: "144%",
+      "color-interpolation-filters": "sRGB"
+    });
+    const turb = mkSvg("feTurbulence", {
+      type: "fractalNoise",
+      baseFrequency: "0.86",
+      numOctaves: "2",
+      seed: "8",
+      result: "noise"
+    });
+    const displace = mkSvg("feDisplacementMap", {
+      in: "SourceGraphic",
+      in2: "noise",
+      scale: "0.85",
+      xChannelSelector: "R",
+      yChannelSelector: "G"
+    });
+    sketchFilter.appendChild(turb);
+    sketchFilter.appendChild(displace);
+    defs.appendChild(sketchFilter);
+    svg.appendChild(defs);
 
     const base = mkCircle({
       cx,
@@ -2682,9 +2712,23 @@
       r,
       fill: "none",
       stroke: "rgba(32, 24, 18, 0.10)",
-      "stroke-width": strokeW
+      "stroke-width": strokeW,
+      class: "auraChart__ringBase",
+      filter: `url(#${sketchFilterId})`
+    });
+    const baseEcho = mkCircle({
+      cx,
+      cy,
+      r,
+      fill: "none",
+      stroke: "rgba(80, 58, 36, 0.20)",
+      "stroke-width": strokeW * 0.76,
+      "stroke-dasharray": "3.2 2.4",
+      class: "auraChart__ringBase auraChart__ringBase--echo",
+      filter: `url(#${sketchFilterId})`
     });
     svg.appendChild(base);
+    svg.appendChild(baseEcho);
 
     if (total <= 0) {
       const li = document.createElement("li");
@@ -2718,19 +2762,41 @@
       const len = Math.max(0, frac * circ);
       if (len < 1.2) continue;
 
+      const color = String((entry && entry.colorHex) || "#FF6A00");
+      const strokeOpacity = Number.isFinite(Number(entry && entry.strokeOpacity)) ? Number(entry.strokeOpacity) : 1;
+      const sketchOffset = clamp(len * 0.02, 0.8, 2.2);
+
+      const segEcho = mkCircle({
+        cx,
+        cy,
+        r,
+        fill: "none",
+        stroke: mixHex(color, "#4D3A28", 0.22),
+        "stroke-opacity": clamp(strokeOpacity * 0.46, 0.18, 0.72),
+        "stroke-width": strokeW * 0.74,
+        "stroke-linecap": "round",
+        "stroke-dasharray": `${Math.max(0.1, len - 0.7)} ${Math.max(0.1, circ - len + 0.7)}`,
+        "stroke-dashoffset": `${-offset - sketchOffset}`,
+        transform: `rotate(-90 ${cx} ${cy})`,
+        class: "auraChart__segEcho",
+        filter: `url(#${sketchFilterId})`
+      });
       const seg = mkCircle({
         cx,
         cy,
         r,
         fill: "none",
-        stroke: (entry && entry.colorHex) || "#FF6A00",
-        "stroke-opacity": Number.isFinite(Number(entry && entry.strokeOpacity)) ? Number(entry.strokeOpacity) : 1,
+        stroke: color,
+        "stroke-opacity": strokeOpacity,
         "stroke-width": strokeW,
-        "stroke-linecap": "butt",
+        "stroke-linecap": "round",
         "stroke-dasharray": `${len} ${circ - len}`,
         "stroke-dashoffset": `${-offset}`,
-        transform: `rotate(-90 ${cx} ${cy})`
+        transform: `rotate(-90 ${cx} ${cy})`,
+        class: "auraChart__seg",
+        filter: `url(#${sketchFilterId})`
       });
+      svg.appendChild(segEcho);
       svg.appendChild(seg);
       offset += len;
     }
