@@ -6429,6 +6429,7 @@
 
     const STREET_MIN_ZOOM = 12;
     const DIALOG_MIN_ZOOM = STREET_MIN_ZOOM;
+    const SHOW_SIM_ACTIVITY_DIALOGS = false;
     const AURA_GRAY_HEX = "#b8b1a5";
     const DECAY_MINUTE_MS = 60_000;
     const DECAY_CURVE = [
@@ -6681,7 +6682,7 @@
 
     const syncAgentDialog = (agent) => {
       if (!agent || !agent.outer) return;
-      const want = map.getZoom() >= DIALOG_MIN_ZOOM;
+      const want = SHOW_SIM_ACTIVITY_DIALOGS && map.getZoom() >= DIALOG_MIN_ZOOM;
       const text = want ? agentDialogText(agent) : "";
 
       if (!text) {
