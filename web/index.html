@@ -169,7 +169,7 @@
 
     <main class="shell" id="mainContent">
       <div class="grid">
-        <section class="card card--timer" id="activitySection" aria-labelledby="activityTitle" tabindex="-1">
+        <section class="card card--timer focusScope focusScope--activity" id="activitySection" aria-labelledby="activityTitle" tabindex="-1">
           <div class="card__head">
             <h2 class="h1" id="activityTitle" data-i18n="activity_title">
               Activity Logger
@@ -177,7 +177,7 @@
             <div class="pill pill--muted" id="auraPill">Aura</div>
           </div>
 
-          <div class="activity">
+          <div class="activity focusTarget" id="focusActivityNow" data-focus-id="activityNow">
             <div class="activity__time" id="activityTime">00:00:00</div>
             <div
               class="activity__hint"
@@ -188,7 +188,7 @@
             </div>
           </div>
 
-          <details class="onboard" id="onboardPanel">
+          <details class="onboard focusTarget" id="onboardPanel" data-focus-id="onboardPanel">
             <summary class="onboard__summary">
               <span class="onboard__title" data-i18n="onboard_title">Quick start</span>
             </summary>
@@ -213,7 +213,7 @@
             </div>
           </details>
 
-          <form class="activityForm" id="activityForm" autocomplete="off">
+          <form class="activityForm focusTarget" id="activityForm" data-focus-id="activityForm" autocomplete="off">
             <div class="activityForm__row">
               <label class="field">
                 <span class="field__label" data-i18n="activity_label">
@@ -359,7 +359,7 @@
             </div>
           </div>
 
-          <div class="auraViz" aria-label="Aura composition breakdown">
+          <div class="auraViz focusTarget" data-focus-id="auraViz" aria-label="Aura composition breakdown">
             <div class="auraChart" aria-hidden="true">
               <svg
                 class="auraChart__svg"
@@ -382,10 +382,10 @@
             ></ul>
           </div>
 
-          <ul class="activityList" id="activityList" aria-label="Recent activities"></ul>
+          <ul class="activityList focusTarget" id="activityList" data-focus-id="activityList" aria-label="Recent activities"></ul>
         </section>
 
-        <section class="card card--map" id="mapSection" aria-labelledby="mapTitle" tabindex="-1">
+        <section class="card card--map focusScope focusScope--map" id="mapSection" aria-labelledby="mapTitle" tabindex="-1">
           <div class="card__head">
             <h2 class="h1" id="mapTitle" data-i18n="map_title">
               Live Aura Map
@@ -395,7 +395,7 @@
             </div>
           </div>
 
-          <div class="mapWrap" aria-label="Map canvas with paper sketch effect">
+          <div class="mapWrap focusTarget" data-focus-id="mapWrap" aria-label="Map canvas with paper sketch effect">
             <div
               id="paperMap"
               class="mapCanvas"
@@ -413,7 +413,7 @@
             </div>
           </div>
 
-          <div class="mapFilters" id="mapLayerFilters" role="group" aria-label="Available on map">
+          <div class="mapFilters focusTarget" id="mapLayerFilters" data-focus-id="mapFilters" role="group" aria-label="Available on map">
             <div class="mapFilters__label" data-i18n="map_filters_label">Available on map</div>
             <div class="mapFilters__chips">
               <button class="mapFilterBtn" type="button" id="mapFilterPeople" aria-pressed="true">
@@ -428,7 +428,7 @@
             </div>
           </div>
 
-          <div class="mapBar">
+          <div class="mapBar focusTarget" data-focus-id="mapBar">
             <div class="mapActions">
               <button class="btn btn--primary" type="button" id="mapLocate">
                 <span data-i18n="map_locate">My location</span>
@@ -444,7 +444,7 @@
             </div>
           </div>
 
-          <div class="mapDm" id="mapDm" hidden>
+          <div class="mapDm focusTarget" id="mapDm" data-focus-id="mapDm" hidden>
             <div class="mapDm__head">
               <div class="mapDm__title" data-i18n="map_msg_title">Map messages</div>
               <div class="mapDm__target" id="mapDmTarget">—</div>
@@ -466,7 +466,7 @@
         </section>
 
         <section
-          class="card card--wide"
+          class="card card--wide focusScope focusScope--market"
           id="marketplaceSection"
           aria-labelledby="marketplaceTitle"
           tabindex="-1"
@@ -480,7 +480,7 @@
             </div>
           </div>
 
-          <div class="marketTabs" id="marketTabs" role="tablist" aria-label="Marketplace tabs">
+          <div class="marketTabs focusTarget" id="marketTabs" data-focus-id="marketTabs" role="tablist" aria-label="Marketplace tabs">
             <button
               class="tabBtn"
               type="button"
@@ -527,7 +527,7 @@
               <div class="pill pill--muted" id="taskFeePill">FEE: 10%</div>
             </div>
 
-            <details class="drop" id="dropTasksPost">
+            <details class="drop focusTarget" id="dropTasksPost" data-focus-id="dropTasksPost">
               <summary class="drop__summary">
                 <span class="drop__label" data-i18n="drop_post_task">Post task</span>
               </summary>
@@ -644,7 +644,7 @@
               </div>
             </details>
 
-            <details class="drop" id="dropTasksList">
+            <details class="drop focusTarget" id="dropTasksList" data-focus-id="dropTasksList">
               <summary class="drop__summary">
                 <span class="drop__label" data-i18n="drop_task_list">Tasks</span>
                 <span class="drop__count" id="taskListCount">0</span>
@@ -688,7 +688,7 @@
               <div class="pill pill--muted" id="marketPill" data-i18n="market_pill">LOCAL</div>
             </div>
 
-            <details class="drop" id="dropMarketPost">
+            <details class="drop focusTarget" id="dropMarketPost" data-focus-id="dropMarketPost">
               <summary class="drop__summary">
                 <span class="drop__label" data-i18n="drop_post_market">Post product/service</span>
               </summary>
@@ -806,7 +806,7 @@
               </div>
             </details>
 
-            <details class="drop" id="dropMarketList">
+            <details class="drop focusTarget" id="dropMarketList" data-focus-id="dropMarketList">
               <summary class="drop__summary">
                 <span class="drop__label" data-i18n="drop_market_list">Market posts</span>
                 <span class="drop__count" id="marketListCount">0</span>
@@ -857,7 +857,7 @@
               <div class="pill pill--muted" id="eventsPill" data-i18n="events_pill">AURAS</div>
             </div>
 
-            <details class="drop" id="dropEventsPost">
+            <details class="drop focusTarget" id="dropEventsPost" data-focus-id="dropEventsPost">
               <summary class="drop__summary">
                 <span class="drop__label" data-i18n="drop_post_events">Schedule activity</span>
               </summary>
@@ -949,7 +949,7 @@
               </div>
             </details>
 
-            <details class="drop" id="dropEventsList">
+            <details class="drop focusTarget" id="dropEventsList" data-focus-id="dropEventsList">
               <summary class="drop__summary">
                 <span class="drop__label" data-i18n="drop_events_list">Scheduled activities</span>
                 <span class="drop__count" id="eventsListCount">0</span>

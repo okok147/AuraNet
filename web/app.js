@@ -3393,6 +3393,27 @@
   // --- Marketplace Tabs (Tasks / Market / Scheduled) ---
 
   const MARKET_TABS = ["tasks", "market", "events"];
+  const DROP_GROUP_KEYS = {
+    tasks: ["tasksPost", "tasksList"],
+    market: ["marketPost", "marketList"],
+    events: ["eventsPost", "eventsList"]
+  };
+  const DROP_KEY_TO_TAB = {
+    tasksPost: "tasks",
+    tasksList: "tasks",
+    marketPost: "market",
+    marketList: "market",
+    eventsPost: "events",
+    eventsList: "events"
+  };
+  const DROP_ID_BY_KEY = {
+    tasksPost: "dropTasksPost",
+    tasksList: "dropTasksList",
+    marketPost: "dropMarketPost",
+    marketList: "dropMarketList",
+    eventsPost: "dropEventsPost",
+    eventsList: "dropEventsList"
+  };
 
   const normalizeMarketTab = (value) => {
     const v = String(value || "").trim().toLowerCase();
@@ -3428,6 +3449,40 @@
     el.open = want;
   };
 
+  const openDropIdForTab = (tab) => {
+    const t = normalizeMarketTab(tab);
+    const keys = DROP_GROUP_KEYS[t] || [];
+    for (const key of keys) {
+      const id = DROP_ID_BY_KEY[key];
+      const el = id ? document.getElementById(id) : null;
+      if (el && el.open) return id;
+    }
+    return "";
+  };
+
+  const ensureSingleOpenDropForTab = (tab, preferredDropId = "", { persist = false } = {}) => {
+    const t = normalizeMarketTab(tab);
+    const keys = DROP_GROUP_KEYS[t] || [];
+    if (!keys.length) return "";
+
+    const ids = keys.map((key) => DROP_ID_BY_KEY[key]).filter((x) => x);
+    const preferred = ids.includes(preferredDropId) ? preferredDropId : "";
+    const currentOpen = openDropIdForTab(t);
+    const chosen = preferred || currentOpen || ids[0] || "";
+    if (!chosen) return "";
+
+    for (const key of keys) {
+      const id = DROP_ID_BY_KEY[key];
+      const el = id ? document.getElementById(id) : null;
+      if (el) setDetailsOpen(el, id === chosen);
+      if (persist && state.ui && state.ui.drops) {
+        state.ui.drops[key] = id === chosen;
+      }
+    }
+    if (persist) saveState();
+    return chosen;
+  };
+
   const applyDropStates = () => {
     ensureUiPrefs();
     setDetailsOpen(els.dropTasksPost, state.ui.drops.tasksPost);
@@ -3436,6 +3491,8 @@
     setDetailsOpen(els.dropMarketList, state.ui.drops.marketList);
     setDetailsOpen(els.dropEventsPost, state.ui.drops.eventsPost);
     setDetailsOpen(els.dropEventsList, state.ui.drops.eventsList);
+    ensureSingleOpenDropForTab(normalizeMarketTab(state.ui.marketTab || "tasks"));
+    renderAttentionFocus();
   };
 
   const renderOnboarding = () => {
@@ -3492,6 +3549,8 @@
     ensureUiPrefs();
     state.ui.marketTab = normalizeMarketTab(state.ui.marketTab);
     setMarketTabSelected(state.ui.marketTab);
+    ensureSingleOpenDropForTab(state.ui.marketTab);
+    renderAttentionFocus();
   };
 
   const mapFilterEntries = () => [
@@ -5959,6 +6018,7 @@
     syncUserAuraOnMap(nowMs(), auraHex);
 
     if (full) renderActivityList();
+    renderAttentionFocus();
   };
 
   // --- Render ---
@@ -5972,6 +6032,7 @@
     renderTasks();
     renderMarket();
     renderEvents();
+    renderAttentionFocus();
     startTaskEngine();
   };
 
@@ -5981,6 +6042,76 @@
   const normalizeSectionTarget = (value) => {
     const v = String(value || "");
     return SECTION_TARGETS.includes(v) ? v : "activitySection";
+  };
+
+  const isFocusTargetVisible = (el) => {
+    if (!el || typeof el !== "object") return false;
+    if (el.hidden) return false;
+    const hiddenParent = typeof el.closest === "function" ? el.closest("[hidden]") : null;
+    if (hiddenParent && hiddenParent !== el) return false;
+    if (typeof window === "undefined" || typeof window.getComputedStyle !== "function") return true;
+    const cs = window.getComputedStyle(el);
+    if (!cs) return true;
+    return cs.display !== "none" && cs.visibility !== "hidden";
+  };
+
+  const setFocusTargetInScope = (scopeEl, preferredFocusId = "") => {
+    if (!scopeEl) return;
+    const targets = Array.from(scopeEl.querySelectorAll(".focusTarget[data-focus-id]"));
+    if (!targets.length) return;
+
+    const preferred = String(preferredFocusId || "").trim();
+    const preferredEl = preferred
+      ? targets.find((el) => String(el.getAttribute("data-focus-id") || "") === preferred)
+      : null;
+    const visibleTargets = targets.filter((el) => isFocusTargetVisible(el));
+    const activeEl = (preferredEl && isFocusTargetVisible(preferredEl) ? preferredEl : null) || visibleTargets[0] || targets[0];
+    const activeId = String((activeEl && activeEl.getAttribute("data-focus-id")) || "");
+
+    if (activeId) scopeEl.setAttribute("data-focus-active", activeId);
+    else scopeEl.removeAttribute("data-focus-active");
+
+    for (const target of targets) {
+      const on = target === activeEl;
+      const visible = isFocusTargetVisible(target);
+      target.classList.toggle("focusTarget--active", on);
+      target.classList.toggle("focusTarget--muted", !on && visible);
+      if (!visible) target.classList.remove("focusTarget--muted");
+    }
+  };
+
+  const activityFocusId = () => {
+    if (state.activity && state.activity.active) return "activityForm";
+    const firstEntry = state.activity && Array.isArray(state.activity.log) ? state.activity.log[0] : null;
+    const endedAt = Number(firstEntry && firstEntry.endedAt) || 0;
+    if (endedAt > 0 && nowMs() - endedAt <= 90_000) return "auraViz";
+    const hasHistory = Boolean(firstEntry);
+    const onboardOpen = Boolean(els.onboardPanel && els.onboardPanel.open);
+    if (!hasHistory && onboardOpen) return "onboardPanel";
+    return "activityForm";
+  };
+
+  const mapFocusId = () => {
+    if (els.mapDm && !els.mapDm.hidden) return "mapDm";
+    return "mapWrap";
+  };
+
+  const marketFocusId = () => {
+    ensureUiPrefs();
+    const tab = normalizeMarketTab(state.ui.marketTab);
+    const openId = ensureSingleOpenDropForTab(tab);
+    return openId || "marketTabs";
+  };
+
+  const renderAttentionFocus = () => {
+    ensureUiPrefs();
+    const activeSection = normalizeSectionTarget(state.ui.section);
+    if (typeof document !== "undefined" && document.body) {
+      document.body.setAttribute("data-focus-section", activeSection);
+    }
+    setFocusTargetInScope(document.getElementById("activitySection"), activityFocusId());
+    setFocusTargetInScope(document.getElementById("mapSection"), mapFocusId());
+    setFocusTargetInScope(document.getElementById("marketplaceSection"), marketFocusId());
   };
 
   const sectionTabElements = () =>
@@ -6013,6 +6144,7 @@
         saveState();
       }
     }
+    renderAttentionFocus();
   };
 
   const scrollToSection = (sectionId) => {
@@ -7650,6 +7782,9 @@
     };
 
     const mapDmRender = () => {
+      const notifyAttention = () => {
+        if (typeof renderAttentionFocus === "function") renderAttentionFocus();
+      };
       if (!els.mapDm || !els.mapDmTarget || !els.mapDmList) return;
       const target = normalizeAuraTarget(mapDmTarget);
       if (!target || target.kind !== "agent") {
@@ -7662,6 +7797,7 @@
         }
         if (els.mapDmSend) els.mapDmSend.disabled = true;
         if (els.mapDmList) els.mapDmList.textContent = "";
+        notifyAttention();
         return;
       }
 
@@ -7688,6 +7824,7 @@
         empty.className = "mapDm__empty";
         empty.textContent = t("map_msg_target_unavailable");
         list.appendChild(empty);
+        notifyAttention();
         return;
       }
 
@@ -7696,6 +7833,7 @@
         empty.className = "mapDm__empty";
         empty.textContent = t("map_msg_empty");
         list.appendChild(empty);
+        notifyAttention();
         return;
       }
 
@@ -7717,6 +7855,7 @@
       }
 
       list.scrollTop = list.scrollHeight;
+      notifyAttention();
     };
 
     const setMapDmTarget = (actor) => {
@@ -9310,9 +9449,27 @@
       const k = String(key || "");
       if (!k) return;
       const next = Boolean(el.open);
-      if (Boolean(state.ui.drops[k]) === next) return;
-      state.ui.drops[k] = next;
+      const tab = DROP_KEY_TO_TAB[k] || "";
+      const groupKeys = tab ? DROP_GROUP_KEYS[tab] || [] : [];
+
+      if (next && tab && groupKeys.length) {
+        for (const gk of groupKeys) {
+          const on = gk === k;
+          state.ui.drops[gk] = on;
+          const id = DROP_ID_BY_KEY[gk];
+          const otherEl = id ? document.getElementById(id) : null;
+          if (otherEl && otherEl !== el) setDetailsOpen(otherEl, on);
+        }
+      } else {
+        if (Boolean(state.ui.drops[k]) === next) {
+          renderAttentionFocus();
+          return;
+        }
+        state.ui.drops[k] = next;
+      }
       saveState();
+      if (tab) ensureSingleOpenDropForTab(tab);
+      renderAttentionFocus();
     });
   };
 
@@ -9325,6 +9482,7 @@
       if (state.ui.onboardingOpen === next) return;
       state.ui.onboardingOpen = next;
       saveState();
+      renderAttentionFocus();
     });
   }
 
