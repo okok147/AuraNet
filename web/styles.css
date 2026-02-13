@@ -4853,8 +4853,8 @@ body[data-focus-section] .card--active.focusScope .focusTarget.focusTarget--acti
 
 /* --- ASCII Paper Texture Pass --- */
 :root {
-  --ascii-paper-glyphs: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260'%3E%3Cg fill='%236a5035' fill-opacity='0.16' font-family='monospace' font-size='11'%3E%3Ctext x='6' y='22'%3E..::--==%2B%2B**..::--==%2B%2B**..::--%3C/text%3E%3Ctext x='10' y='50'%3E::..--==**%2B%2B::..--==**%2B%2B::..--%3C/text%3E%3Ctext x='4' y='78'%3E--::..==%2B%2B**--::..==%2B%2B**--::..%3C/text%3E%3Ctext x='14' y='106'%3E==..::--**%2B%2B==..::--**%2B%2B==..::%3C/text%3E%3Ctext x='8' y='134'%3E..--::==%2B%2B**..--::==%2B%2B**..--::%3C/text%3E%3Ctext x='12' y='162'%3E::==..--**%2B%2B::==..--**%2B%2B::==..%3C/text%3E%3Ctext x='6' y='190'%3E--..::==%2B%2B**--..::==%2B%2B**--..::%3C/text%3E%3Ctext x='10' y='218'%3E==--..::**%2B%2B==--..::**%2B%2B==--..%3C/text%3E%3Ctext x='4' y='246'%3E..::--==%2B%2B**..::--==%2B%2B**..::--%3C/text%3E%3C/g%3E%3C/svg%3E");
-  --ascii-paper-speckle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cg fill='%23533d26' fill-opacity='0.12' font-family='monospace' font-size='9'%3E%3Ctext x='6' y='18'%3Eo..x..o..x..o..x..o..x..o..x..%3C/text%3E%3Ctext x='2' y='40'%3E..o..x..o..x..o..x..o..x..o.%3C/text%3E%3Ctext x='9' y='62'%3Ex..o..x..o..x..o..x..o..x..o%3C/text%3E%3Ctext x='4' y='84'%3E.o..x..o..x..o..x..o..x..o..%3C/text%3E%3Ctext x='11' y='106'%3E..x..o..x..o..x..o..x..o..x%3C/text%3E%3Ctext x='6' y='128'%3Eo..x..o..x..o..x..o..x..o..%3C/text%3E%3Ctext x='2' y='150'%3E..o..x..o..x..o..x..o..x..o.%3C/text%3E%3Ctext x='10' y='172'%3Ex..o..x..o..x..o..x..o..x..o%3C/text%3E%3Ctext x='5' y='194'%3E.o..x..o..x..o..x..o..x..o..%3C/text%3E%3C/g%3E%3C/svg%3E");
+  --ascii-paper-glyphs: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260'%3E%3Cg fill='%23303030' fill-opacity='0.16' font-family='monospace' font-size='11'%3E%3Ctext x='6' y='22'%3E..::--==%2B%2B**..::--==%2B%2B**..::--%3C/text%3E%3Ctext x='10' y='50'%3E::..--==**%2B%2B::..--==**%2B%2B::..--%3C/text%3E%3Ctext x='4' y='78'%3E--::..==%2B%2B**--::..==%2B%2B**--::..%3C/text%3E%3Ctext x='14' y='106'%3E==..::--**%2B%2B==..::--**%2B%2B==..::%3C/text%3E%3Ctext x='8' y='134'%3E..--::==%2B%2B**..--::==%2B%2B**..--::%3C/text%3E%3Ctext x='12' y='162'%3E::==..--**%2B%2B::==..--**%2B%2B::==..%3C/text%3E%3Ctext x='6' y='190'%3E--..::==%2B%2B**--..::==%2B%2B**--..::%3C/text%3E%3Ctext x='10' y='218'%3E==--..::**%2B%2B==--..::**%2B%2B==--..%3C/text%3E%3Ctext x='4' y='246'%3E..::--==%2B%2B**..::--==%2B%2B**..::--%3C/text%3E%3C/g%3E%3C/svg%3E");
+  --ascii-paper-speckle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cg fill='%23212121' fill-opacity='0.12' font-family='monospace' font-size='9'%3E%3Ctext x='6' y='18'%3Eo..x..o..x..o..x..o..x..o..x..%3C/text%3E%3Ctext x='2' y='40'%3E..o..x..o..x..o..x..o..x..o.%3C/text%3E%3Ctext x='9' y='62'%3Ex..o..x..o..x..o..x..o..x..o%3C/text%3E%3Ctext x='4' y='84'%3E.o..x..o..x..o..x..o..x..o..%3C/text%3E%3Ctext x='11' y='106'%3E..x..o..x..o..x..o..x..o..x%3C/text%3E%3Ctext x='6' y='128'%3Eo..x..o..x..o..x..o..x..o..%3C/text%3E%3Ctext x='2' y='150'%3E..o..x..o..x..o..x..o..x..o.%3C/text%3E%3Ctext x='10' y='172'%3Ex..o..x..o..x..o..x..o..x..o%3C/text%3E%3Ctext x='5' y='194'%3E.o..x..o..x..o..x..o..x..o..%3C/text%3E%3C/g%3E%3C/svg%3E");
 }
 
 body {
@@ -5016,4 +5016,225 @@ body::before {
     120px 120px,
     auto;
   background-blend-mode: multiply, normal;
+}
+
+/* --- Monochrome Paper Theme --- */
+:root {
+  --bg0: #ffffff;
+  --bg1: #f5f5f5;
+  --panel: rgba(255, 255, 255, 0.94);
+  --panel2: rgba(252, 252, 252, 0.96);
+  --stroke: rgba(0, 0, 0, 0.2);
+  --stroke2: rgba(0, 0, 0, 0.12);
+  --text: rgba(10, 10, 10, 0.96);
+  --muted: rgba(0, 0, 0, 0.72);
+  --muted2: rgba(0, 0, 0, 0.56);
+  --accent: #171717;
+  --accent-soft: rgba(0, 0, 0, 0.16);
+  --ok: #202020;
+  --ok-soft: rgba(0, 0, 0, 0.14);
+  --danger: #303030;
+  --danger-soft: rgba(0, 0, 0, 0.18);
+  --shadow: 0 14px 28px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.7) inset;
+  --shadow2: 0 8px 16px rgba(0, 0, 0, 0.07), 0 0 0 1px rgba(255, 255, 255, 0.62) inset;
+  --shadow3: 0 18px 34px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.76) inset;
+}
+
+body {
+  color: var(--text);
+  background:
+    radial-gradient(1200px 760px at 6% -18%, rgba(255, 255, 255, 0.92), transparent 60%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.07),
+      rgba(0, 0, 0, 0.07) 1px,
+      rgba(255, 255, 255, 0) 1px,
+      rgba(255, 255, 255, 0) 30px
+    ),
+    linear-gradient(180deg, #ffffff 0%, #f7f7f7 100%);
+}
+
+.bg {
+  background:
+    radial-gradient(900px 620px at 10% 10%, rgba(255, 255, 255, 0.64), transparent 58%),
+    radial-gradient(700px 520px at 86% 78%, rgba(0, 0, 0, 0.06), transparent 62%),
+    repeating-linear-gradient(
+      15deg,
+      rgba(0, 0, 0, 0.05) 0,
+      rgba(0, 0, 0, 0.05) 1px,
+      transparent 1px,
+      transparent 9px
+    );
+}
+
+.brand__name,
+.h1,
+.panelHead__title,
+.drop__label,
+.auraMeta__title,
+.auraChart__label,
+.visBlock__label,
+.field__label,
+.mapFilters__label,
+.mapDm__title,
+.dialog__title,
+.taskItem__title,
+.marketItem__title,
+.eventItem__title,
+.activityItem__title,
+.offerItem__who,
+.stats,
+.taskItem__meta,
+.taskItem__who,
+.marketItem__meta,
+.eventItem__meta,
+.auraMeta__value,
+.auraLegend__val,
+.onboard__desc,
+.onboard__item,
+.mapDm__target,
+.mapDm__msgText {
+  color: var(--text);
+}
+
+.sectionTabs,
+.quickActions,
+.lang,
+.hud__clock,
+.pill,
+.card,
+.drop,
+.marketTabs,
+.mapWrap,
+.onboard,
+.visBlock,
+.toggle,
+.activitySuggest,
+.activityColorPreview,
+.modal__panel,
+.dialog__panel,
+.mapDm,
+.toast--global,
+.taskItem,
+.marketItem,
+.eventItem,
+.activityItem,
+.offerItem,
+.approvedItem,
+.auraLegend__item,
+.item,
+.taskChip,
+.badge,
+.skillChip,
+.drop__count {
+  border-color: rgba(0, 0, 0, 0.24);
+  color: var(--text);
+  background-image:
+    var(--ascii-paper-glyphs),
+    var(--ascii-paper-speckle),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(245, 245, 245, 0.9));
+}
+
+.sectionTabs__btn,
+.quickActionBtn,
+.btn,
+.tabBtn,
+.mapFilterBtn,
+.seg__btn,
+.iconBtn {
+  color: var(--text);
+  border-color: rgba(0, 0, 0, 0.34);
+  background-image:
+    var(--ascii-paper-speckle),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(241, 241, 241, 0.9));
+}
+
+.sectionTabs__btn[aria-pressed="true"],
+.tabBtn[aria-selected="true"],
+.seg__btn[aria-selected="true"],
+.mapFilterBtn.mapFilterBtn--on,
+.mapFilterBtn[aria-pressed="true"],
+.btn--primary {
+  color: #ffffff;
+  border-color: rgba(0, 0, 0, 0.58);
+  background-image:
+    var(--ascii-paper-speckle),
+    linear-gradient(180deg, rgba(30, 30, 30, 0.96), rgba(0, 0, 0, 0.9));
+}
+
+.btn--ghost {
+  color: var(--text);
+  background-image:
+    var(--ascii-paper-speckle),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(245, 245, 245, 0.88));
+}
+
+.input,
+.select,
+.lang__select {
+  border-color: rgba(0, 0, 0, 0.32);
+  color: var(--text);
+  background-image:
+    var(--ascii-paper-speckle),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 247, 247, 0.9));
+}
+
+.card--map .leaflet-tile {
+  filter: grayscale(1) contrast(1.08) brightness(1.07);
+}
+
+.mapPaper {
+  background:
+    var(--ascii-paper-glyphs),
+    var(--ascii-paper-speckle),
+    radial-gradient(circle at 24% 18%, rgba(255, 255, 255, 0.9) 0%, transparent 52%),
+    radial-gradient(circle at 76% 74%, rgba(0, 0, 0, 0.14) 0%, transparent 56%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.06) 0,
+      rgba(0, 0, 0, 0.06) 1px,
+      transparent 1px,
+      transparent 12px
+    ),
+    repeating-linear-gradient(
+      62deg,
+      rgba(0, 0, 0, 0.04) 0,
+      rgba(0, 0, 0, 0.04) 1px,
+      transparent 1px,
+      transparent 9px
+    );
+}
+
+.card--map .leaflet-control-zoom a,
+.card--map .leaflet-popup-content-wrapper,
+.card--map .leaflet-popup-tip,
+.card--map .leaflet-control-attribution,
+.card--map .leaflet-tooltip.auraDialog {
+  color: var(--text);
+  border-color: rgba(0, 0, 0, 0.28);
+  background-image:
+    var(--ascii-paper-speckle),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 244, 244, 0.92));
+}
+
+.auraChart__ringBase {
+  stroke: rgba(0, 0, 0, 0.22);
+}
+
+.auraChart__label,
+.auraChart__value {
+  color: var(--text);
+}
+
+.auraLegend__dot {
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.92),
+    0 0 0 3px rgba(0, 0, 0, 0.22);
+}
+
+body[data-focus-section] .card--active.focusScope .focusTarget.focusTarget--active {
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.42),
+    0 0 0 4px rgba(0, 0, 0, 0.12),
+    0 10px 24px rgba(0, 0, 0, 0.12);
 }
