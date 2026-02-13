@@ -6207,6 +6207,7 @@
     let userAuraVerified = Boolean(state && state.tasks && state.tasks.prefs && state.tasks.prefs.userVerified);
     let userAuraRequested = false;
     let userWatchId = null;
+    let userPrimePending = false;
     let lastUserLatLng = null;
     let lastUserLatLngRaw = null;
     let lastUserLatLngBlurred = null;
@@ -6236,6 +6237,10 @@
       offsetNorthM: randomPrivacyOffsetM(initialGridM)
     };
     const simRenderer = L.canvas({ padding: 0.5 });
+    const selfAuraPane = map.createPane("selfAuraPane");
+    // Keep self aura above the paper texture overlay so it stays visible.
+    selfAuraPane.style.zIndex = "460";
+    const selfAuraRenderer = L.canvas({ padding: 0.5, pane: "selfAuraPane" });
     const taskPane = map.createPane("taskPane");
     // Above the paper texture + aura haze so accepted-task tethers stay visible.
     taskPane.style.zIndex = "520";
@@ -6786,9 +6791,9 @@
       return Math.round(min + t * (max - min));
     };
 
-    const createAuraLayer = (latLng, fill, radius, fillOpacity) => {
+    const createAuraLayer = (latLng, fill, radius, fillOpacity, { renderer = simRenderer } = {}) => {
       return L.circleMarker(latLng, {
-        renderer: simRenderer,
+        renderer,
         radius,
         stroke: false,
         fillColor: fill,
@@ -6843,9 +6848,9 @@
       if (!latLng) return;
       if (userAuraLayers.length === 0) {
         userAuraLayers = [
-          createAuraLayer(latLng, userAuraColor, 70, 0.06),
-          createAuraLayer(latLng, userAuraColor, 52, 0.09),
-          createAuraLayer(latLng, userAuraColor, 36, 0.12)
+          createAuraLayer(latLng, userAuraColor, 70, 0.06, { renderer: selfAuraRenderer }),
+          createAuraLayer(latLng, userAuraColor, 52, 0.09, { renderer: selfAuraRenderer }),
+          createAuraLayer(latLng, userAuraColor, 36, 0.12, { renderer: selfAuraRenderer })
         ];
 
         const onClick = (e) => {
@@ -6982,6 +6987,31 @@
       userWatchId = null;
     };
 
+    const primeUserLocationOnce = () => {
+      if (lastUserLatLngRaw || userPrimePending) return;
+      if (!navigator.geolocation) return;
+      userPrimePending = true;
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          const accuracy = Number(pos.coords.accuracy) || 0;
+          setUserLatLng(lat, lng, accuracy, { ensureRing: false });
+          maybeSaveHomeFromRaw(lastUserLatLngRaw);
+          setGpsBadge(t("map_gps_on"), "ok");
+          userPrimePending = false;
+        },
+        () => {
+          userPrimePending = false;
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 8_000,
+          maximumAge: 0
+        }
+      );
+    };
+
     const startUserWatch = () => {
       if (userWatchId !== null) return;
       if (!navigator.geolocation) {
@@ -7016,6 +7046,29 @@
           maximumAge: 20_000
         }
       );
+    };
+
+    const syncUserAuraTracking = () => {
+      if (!userAuraRequested) {
+        userAuraEnabled = false;
+        stopUserWatch();
+        removeUserAuraLayers();
+        setGpsBadge(t("map_gps_off"), "off");
+        return;
+      }
+
+      userAuraEnabled = true;
+      // Self view should stay precise when user chooses to show their own aura.
+      selfPreciseMode = true;
+      if (lastUserLatLngRaw) {
+        lastUserLatLng = lastUserLatLngRaw;
+      }
+      if (lastUserLatLng) {
+        ensureUserAuraLayers(lastUserLatLng);
+        for (const l of userAuraLayers) l.setLatLng(lastUserLatLng);
+      }
+      primeUserLocationOnce();
+      startUserWatch();
     };
 
     const mixWeightedHex = (mix) => {
@@ -7633,29 +7686,12 @@
       if (!showPeople) {
         stopSimInternal();
         setSimUi();
-        userAuraEnabled = false;
-        stopUserWatch();
-        removeUserAuraLayers();
-        setGpsBadge(t("map_gps_off"), "off");
-        return;
+      } else {
+        startSim();
       }
 
-      startSim();
-      const wantAura = Boolean(userAuraRequested);
-      if (!wantAura) {
-        userAuraEnabled = false;
-        stopUserWatch();
-        removeUserAuraLayers();
-        setGpsBadge(t("map_gps_off"), "off");
-        return;
-      }
-
-      userAuraEnabled = true;
-      if (lastUserLatLng) {
-        ensureUserAuraLayers(lastUserLatLng);
-        for (const l of userAuraLayers) l.setLatLng(lastUserLatLng);
-      }
-      startUserWatch();
+      // Keep self aura independent from the people layer filter.
+      syncUserAuraTracking();
     };
 
     if (els.mapReset) {
@@ -8175,21 +8211,7 @@
         }
 
         userAuraRequested = Boolean(enabled);
-        const want = userAuraRequested && Boolean(mapLayerFilters.people);
-        if (!want) {
-          userAuraEnabled = false;
-          stopUserWatch();
-          removeUserAuraLayers();
-          setGpsBadge(t("map_gps_off"), "off");
-          return;
-        }
-
-        userAuraEnabled = true;
-        if (lastUserLatLng) {
-          ensureUserAuraLayers(lastUserLatLng);
-          for (const l of userAuraLayers) l.setLatLng(lastUserLatLng);
-        }
-        startUserWatch();
+        syncUserAuraTracking();
       },
       requestGpsOnce: () => {
         return new Promise((resolve, reject) => {
