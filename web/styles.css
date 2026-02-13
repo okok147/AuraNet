@@ -4850,3 +4850,170 @@ body[data-focus-section] .card--active.focusScope .focusTarget.focusTarget--acti
       linear-gradient(180deg, #f8efdd 0%, #ecdfc8 100%);
   }
 }
+
+/* --- ASCII Paper Texture Pass --- */
+:root {
+  --ascii-paper-glyphs: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260'%3E%3Cg fill='%236a5035' fill-opacity='0.16' font-family='monospace' font-size='11'%3E%3Ctext x='6' y='22'%3E..::--==%2B%2B**..::--==%2B%2B**..::--%3C/text%3E%3Ctext x='10' y='50'%3E::..--==**%2B%2B::..--==**%2B%2B::..--%3C/text%3E%3Ctext x='4' y='78'%3E--::..==%2B%2B**--::..==%2B%2B**--::..%3C/text%3E%3Ctext x='14' y='106'%3E==..::--**%2B%2B==..::--**%2B%2B==..::%3C/text%3E%3Ctext x='8' y='134'%3E..--::==%2B%2B**..--::==%2B%2B**..--::%3C/text%3E%3Ctext x='12' y='162'%3E::==..--**%2B%2B::==..--**%2B%2B::==..%3C/text%3E%3Ctext x='6' y='190'%3E--..::==%2B%2B**--..::==%2B%2B**--..::%3C/text%3E%3Ctext x='10' y='218'%3E==--..::**%2B%2B==--..::**%2B%2B==--..%3C/text%3E%3Ctext x='4' y='246'%3E..::--==%2B%2B**..::--==%2B%2B**..::--%3C/text%3E%3C/g%3E%3C/svg%3E");
+  --ascii-paper-speckle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cg fill='%23533d26' fill-opacity='0.12' font-family='monospace' font-size='9'%3E%3Ctext x='6' y='18'%3Eo..x..o..x..o..x..o..x..o..x..%3C/text%3E%3Ctext x='2' y='40'%3E..o..x..o..x..o..x..o..x..o.%3C/text%3E%3Ctext x='9' y='62'%3Ex..o..x..o..x..o..x..o..x..o%3C/text%3E%3Ctext x='4' y='84'%3E.o..x..o..x..o..x..o..x..o..%3C/text%3E%3Ctext x='11' y='106'%3E..x..o..x..o..x..o..x..o..x%3C/text%3E%3Ctext x='6' y='128'%3Eo..x..o..x..o..x..o..x..o..%3C/text%3E%3Ctext x='2' y='150'%3E..o..x..o..x..o..x..o..x..o.%3C/text%3E%3Ctext x='10' y='172'%3Ex..o..x..o..x..o..x..o..x..o%3C/text%3E%3Ctext x='5' y='194'%3E.o..x..o..x..o..x..o..x..o..%3C/text%3E%3C/g%3E%3C/svg%3E");
+}
+
+body {
+  position: relative;
+  isolation: isolate;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0.14;
+  mix-blend-mode: multiply;
+  background-image: var(--ascii-paper-glyphs), var(--ascii-paper-speckle);
+  background-size:
+    260px 260px,
+    200px 200px;
+  background-repeat: repeat;
+}
+
+@media (max-width: 960px) {
+  body::before {
+    opacity: 0.11;
+  }
+}
+
+.sectionTabs,
+.quickActions,
+.lang,
+.hud__clock,
+.pill,
+.card,
+.drop,
+.marketTabs,
+.mapWrap,
+.onboard,
+.visBlock,
+.toggle,
+.activitySuggest,
+.activityColorPreview,
+.modal__panel,
+.dialog__panel,
+.mapDm,
+.toast--global,
+.taskItem,
+.marketItem,
+.eventItem,
+.activityItem,
+.offerItem,
+.approvedItem,
+.auraLegend__item,
+.item,
+.taskChip,
+.badge,
+.skillChip,
+.drop__count {
+  background-image:
+    var(--ascii-paper-glyphs),
+    var(--ascii-paper-speckle),
+    linear-gradient(180deg, rgba(255, 253, 246, 0.92), rgba(246, 233, 212, 0.84));
+  background-size:
+    240px 240px,
+    180px 180px,
+    auto;
+  background-blend-mode: multiply, soft-light, normal;
+}
+
+.sectionTabs__btn,
+.quickActionBtn,
+.btn,
+.tabBtn,
+.mapFilterBtn,
+.seg__btn,
+.iconBtn {
+  background-image:
+    var(--ascii-paper-speckle),
+    linear-gradient(180deg, rgba(255, 248, 236, 0.94), rgba(236, 219, 191, 0.84));
+  background-size:
+    160px 160px,
+    auto;
+  background-blend-mode: multiply, normal;
+}
+
+.sectionTabs__btn[aria-pressed="true"],
+.tabBtn[aria-selected="true"],
+.seg__btn[aria-selected="true"],
+.mapFilterBtn.mapFilterBtn--on,
+.mapFilterBtn[aria-pressed="true"],
+.btn--primary {
+  background-image:
+    var(--ascii-paper-speckle),
+    linear-gradient(180deg, rgba(232, 188, 129, 0.62), rgba(209, 143, 82, 0.46));
+  background-blend-mode: multiply, normal;
+}
+
+.input,
+.select,
+.lang__select {
+  background-image:
+    var(--ascii-paper-speckle),
+    linear-gradient(180deg, rgba(255, 251, 243, 0.93), rgba(245, 233, 211, 0.82));
+  background-size:
+    130px 130px,
+    auto;
+  background-blend-mode: soft-light, normal;
+}
+
+.mapPaper {
+  background:
+    var(--ascii-paper-glyphs),
+    var(--ascii-paper-speckle),
+    radial-gradient(circle at 24% 18%, rgba(255, 255, 255, 0.84) 0%, transparent 52%),
+    radial-gradient(circle at 76% 74%, rgba(55, 41, 27, 0.14) 0%, transparent 56%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(75, 57, 37, 0.06) 0,
+      rgba(75, 57, 37, 0.06) 1px,
+      transparent 1px,
+      transparent 12px
+    ),
+    repeating-linear-gradient(
+      62deg,
+      rgba(75, 57, 37, 0.04) 0,
+      rgba(75, 57, 37, 0.04) 1px,
+      transparent 1px,
+      transparent 9px
+    );
+  background-size:
+    220px 220px,
+    160px 160px,
+    auto,
+    auto,
+    auto,
+    auto;
+  background-blend-mode: multiply, soft-light, normal, normal, normal, normal;
+}
+
+.card--map .leaflet-popup-content-wrapper,
+.card--map .leaflet-popup-tip,
+.card--map .leaflet-control-zoom a,
+.card--map .leaflet-control-attribution {
+  background-image:
+    var(--ascii-paper-speckle),
+    linear-gradient(180deg, rgba(255, 250, 240, 0.98), rgba(245, 229, 204, 0.9));
+  background-size:
+    150px 150px,
+    auto;
+  background-blend-mode: soft-light, normal;
+}
+
+.auraChart__svg {
+  border-radius: 999px;
+  background-image:
+    var(--ascii-paper-speckle),
+    radial-gradient(circle at 50% 50%, rgba(255, 251, 243, 0.9), rgba(236, 219, 191, 0.56));
+  background-size:
+    120px 120px,
+    auto;
+  background-blend-mode: multiply, normal;
+}
