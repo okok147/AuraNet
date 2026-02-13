@@ -6760,6 +6760,7 @@
     let userAuraVerified = Boolean(state && state.tasks && state.tasks.prefs && state.tasks.prefs.userVerified);
     let userAuraRequested = false;
     let userWatchId = null;
+    let userWatchRetryTimer = null;
     let lastUserLatLng = null;
     let lastUserLatLngRaw = null;
     let lastUserLatLngBlurred = null;
@@ -7674,7 +7675,87 @@
       }
     };
 
-    const stopUserWatch = () => {
+    const gpsMessageFromError = (err) => {
+      const code = err && typeof err.code === "number" ? err.code : 0;
+      let msg = t("gps_error");
+      if (code === 1) msg = t("gps_denied");
+      if (code === 2) msg = t("gps_unavailable");
+      if (code === 3) msg = t("gps_timeout");
+      return msg;
+    };
+
+    const getCurrentPositionOnce = (options) =>
+      new Promise((resolve, reject) => {
+        try {
+          navigator.geolocation.getCurrentPosition(resolve, reject, options);
+        } catch (err) {
+          reject(err);
+        }
+      });
+
+    const requestUserGpsFix = async ({ preferFresh = false } = {}) => {
+      if (!navigator.geolocation) {
+        const err = new Error("geolocation unsupported");
+        err.code = 0;
+        throw err;
+      }
+
+      const attempts = [
+        {
+          enableHighAccuracy: true,
+          timeout: preferFresh ? 16_000 : 12_000,
+          maximumAge: preferFresh ? 10_000 : 60_000
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 24_000,
+          maximumAge: preferFresh ? 45_000 : 300_000
+        }
+      ];
+
+      let lastErr = null;
+      for (const opts of attempts) {
+        try {
+          const pos = await getCurrentPositionOnce(opts);
+          const lat = Number(pos && pos.coords && pos.coords.latitude);
+          const lng = Number(pos && pos.coords && pos.coords.longitude);
+          if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            const accuracy = Number(pos.coords && pos.coords.accuracy) || 0;
+            return { lat, lng, accuracy };
+          }
+          lastErr = { code: 2 };
+        } catch (err) {
+          lastErr = err;
+          const code = err && typeof err.code === "number" ? err.code : 0;
+          // Permission denied is final; other failures get one fallback attempt.
+          if (code === 1) break;
+        }
+      }
+
+      if (lastErr) throw lastErr;
+      const fallbackErr = new Error("gps unavailable");
+      fallbackErr.code = 2;
+      throw fallbackErr;
+    };
+
+    const clearUserWatchRetry = () => {
+      if (userWatchRetryTimer === null) return;
+      window.clearTimeout(userWatchRetryTimer);
+      userWatchRetryTimer = null;
+    };
+
+    const scheduleUserWatchRetry = (delayMs = 3_200) => {
+      if (!userAuraRequested) return;
+      if (userWatchRetryTimer !== null) return;
+      userWatchRetryTimer = window.setTimeout(() => {
+        userWatchRetryTimer = null;
+        if (!userAuraRequested || userWatchId !== null) return;
+        startUserWatch();
+      }, Math.max(1200, Number(delayMs) || 3200));
+    };
+
+    const stopUserWatch = ({ clearRetry = true } = {}) => {
+      if (clearRetry) clearUserWatchRetry();
       if (userWatchId === null) return;
       try {
         navigator.geolocation.clearWatch(userWatchId);
@@ -7701,21 +7782,27 @@
           setUserLatLng(lat, lng, accuracy, { ensureRing: false });
           maybeSaveHomeFromRaw(lastUserLatLngRaw);
           setGpsBadge(t("map_gps_on"), "ok");
+          clearUserWatchRetry();
         },
         (err) => {
           const code = err && typeof err.code === "number" ? err.code : 0;
-          let msg = t("gps_error");
-          if (code === 1) msg = t("gps_denied");
-          if (code === 2) msg = t("gps_unavailable");
-          if (code === 3) msg = t("gps_timeout");
-          setGpsBadge(t("map_gps_off"), "warn");
+          const msg = gpsMessageFromError(err);
+          const badge = code === 1 ? t("map_gps_off") : t("map_gps_error");
+          setGpsBadge(badge, "warn");
           setMapStatus(msg, true);
-          stopUserWatch();
+          if (code === 1) {
+            // User denied permission: don't auto-retry.
+            stopUserWatch();
+            return;
+          }
+          // Temporary signal issues: retry watch automatically.
+          stopUserWatch({ clearRetry: false });
+          scheduleUserWatchRetry(code === 3 ? 4200 : 3200);
         },
         {
           enableHighAccuracy: true,
-          timeout: 10_000,
-          maximumAge: 20_000
+          timeout: 18_000,
+          maximumAge: 60_000
         }
       );
     };
@@ -8658,7 +8745,7 @@
       });
     }
 
-    const showMyLocation = () => {
+    const showMyLocation = async () => {
       if (!els.mapLocate) return;
       if (!navigator.geolocation) {
         setGpsBadge(t("map_gps_unsupported"), "warn");
@@ -8670,45 +8757,29 @@
       els.mapLocate.disabled = true;
       setGpsBadge(t("map_gps_request"), "off");
       setMapStatus(t("map_status_requesting_gps"));
+      try {
+        const { lat, lng, accuracy } = await requestUserGpsFix({ preferFresh: true });
+        enableSelfPreciseMode();
+        setUserLatLng(lat, lng, accuracy, { ensureRing: false });
+        maybeSaveHomeFromRaw(lastUserLatLngRaw);
+        map.flyTo([clamp(lat, -85, 85), wrapLng(lng)], Math.max(map.getZoom(), 16), {
+          duration: 0.8
+        });
 
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          const accuracy = Number(pos.coords.accuracy) || 0;
-
-          enableSelfPreciseMode();
-          setUserLatLng(lat, lng, accuracy, { ensureRing: false });
-          maybeSaveHomeFromRaw(lastUserLatLngRaw);
-          map.flyTo([clamp(lat, -85, 85), wrapLng(lng)], Math.max(map.getZoom(), 16), {
-            duration: 0.8
-          });
-
-          setGpsBadge(t("map_gps_on"), "ok");
-          setMapStatus(t("map_status_gps_private"));
-          toast(t("gps_ready"));
-
-          window.requestAnimationFrame(() => map.invalidateSize());
-          els.mapLocate.disabled = false;
-        },
-        (err) => {
-          const code = err && typeof err.code === "number" ? err.code : 0;
-          let msg = t("gps_error");
-          if (code === 1) msg = t("gps_denied");
-          if (code === 2) msg = t("gps_unavailable");
-          if (code === 3) msg = t("gps_timeout");
-
-          setGpsBadge(t("map_gps_off"), "warn");
-          setMapStatus(msg, true);
-          toast(msg);
-          els.mapLocate.disabled = false;
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10_000,
-          maximumAge: 60_000
-        }
-      );
+        setGpsBadge(t("map_gps_on"), "ok");
+        setMapStatus(t("map_status_gps_private"));
+        toast(t("gps_ready"));
+        window.requestAnimationFrame(() => map.invalidateSize());
+      } catch (err) {
+        const code = err && typeof err.code === "number" ? err.code : 0;
+        const msg = gpsMessageFromError(err);
+        const badge = code === 1 ? t("map_gps_off") : t("map_gps_error");
+        setGpsBadge(badge, "warn");
+        setMapStatus(msg, true);
+        toast(msg);
+      } finally {
+        els.mapLocate.disabled = false;
+      }
     };
 
     if (els.mapLocate) {
@@ -9192,44 +9263,32 @@
         }
         startUserWatch();
       },
-      requestGpsOnce: () => {
-        return new Promise((resolve, reject) => {
-          if (!navigator.geolocation) {
-            setGpsBadge(t("map_gps_unsupported"), "warn");
-            reject(new Error("geolocation unsupported"));
-            return;
-          }
-
-          setGpsBadge(t("map_gps_request"), "off");
-          setMapStatus(t("map_status_requesting_gps"));
-          navigator.geolocation.getCurrentPosition(
-            (pos) => {
-              const lat = pos.coords.latitude;
-              const lng = pos.coords.longitude;
-              const accuracy = Number(pos.coords.accuracy) || 0;
-              setUserLatLng(lat, lng, accuracy, { ensureRing: false });
-              maybeSaveHomeFromRaw(lastUserLatLngRaw);
-              setGpsBadge(t("map_gps_on"), "ok");
-              setMapStatus(t("map_status_ready"));
-              resolve({ lat, lng, accuracy });
-            },
-            (err) => {
-              const code = err && typeof err.code === "number" ? err.code : 0;
-              let msg = t("gps_error");
-              if (code === 1) msg = t("gps_denied");
-              if (code === 2) msg = t("gps_unavailable");
-              if (code === 3) msg = t("gps_timeout");
-              setGpsBadge(t("map_gps_off"), "warn");
-              setMapStatus(msg, true);
-              reject(new Error(msg));
-            },
-            {
-              enableHighAccuracy: true,
-              timeout: 10_000,
-              maximumAge: 60_000
-            }
-          );
-        });
+      requestGpsOnce: async () => {
+        if (!navigator.geolocation) {
+          setGpsBadge(t("map_gps_unsupported"), "warn");
+          const err = new Error("geolocation unsupported");
+          err.code = 0;
+          throw err;
+        }
+        setGpsBadge(t("map_gps_request"), "off");
+        setMapStatus(t("map_status_requesting_gps"));
+        try {
+          const { lat, lng, accuracy } = await requestUserGpsFix({ preferFresh: false });
+          setUserLatLng(lat, lng, accuracy, { ensureRing: false });
+          maybeSaveHomeFromRaw(lastUserLatLngRaw);
+          setGpsBadge(t("map_gps_on"), "ok");
+          setMapStatus(t("map_status_ready"));
+          return { lat, lng, accuracy };
+        } catch (err) {
+          const code = err && typeof err.code === "number" ? err.code : 0;
+          const msg = gpsMessageFromError(err);
+          const badge = code === 1 ? t("map_gps_off") : t("map_gps_error");
+          setGpsBadge(badge, "warn");
+          setMapStatus(msg, true);
+          const wrapped = new Error(msg);
+          wrapped.code = code;
+          throw wrapped;
+        }
       },
       setTasks: (tasks) => {
         tasksForLines = Array.isArray(tasks) ? tasks.slice() : [];
