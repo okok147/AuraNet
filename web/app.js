@@ -6433,6 +6433,9 @@
     // Keep self aura above the paper texture overlay so it stays visible.
     selfAuraPane.style.zIndex = "460";
     const selfAuraRenderer = L.canvas({ padding: 0.5, pane: "selfAuraPane", tolerance: 8 });
+    const tapPane = map.createPane("tapPane");
+    // Dedicated hit-target pane above aura overlays to keep tapping reliable on mobile.
+    tapPane.style.zIndex = "650";
     const taskPane = map.createPane("taskPane");
     // Above the paper texture + aura haze so accepted-task tethers stay visible.
     taskPane.style.zIndex = "520";
@@ -7035,6 +7038,17 @@
       }).addTo(map);
     };
 
+    const makeAgentTapIcon = (diameterPx) => {
+      const dRaw = Number(diameterPx) || 0;
+      const d = Math.max(34, Math.min(140, Math.round(dRaw)));
+      return L.divIcon({
+        className: "auraTapMarker",
+        html: "",
+        iconSize: [d, d],
+        iconAnchor: [Math.round(d / 2), Math.round(d / 2)]
+      });
+    };
+
     const removeUserAuraLayers = () => {
       for (const l of userAuraLayers) l.remove();
       userAuraLayers = [];
@@ -7559,6 +7573,23 @@
         });
         layer.setRadius(Math.max(10, baseR * radiusScale * repScale));
       }
+
+      if (agent.tapMarker && typeof agent.tapMarker.setIcon === "function") {
+        const outerRadius =
+          agent.outer && typeof agent.outer.getRadius === "function"
+            ? Number(agent.outer.getRadius()) || Number(agent.baseOuterRadius) || 24
+            : Number(agent.baseOuterRadius) || 24;
+        const wantHitPx = Math.max(18, Math.min(70, Math.round(outerRadius * 0.75 + 12)));
+        const prevHitPx = Number(agent.tapHitPx) || 0;
+        if (Math.abs(wantHitPx - prevHitPx) >= 3) {
+          agent.tapHitPx = wantHitPx;
+          try {
+            agent.tapMarker.setIcon(makeAgentTapIcon(wantHitPx * 2));
+          } catch {
+            // ignore
+          }
+        }
+      }
     };
 
     const maybeUpdateAgentStyle = (agent, now) => {
@@ -7740,15 +7771,15 @@
       const baseOpacities = [0.05, 0.08, 0.12];
       const layers = baseRadii.map((r, i) => createAuraLayer(route.points[0], persona.fill, r, baseOpacities[i] || 0.08));
       const outer = layers[0];
-      const tapMarker = L.circleMarker(route.points[0], {
-        pane: "markerPane",
-        radius: Math.max(22, baseOuterRadius * 0.78),
-        stroke: false,
-        fill: true,
-        fillColor: "#000000",
-        fillOpacity: 0,
+      const tapHitPx = Math.max(20, Math.min(72, Math.round(baseOuterRadius * 0.78 + 12)));
+      const tapMarker = L.marker(route.points[0], {
+        pane: "tapPane",
+        icon: makeAgentTapIcon(tapHitPx * 2),
+        keyboard: false,
         interactive: true,
-        bubblingMouseEvents: false
+        bubblingMouseEvents: false,
+        autoPanOnFocus: false,
+        zIndexOffset: 1200
       }).addTo(map);
 
       const distM = randBetween(0, route.totalM);
@@ -7767,6 +7798,7 @@
         outer,
         layers,
         tapMarker,
+        tapHitPx,
         route,
         persona,
         mix: agentInitMix(persona),
@@ -8267,6 +8299,7 @@
     const nearestAgentForClick = (latLng) => {
       if (!latLng || !sim.agents.length) return null;
       const clickPt = map.latLngToContainerPoint(latLng);
+      const zoom = map.getZoom();
       let best = null;
       let bestDist = Infinity;
       let bestLoose = null;
@@ -8275,7 +8308,10 @@
         if (!agent || !agent.outer || isAgentBlocked(agent)) continue;
         let ll = null;
         try {
-          ll = agent.outer.getLatLng();
+          ll =
+            (agent.tapMarker && typeof agent.tapMarker.getLatLng === "function"
+              ? agent.tapMarker.getLatLng()
+              : null) || agent.outer.getLatLng();
         } catch {
           ll = null;
         }
@@ -8286,7 +8322,9 @@
           typeof agent.outer.getRadius === "function"
             ? Number(agent.outer.getRadius()) || Number(agent.baseOuterRadius) || 20
             : Number(agent.baseOuterRadius) || 20;
-        const hitPx = Math.max(20, r * 0.9) + 24;
+        const tapPx = Number(agent.tapHitPx) || 0;
+        const zoomPad = zoom <= 13 ? 26 : zoom <= 15 ? 18 : 12;
+        const hitPx = Math.max(24, tapPx + zoomPad, r * 0.8 + 18);
         if (d <= hitPx && d < bestDist) {
           bestDist = d;
           best = agent;
@@ -8298,7 +8336,7 @@
       }
       if (best) return best;
       // Fallback hit window helps when moving canvas layers miss exact taps on mobile.
-      const looseMaxPx = map.getZoom() <= 13 ? 140 : 105;
+      const looseMaxPx = zoom <= 13 ? 150 : zoom <= 15 ? 120 : 96;
       if (bestLoose && bestLooseDist <= looseMaxPx) return bestLoose;
       return null;
     };
@@ -8360,7 +8398,7 @@
           const dy = (Number(ev && ev.clientY) || 0) - pointerDown.y;
           pointerDown = null;
           // Ignore drags; only treat tap/click releases as aura selection intents.
-          if (Math.hypot(dx, dy) > 12) return;
+          if (Math.hypot(dx, dy) > 18) return;
           if (!mapLayerFilters.people || !sim.enabled) return;
           let ll = null;
           try {
