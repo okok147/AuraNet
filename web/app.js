@@ -63,6 +63,7 @@
     approvedInput: $("approvedInput"),
     approvedAdd: $("approvedAdd"),
     approvedList: $("approvedList"),
+    blockedList: $("blockedList"),
     activityTime: $("activityTime"),
     activityHint: $("activityHint"),
     activityStart: $("activityStart"),
@@ -402,6 +403,9 @@
       approved_add: "Add",
       approved_empty: "No approved contacts yet",
       approved_remove: "Remove",
+      blocked_label: "Blocked contacts",
+      blocked_empty: "No blocked contacts",
+      blocked_remove: "Unblock",
       area_room_state_on: "ROOM: ON",
       area_room_state_off: "ROOM: OFF",
       toast_room_code_empty: "Room code can’t be empty.",
@@ -410,6 +414,8 @@
       toast_contact_added: "Approved contact added.",
       toast_contact_exists: "Already approved.",
       toast_contact_removed: "Approved contact removed.",
+      toast_contact_blocked: "Blocked {handle}.",
+      toast_contact_unblocked: "Unblocked {handle}.",
       toast_dm_saved: "Message saved for {handle}.",
       toast_dm_empty: "Message can’t be empty.",
       activity_start: "Start",
@@ -433,6 +439,7 @@
       popup_you: "You",
       popup_action_message: "Message",
       popup_action_add_friend: "Add friend",
+      popup_action_block: "Block",
       popup_message_prompt: "Message to {handle}",
       gps_unsupported: "Geolocation not supported.",
       gps_denied: "Location permission denied.",
@@ -706,6 +713,9 @@
       approved_add: "新增",
       approved_empty: "尚無已核准聯絡人",
       approved_remove: "移除",
+      blocked_label: "封鎖聯絡人",
+      blocked_empty: "尚無封鎖聯絡人",
+      blocked_remove: "解除封鎖",
       area_room_state_on: "房間：開",
       area_room_state_off: "房間：關",
       toast_room_code_empty: "房間代碼不能為空。",
@@ -714,6 +724,8 @@
       toast_contact_added: "已新增核准聯絡人。",
       toast_contact_exists: "已在核准名單中。",
       toast_contact_removed: "已移除核准聯絡人。",
+      toast_contact_blocked: "已封鎖 {handle}。",
+      toast_contact_unblocked: "已解除封鎖 {handle}。",
       toast_dm_saved: "已儲存給 {handle} 的訊息。",
       toast_dm_empty: "訊息內容不能為空。",
       activity_start: "開始",
@@ -737,6 +749,7 @@
       popup_you: "你",
       popup_action_message: "訊息",
       popup_action_add_friend: "加好友",
+      popup_action_block: "封鎖",
       popup_message_prompt: "傳送訊息給 {handle}",
       gps_unsupported: "此瀏覽器不支援定位。",
       gps_denied: "定位權限被拒絕。",
@@ -1010,6 +1023,9 @@
       approved_add: "追加",
       approved_empty: "承認済みはまだありません",
       approved_remove: "削除",
+      blocked_label: "ブロック済み連絡先",
+      blocked_empty: "ブロック済みはありません",
+      blocked_remove: "解除",
       area_room_state_on: "ROOM: ON",
       area_room_state_off: "ROOM: OFF",
       toast_room_code_empty: "ルームコードを入力してください。",
@@ -1018,6 +1034,8 @@
       toast_contact_added: "承認済みに追加しました。",
       toast_contact_exists: "すでに承認済みです。",
       toast_contact_removed: "承認済みから削除しました。",
+      toast_contact_blocked: "{handle} をブロックしました。",
+      toast_contact_unblocked: "{handle} のブロックを解除しました。",
       toast_dm_saved: "{handle} へのメッセージを保存しました。",
       toast_dm_empty: "メッセージを入力してください。",
       activity_start: "開始",
@@ -1041,6 +1059,7 @@
       popup_you: "あなた",
       popup_action_message: "メッセージ",
       popup_action_add_friend: "友だち追加",
+      popup_action_block: "ブロック",
       popup_message_prompt: "{handle} へのメッセージ",
       gps_unsupported: "位置情報に対応していません。",
       gps_denied: "位置情報の許可が拒否されました。",
@@ -1375,7 +1394,8 @@
       user: null
     },
     social: {
-      sent: []
+      sent: [],
+      blocked: []
     }
   });
 
@@ -1625,6 +1645,7 @@
 
       if (!merged.social || typeof merged.social !== "object") merged.social = defaultState().social;
       if (!Array.isArray(merged.social.sent)) merged.social.sent = [];
+      if (!Array.isArray(merged.social.blocked)) merged.social.blocked = [];
       merged.social.sent = merged.social.sent
         .filter((m) => m && typeof m === "object")
         .map((m) => ({
@@ -1635,6 +1656,10 @@
           sentAt: Number(m.sentAt) || 0
         }))
         .filter((m) => m.id && m.to && m.text)
+        .slice(0, 400);
+      merged.social.blocked = merged.social.blocked
+        .map((h) => normalizeContactHandle(h))
+        .filter(Boolean)
         .slice(0, 400);
 
       // Normalize task rooms (messages).
@@ -3204,11 +3229,56 @@
     }
 
     renderApprovedList();
+    renderBlockedList();
+  };
+
+  const renderBlockedList = () => {
+    if (!els.blockedList) return;
+    els.blockedList.replaceChildren();
+
+    const items = state.social && Array.isArray(state.social.blocked) ? state.social.blocked.slice() : [];
+    if (!items.length) {
+      const li = document.createElement("li");
+      li.className = "approvedEmpty";
+      li.textContent = t("blocked_empty");
+      els.blockedList.appendChild(li);
+      return;
+    }
+
+    for (const handle of items) {
+      const li = document.createElement("li");
+      li.className = "approvedItem";
+
+      const dot = document.createElement("span");
+      dot.className = "approvedDot";
+      dot.style.background = mixHex(activityColorHex(handle), "#8f8580", 0.45);
+
+      const name = document.createElement("span");
+      name.className = "approvedName";
+      name.textContent = handle;
+
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "iconBtn";
+      remove.textContent = t("blocked_remove").toUpperCase();
+      remove.addEventListener("click", () => {
+        unblockContact(handle, { notify: true, rerender: true });
+      });
+
+      li.appendChild(dot);
+      li.appendChild(name);
+      li.appendChild(remove);
+      els.blockedList.appendChild(li);
+    }
   };
 
   const ensureApprovedContact = (value, { notify = true, rerender = true } = {}) => {
     const handle = normalizeContactHandle(value);
     if (!handle) return { ok: false, reason: "invalid", handle: "" };
+    if (state.social && Array.isArray(state.social.blocked) && state.social.blocked.includes(handle)) {
+      state.social.blocked = state.social.blocked.filter((x) => x !== handle);
+      if (mapApi && typeof mapApi.refreshBlocked === "function") mapApi.refreshBlocked();
+    }
     if (!Array.isArray(state.activity.prefs.allowlist)) state.activity.prefs.allowlist = [];
     if (state.activity.prefs.allowlist.includes(handle)) {
       if (notify) toast(t("toast_contact_exists"));
@@ -3220,6 +3290,46 @@
     if (rerender) renderActivity(false);
     if (notify) toast(t("toast_contact_added"));
     return { ok: true, reason: "added", handle };
+  };
+
+  const isBlockedContact = (value) => {
+    const handle = normalizeContactHandle(value);
+    if (!handle) return false;
+    const blocked = state.social && Array.isArray(state.social.blocked) ? state.social.blocked : [];
+    return blocked.includes(handle);
+  };
+
+  const blockContact = (value, { notify = true, rerender = true } = {}) => {
+    const handle = normalizeContactHandle(value);
+    if (!handle) return { ok: false, reason: "invalid", handle: "" };
+    if (!state.social || typeof state.social !== "object") state.social = { sent: [], blocked: [] };
+    if (!Array.isArray(state.social.blocked)) state.social.blocked = [];
+    if (state.social.blocked.includes(handle)) return { ok: false, reason: "exists", handle };
+    state.social.blocked.unshift(handle);
+    state.social.blocked = state.social.blocked.slice(0, 400);
+    if (Array.isArray(state.activity.prefs.allowlist)) {
+      state.activity.prefs.allowlist = state.activity.prefs.allowlist.filter((x) => x !== handle);
+    }
+    saveState();
+    if (mapApi && typeof mapApi.refreshBlocked === "function") mapApi.refreshBlocked();
+    if (rerender) renderActivity(false);
+    if (notify) toast(t("toast_contact_blocked", { handle }));
+    return { ok: true, reason: "blocked", handle };
+  };
+
+  const unblockContact = (value, { notify = true, rerender = true } = {}) => {
+    const handle = normalizeContactHandle(value);
+    if (!handle) return { ok: false, reason: "invalid", handle: "" };
+    if (!state.social || typeof state.social !== "object") state.social = { sent: [], blocked: [] };
+    if (!Array.isArray(state.social.blocked)) state.social.blocked = [];
+    const before = state.social.blocked.length;
+    state.social.blocked = state.social.blocked.filter((x) => x !== handle);
+    if (state.social.blocked.length === before) return { ok: false, reason: "missing", handle };
+    saveState();
+    if (mapApi && typeof mapApi.refreshBlocked === "function") mapApi.refreshBlocked();
+    if (rerender) renderActivity(false);
+    if (notify) toast(t("toast_contact_unblocked", { handle }));
+    return { ok: true, reason: "unblocked", handle };
   };
 
   const saveDirectMessage = (toHandleRaw, messageRaw) => {
@@ -6337,6 +6447,7 @@
     let agentSeq = 0;
     let selectedAgentId = "";
     let selectedAgentPopup = null;
+    let lastAuraPopupAt = 0;
 
     const clearSelectedAgentPopupIfMissing = () => {
       if (!selectedAgentPopup || !selectedAgentId) return;
@@ -6348,6 +6459,11 @@
       }
       selectedAgentPopup = null;
       selectedAgentId = "";
+    };
+
+    const isAgentBlocked = (agent) => {
+      if (!agent) return true;
+      return isBlockedContact(agent.handle);
     };
 
     const setGpsBadge = (message, kind = "off") => {
@@ -7266,6 +7382,8 @@
         t("popup_action_message")
       )}</button><button type="button" class="auraPop__action" data-aura-action="add-friend">${escapeHtml(
         t("popup_action_add_friend")
+      )}</button><button type="button" class="auraPop__action auraPop__action--danger" data-aura-action="block">${escapeHtml(
+        t("popup_action_block")
       )}</button></div>`;
 
       return `<div class="auraPop"><div class="auraPop__title">${escapeHtml(title)}</div><div class="auraPop__sub">${escapeHtml(who)} • ${escapeHtml(handle)}${verified}</div><div class="auraPop__hex">${escapeHtml(agent.auraHex || "#FF6A00")}</div>${rows || empty}${actions}</div>`;
@@ -7305,6 +7423,23 @@
           toast(t("toast_dm_saved", { handle: res.handle }));
         });
       }
+
+      const blockBtn = root.querySelector('button[data-aura-action="block"]');
+      if (blockBtn) {
+        blockBtn.addEventListener("click", (ev) => {
+          if (ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+          }
+          const res = blockContact(handle, { notify: true, rerender: true });
+          if (!res.ok) return;
+          try {
+            map.closePopup(popup);
+          } catch {
+            // ignore
+          }
+        });
+      }
     };
 
     const openAgentPopup = (agent, latLng) => {
@@ -7313,6 +7448,7 @@
         .setLatLng(latLng)
         .setContent(html)
         .openOn(map);
+      lastAuraPopupAt = simNow();
       selectedAgentId = String(agent && agent.id ? agent.id : "");
       selectedAgentPopup = popup;
       popup.on("remove", () => {
@@ -7404,25 +7540,48 @@
       applyAgentStyle(agent, tNow);
     };
 
-    const clearAgents = () => {
-      for (const a of sim.agents) {
+    const removeAgentLayers = (agent) => {
+      if (!agent) return;
+      try {
+        if (agent.outer) agent.outer.unbindTooltip();
+      } catch {
+        // ignore
+      }
+      if (agent.id) agentsById.delete(agent.id);
+      if (Array.isArray(agent.layers) && agent.layers.length) {
+        for (const l of agent.layers) {
+          try {
+            l.remove();
+          } catch {
+            // ignore
+          }
+        }
+      } else if (agent.outer) {
         try {
-          a.outer.unbindTooltip();
+          agent.outer.remove();
         } catch {
           // ignore
         }
-        if (a && a.id) agentsById.delete(a.id);
-        if (a && Array.isArray(a.layers)) {
-          for (const l of a.layers) {
-            try {
-              l.remove();
-            } catch {
-              // ignore
-            }
-          }
-        } else if (a && a.outer) {
-          a.outer.remove();
+      }
+    };
+
+    const removeBlockedAgents = () => {
+      if (!sim.agents.length) return;
+      const keep = [];
+      for (const agent of sim.agents) {
+        if (isAgentBlocked(agent)) {
+          removeAgentLayers(agent);
+          continue;
         }
+        keep.push(agent);
+      }
+      sim.agents = keep;
+      clearSelectedAgentPopupIfMissing();
+    };
+
+    const clearAgents = () => {
+      for (const a of sim.agents) {
+        removeAgentLayers(a);
       }
       sim.agents = [];
       clearSelectedAgentPopupIfMissing();
@@ -7489,6 +7648,7 @@
       const now = simNow();
       const id = uid();
       const handle = `@sim${String(++agentSeq).padStart(3, "0")}`;
+      if (isBlockedContact(handle)) return null;
       const verified = Math.random() < 0.42;
       const skillsPool = ["courier", "photo", "fast", "careful", "bilingual", "tools", "trusted", "night"];
       const skillsCount = verified ? clamp(Math.round(randBetween(3, 5)), 3, 5) : clamp(Math.round(randBetween(2, 4)), 2, 4);
@@ -7701,7 +7861,9 @@
             ? pickOne(routesWalking.length ? routesWalking : routesDriving)
             : pickOne(routesDriving.length ? routesDriving : routesWalking);
         if (!route) break;
-        sim.agents.push(createAgent(route, persona));
+        const next = createAgent(route, persona);
+        if (!next) continue;
+        sim.agents.push(next);
       }
 
       while (sim.agents.length > nowTarget) {
@@ -7709,17 +7871,7 @@
         if (idx < 0) break;
         const agent = sim.agents.splice(idx, 1)[0];
         if (!agent) break;
-        try {
-          agent.outer.unbindTooltip();
-        } catch {
-          // ignore
-        }
-        if (agent.id) agentsById.delete(agent.id);
-        if (Array.isArray(agent.layers) && agent.layers.length) {
-          for (const l of agent.layers) l.remove();
-        } else {
-          agent.outer.remove();
-        }
+        removeAgentLayers(agent);
       }
       clearSelectedAgentPopupIfMissing();
     };
@@ -7761,24 +7913,16 @@
               ? pickOne(routesWalking)
               : pickOne(routesDriving.length ? routesDriving : routesWalking);
           if (!route) continue;
-          nextAgents.push(createAgent(route, persona));
+          const next = createAgent(route, persona);
+          if (!next) continue;
+          nextAgents.push(next);
         }
 
         sim.routePool = pool;
         sim.agents = nextAgents;
         for (const a of prevAgents) {
           if (a && a.id && protect.has(a.id)) continue;
-          try {
-            a.outer.unbindTooltip();
-          } catch {
-            // ignore
-          }
-          if (a && a.id) agentsById.delete(a.id);
-          if (a && Array.isArray(a.layers)) {
-            for (const l of a.layers) l.remove();
-          } else if (a && a.outer) {
-            a.outer.remove();
-          }
+          removeAgentLayers(a);
         }
         clearSelectedAgentPopupIfMissing();
 
@@ -7824,6 +7968,7 @@
         setSimUi();
         return;
       }
+      removeBlockedAgents();
       const targetCount = auraTargetCountForZoom(map.getZoom());
       if (!sim.routePool) {
         if (sim.agents.length === 0 && !sim.loading) rebuildSim();
@@ -7836,6 +7981,7 @@
     const startSim = () => {
       if (sim.enabled) return;
       sim.enabled = true;
+      removeBlockedAgents();
       setSimUi();
       syncSimForView();
     };
@@ -8024,16 +8170,80 @@
     if (els.mapHudCancel) {
       els.mapHudCancel.addEventListener("click", () => cancelPick({ resetStatus: true }));
     }
+    const nearestAgentForClick = (latLng) => {
+      if (!latLng || !sim.agents.length) return null;
+      const clickPt = map.latLngToContainerPoint(latLng);
+      let best = null;
+      let bestDist = Infinity;
+      for (const agent of sim.agents) {
+        if (!agent || !agent.outer || isAgentBlocked(agent)) continue;
+        let ll = null;
+        try {
+          ll = agent.outer.getLatLng();
+        } catch {
+          ll = null;
+        }
+        if (!ll) continue;
+        const pt = map.latLngToContainerPoint(ll);
+        const d = clickPt.distanceTo(pt);
+        const r =
+          typeof agent.outer.getRadius === "function"
+            ? Number(agent.outer.getRadius()) || Number(agent.baseOuterRadius) || 20
+            : Number(agent.baseOuterRadius) || 20;
+        const hitPx = Math.max(16, r * 0.66) + 10;
+        if (d > hitPx) continue;
+        if (d >= bestDist) continue;
+        bestDist = d;
+        best = agent;
+      }
+      return best;
+    };
     map.on("click", (e) => {
-      if (!pickCb) return;
-      const cb = pickCb;
-      cancelPick({ resetStatus: true });
       const ll = e && e.latlng ? e.latlng : null;
-      if (!ll) return;
-      try {
-        cb({ lat: ll.lat, lng: ll.lng });
-      } catch {
-        // ignore
+      if (pickCb) {
+        const cb = pickCb;
+        cancelPick({ resetStatus: true });
+        if (!ll) return;
+        try {
+          cb({ lat: ll.lat, lng: ll.lng });
+        } catch {
+          // ignore
+        }
+        return;
+      }
+
+      if (!ll || !mapLayerFilters.people || !sim.enabled) {
+        if (selectedAgentPopup) {
+          try {
+            map.closePopup(selectedAgentPopup);
+          } catch {
+            // ignore
+          }
+        }
+        return;
+      }
+
+      const now = simNow();
+      if (now - lastAuraPopupAt < 140) return;
+
+      const hitAgent = nearestAgentForClick(ll);
+      if (hitAgent) {
+        let at = ll;
+        try {
+          at = hitAgent.outer.getLatLng() || ll;
+        } catch {
+          at = ll;
+        }
+        openAgentPopup(hitAgent, at);
+        return;
+      }
+
+      if (selectedAgentPopup) {
+        try {
+          map.closePopup(selectedAgentPopup);
+        } catch {
+          // ignore
+        }
       }
     });
     window.addEventListener("keydown", (e) => {
@@ -8528,6 +8738,13 @@
           applyAgentStyle(a, simNow());
           syncAgentDialog(a);
         }
+      },
+      refreshBlocked: () => {
+        removeBlockedAgents();
+        if (sim.enabled && sim.routePool && map.getZoom() >= STREET_MIN_ZOOM && !sim.loading) {
+          ensureAgentCount(auraTargetCountForZoom(map.getZoom()));
+        }
+        setSimUi();
       },
       refreshI18n: () => {
         setSimUi();
