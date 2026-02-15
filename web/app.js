@@ -8184,6 +8184,8 @@
       const clickPt = map.latLngToContainerPoint(latLng);
       let best = null;
       let bestDist = Infinity;
+      let bestLoose = null;
+      let bestLooseDist = Infinity;
       for (const agent of sim.agents) {
         if (!agent || !agent.outer || isAgentBlocked(agent)) continue;
         let ll = null;
@@ -8200,12 +8202,20 @@
             ? Number(agent.outer.getRadius()) || Number(agent.baseOuterRadius) || 20
             : Number(agent.baseOuterRadius) || 20;
         const hitPx = Math.max(20, r * 0.9) + 24;
-        if (d > hitPx) continue;
-        if (d >= bestDist) continue;
-        bestDist = d;
-        best = agent;
+        if (d <= hitPx && d < bestDist) {
+          bestDist = d;
+          best = agent;
+        }
+        if (d < bestLooseDist) {
+          bestLooseDist = d;
+          bestLoose = agent;
+        }
       }
-      return best;
+      if (best) return best;
+      // Fallback hit window helps when moving canvas layers miss exact taps on mobile.
+      const looseMaxPx = map.getZoom() <= 13 ? 140 : 105;
+      if (bestLoose && bestLooseDist <= looseMaxPx) return bestLoose;
+      return null;
     };
     map.on("click", (e) => {
       const ll = e && e.latlng ? e.latlng : null;
@@ -8221,16 +8231,7 @@
         return;
       }
 
-      if (!ll || !mapLayerFilters.people || !sim.enabled) {
-        if (selectedAgentPopup) {
-          try {
-            map.closePopup(selectedAgentPopup);
-          } catch {
-            // ignore
-          }
-        }
-        return;
-      }
+      if (!ll || !mapLayerFilters.people || !sim.enabled) return;
 
       const now = simNow();
       if (now - lastAuraPopupAt < 800) return;
@@ -8247,13 +8248,7 @@
         return;
       }
 
-      if (selectedAgentPopup) {
-        try {
-          map.closePopup(selectedAgentPopup);
-        } catch {
-          // ignore
-        }
-      }
+      // Keep the current popup open until user selects another aura or closes it.
     });
     window.addEventListener("keydown", (e) => {
       if (e && e.key === "Escape") cancelPick({ resetStatus: true });
