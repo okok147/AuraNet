@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Myelin Sheath Animation</title>
+    <meta
+      name="description"
+      content="Interactive animation showing how the myelin sheath helps action potentials jump between nodes of Ranvier."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Sora:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./myelin-animation.css" />
+    <script src="./myelin-animation.js" defer></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="hero">
+        <p class="eyebrow">Neuroscience Motion Study</p>
+        <h1>How the Myelin Sheath Speeds Up Nerve Signals</h1>
+        <p class="subtitle">
+          The pulse below simulates action potential travel along an axon.
+          Switch conditions to compare healthy myelin, damaged myelin, and no
+          myelin.
+        </p>
+      </header>
+
+      <section class="controls" aria-label="Animation controls">
+        <button id="playPauseButton" class="play-toggle" type="button">
+          Pause Animation
+        </button>
+
+        <label class="speed-control" for="speedRange">
+          <span>Conduction speed</span>
+          <input
+            id="speedRange"
+            type="range"
+            min="0.6"
+            max="2"
+            value="1"
+            step="0.1"
+            aria-describedby="speedValue"
+          />
+          <strong id="speedValue">1.0x</strong>
+        </label>
+
+        <fieldset class="mode-group">
+          <legend>Myelin condition</legend>
+          <label>
+            <input type="radio" name="mode" value="healthy" checked />
+            Healthy
+          </label>
+          <label>
+            <input type="radio" name="mode" value="damaged" />
+            Damaged
+          </label>
+          <label>
+            <input type="radio" name="mode" value="bare" />
+            No myelin
+          </label>
+        </fieldset>
+      </section>
+
+      <section class="canvas-panel">
+        <div class="visualization">
+          <svg
+            id="axonDiagram"
+            viewBox="0 0 920 320"
+            role="img"
+            aria-labelledby="diagramTitle diagramDescription"
+            data-mode="healthy"
+          >
+            <title id="diagramTitle">Myelinated axon animation</title>
+            <desc id="diagramDescription">
+              A pulse travels down an axon. In healthy mode it jumps between
+              nodes, in damaged mode it leaks, and without myelin it moves
+              slowly.
+            </desc>
+
+            <defs>
+              <linearGradient id="axonGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#2f566f" />
+                <stop offset="50%" stop-color="#44799a" />
+                <stop offset="100%" stop-color="#2f566f" />
+              </linearGradient>
+              <linearGradient
+                id="myelinGradient"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="100%"
+              >
+                <stop offset="0%" stop-color="#f8d28a" />
+                <stop offset="100%" stop-color="#efb954" />
+              </linearGradient>
+              <radialGradient id="pulseGradient" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#f7fff4" />
+                <stop offset="100%" stop-color="#59c6b0" />
+              </radialGradient>
+              <filter id="softGlow" x="-60%" y="-60%" width="220%" height="220%">
+                <feGaussianBlur stdDeviation="4" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+
+            <rect class="chamber" x="26" y="48" width="868" height="224" rx="34" />
+            <line id="axonCore" x1="92" y1="160" x2="828" y2="160" />
+
+            <g id="myelinSegments">
+              <rect class="myelin-segment" data-index="0" x="132" y="126" width="96" height="68" rx="34" />
+              <rect class="myelin-segment" data-index="1" x="272" y="126" width="96" height="68" rx="34" />
+              <rect class="myelin-segment" data-index="2" x="412" y="126" width="96" height="68" rx="34" />
+              <rect class="myelin-segment" data-index="3" x="552" y="126" width="96" height="68" rx="34" />
+              <rect class="myelin-segment" data-index="4" x="692" y="126" width="96" height="68" rx="34" />
+            </g>
+
+            <g id="lesions" aria-hidden="true">
+              <path class="lesion-mark" d="M438 132 L452 150 L436 168 L450 188" />
+              <path class="lesion-mark" d="M578 132 L590 150 L576 168 L592 188" />
+            </g>
+
+            <g id="nodes">
+              <circle class="node-core" cx="110" cy="160" r="10" />
+              <circle class="node-core" cx="250" cy="160" r="10" />
+              <circle class="node-core" cx="390" cy="160" r="10" />
+              <circle class="node-core" cx="530" cy="160" r="10" />
+              <circle class="node-core" cx="670" cy="160" r="10" />
+              <circle class="node-core" cx="810" cy="160" r="10" />
+
+              <circle class="node-ring" cx="110" cy="160" r="10" />
+              <circle class="node-ring" cx="250" cy="160" r="10" />
+              <circle class="node-ring" cx="390" cy="160" r="10" />
+              <circle class="node-ring" cx="530" cy="160" r="10" />
+              <circle class="node-ring" cx="670" cy="160" r="10" />
+              <circle class="node-ring" cx="810" cy="160" r="10" />
+            </g>
+
+            <path id="pulseTrail" d="" />
+            <circle id="pulseGlow" cx="110" cy="160" r="18" />
+            <circle id="pulseCore" cx="110" cy="160" r="9" />
+          </svg>
+
+          <div class="legend">
+            <span><i class="legend-dot pulse"></i>Action potential</span>
+            <span><i class="legend-dot sheath"></i>Myelin sheath</span>
+            <span><i class="legend-dot node"></i>Node of Ranvier</span>
+          </div>
+        </div>
+
+        <aside class="info-panel">
+          <article class="info-card">
+            <h2>Relative speed</h2>
+            <p id="speedReadout">Fast saltatory conduction between nodes.</p>
+          </article>
+          <article class="info-card">
+            <h2>Signal integrity</h2>
+            <p id="integrityReadout">Low ion leak. Strong pulse arrival.</p>
+          </article>
+          <article class="info-card">
+            <h2>Live narration</h2>
+            <p id="narrationReadout">
+              Signal is leaping from one node to the next.
+            </p>
+          </article>
+        </aside>
+      </section>
+
+      <section class="explainers">
+        <h2>Why this matters</h2>
+        <ul>
+          <li>
+            Myelin acts like insulation around axons, reducing current loss.
+          </li>
+          <li>
+            Nodes of Ranvier let the impulse regenerate in jumps (saltatory
+            conduction).
+          </li>
+          <li>
+            When myelin is damaged, messages slow down and can weaken before
+            they arrive.
+          </li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>
