@@ -7710,6 +7710,15 @@
 
       if (!pool.driving.length) synthForProfile("driving", desiredDriving);
       if (!pool.walking.length) synthForProfile("walking", desiredWalking);
+      if (!pool.driving.length && !pool.walking.length) {
+        const c = map.getCenter();
+        const a = L.latLng(clamp(c.lat, -85, 85), wrapLng(c.lng));
+        const b = L.latLng(clamp(c.lat + 0.01, -85, 85), wrapLng(c.lng + 0.01));
+        const drive = buildRouteFromPoints("driving", [a, b]);
+        const walk = buildRouteFromPoints("walking", [a, b]);
+        if (drive) pool.driving.push(drive);
+        if (walk) pool.walking.push(walk);
+      }
       return pool;
     };
 
@@ -8311,23 +8320,70 @@
 
       if (!ll || !mapLayerFilters.people || !sim.enabled) return;
 
-      const now = simNow();
-      if (now - lastAuraPopupAt < 800) return;
-
-      const hitAgent = nearestAgentForClick(ll);
-      if (hitAgent) {
-        let at = ll;
+      const tryOpenNearestAura = (latLng, { ignoreCooldown = false } = {}) => {
+        if (!latLng || !mapLayerFilters.people || !sim.enabled) return false;
+        const nowLocal = simNow();
+        if (!ignoreCooldown && nowLocal - lastAuraPopupAt < 800) return false;
+        const hitAgent = nearestAgentForClick(latLng);
+        if (!hitAgent) return false;
+        let at = latLng;
         try {
-          at = hitAgent.outer.getLatLng() || ll;
+          at = hitAgent.outer.getLatLng() || latLng;
         } catch {
-          at = ll;
+          at = latLng;
         }
         openAgentPopup(hitAgent, at);
-        return;
-      }
+        return true;
+      };
 
-      // Keep the current popup open until user selects another aura or closes it.
+      if (tryOpenNearestAura(ll)) return;
     });
+
+    const mapContainer = map.getContainer();
+    let pointerDown = null;
+    if (mapContainer && typeof mapContainer.addEventListener === "function") {
+      mapContainer.addEventListener(
+        "pointerdown",
+        (ev) => {
+          pointerDown = {
+            x: Number(ev && ev.clientX) || 0,
+            y: Number(ev && ev.clientY) || 0,
+            t: simNow()
+          };
+        },
+        { passive: true }
+      );
+
+      mapContainer.addEventListener(
+        "pointerup",
+        (ev) => {
+          if (!pointerDown) return;
+          const dx = (Number(ev && ev.clientX) || 0) - pointerDown.x;
+          const dy = (Number(ev && ev.clientY) || 0) - pointerDown.y;
+          pointerDown = null;
+          // Ignore drags; only treat tap/click releases as aura selection intents.
+          if (Math.hypot(dx, dy) > 12) return;
+          if (!mapLayerFilters.people || !sim.enabled) return;
+          let ll = null;
+          try {
+            ll = map.mouseEventToLatLng(ev);
+          } catch {
+            ll = null;
+          }
+          if (!ll) return;
+          const nowLocal = simNow();
+          if (nowLocal - lastAuraPopupAt < 120) return;
+          const hitAgent = nearestAgentForClick(ll);
+          if (!hitAgent) return;
+          try {
+            openAgentPopup(hitAgent, hitAgent.outer.getLatLng() || ll);
+          } catch {
+            openAgentPopup(hitAgent, ll);
+          }
+        },
+        { passive: true }
+      );
+    }
     window.addEventListener("keydown", (e) => {
       if (e && e.key === "Escape") cancelPick({ resetStatus: true });
     });
