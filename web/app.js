@@ -1453,6 +1453,15 @@
       const parsed = JSON.parse(raw);
       if (!parsed || parsed.version !== 1) return defaultState();
       const base = defaultState();
+      // Keep a local normalizer to avoid relying on later-in-file declarations.
+      const normHandle = (value) => {
+        const rawHandle = String(value || "").trim();
+        if (!rawHandle) return "";
+        let v = rawHandle.startsWith("@") ? rawHandle : `@${rawHandle}`;
+        v = v.replace(/\s+/g, "");
+        v = v.slice(0, 32);
+        return v.toLowerCase();
+      };
       const merged = {
         ...base,
         ...parsed,
@@ -1650,7 +1659,7 @@
         .filter((m) => m && typeof m === "object")
         .map((m) => ({
           id: String(m.id || ""),
-          to: normalizeContactHandle(m.to),
+          to: normHandle(m.to),
           text: String(m.text || "").slice(0, 280),
           from: String(m.from || "").slice(0, 64),
           sentAt: Number(m.sentAt) || 0
@@ -1658,7 +1667,7 @@
         .filter((m) => m.id && m.to && m.text)
         .slice(0, 400);
       merged.social.blocked = merged.social.blocked
-        .map((h) => normalizeContactHandle(h))
+        .map((h) => normHandle(h))
         .filter(Boolean)
         .slice(0, 400);
 
@@ -8190,7 +8199,7 @@
           typeof agent.outer.getRadius === "function"
             ? Number(agent.outer.getRadius()) || Number(agent.baseOuterRadius) || 20
             : Number(agent.baseOuterRadius) || 20;
-        const hitPx = Math.max(16, r * 0.66) + 10;
+        const hitPx = Math.max(20, r * 0.9) + 24;
         if (d > hitPx) continue;
         if (d >= bestDist) continue;
         bestDist = d;
@@ -8224,7 +8233,7 @@
       }
 
       const now = simNow();
-      if (now - lastAuraPopupAt < 140) return;
+      if (now - lastAuraPopupAt < 800) return;
 
       const hitAgent = nearestAgentForClick(ll);
       if (hitAgent) {
