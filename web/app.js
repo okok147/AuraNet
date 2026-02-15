@@ -7603,9 +7603,9 @@
           // ignore
         }
       }
-      if (agent.hitLayer) {
+      if (agent.tapMarker) {
         try {
-          agent.hitLayer.remove();
+          agent.tapMarker.remove();
         } catch {
           // ignore
         }
@@ -7738,17 +7738,18 @@
       const baseOuterRadius = randBetween(44, 68);
       const baseRadii = [baseOuterRadius, baseOuterRadius * 0.72, baseOuterRadius * 0.48];
       const baseOpacities = [0.05, 0.08, 0.12];
-      const layers = baseRadii.map((r, i) =>
-        createAuraLayer(route.points[0], persona.fill, r, baseOpacities[i] || 0.08, {
-          interactive: true,
-          bubblingMouseEvents: false
-        })
-      );
+      const layers = baseRadii.map((r, i) => createAuraLayer(route.points[0], persona.fill, r, baseOpacities[i] || 0.08));
       const outer = layers[0];
-      const hitLayer = createAuraLayer(route.points[0], "#000000", Math.max(26, baseOuterRadius * 0.92 + 18), 0.001, {
+      const tapMarker = L.circleMarker(route.points[0], {
+        pane: "markerPane",
+        radius: Math.max(22, baseOuterRadius * 0.78),
+        stroke: false,
+        fill: true,
+        fillColor: "#000000",
+        fillOpacity: 0,
         interactive: true,
         bubblingMouseEvents: false
-      });
+      }).addTo(map);
 
       const distM = randBetween(0, route.totalM);
       const dir = Math.random() < 0.5 ? 1 : -1;
@@ -7765,7 +7766,7 @@
         onTimePct,
         outer,
         layers,
-        hitLayer,
+        tapMarker,
         route,
         persona,
         mix: agentInitMix(persona),
@@ -7793,7 +7794,7 @@
       agent.hintIdx = pos.idx;
       const ll = jitterLatLng(pos.latLng, agent.jitterPx);
       for (const l of layers) l.setLatLng(ll);
-      hitLayer.setLatLng(ll);
+      tapMarker.setLatLng(ll);
       agent.auraHex = mixWeightedHex(agent.mix);
       applyAgentStyle(agent, now);
 
@@ -7809,10 +7810,7 @@
         const llClick = e && e.latlng ? e.latlng : agent.outer.getLatLng();
         openAgentPopup(agent, llClick);
       };
-      for (const l of layers) {
-        l.on("click", onClick);
-      }
-      hitLayer.on("click", onClick);
+      tapMarker.on("click", onClick);
       syncAgentDialog(agent);
       agentsById.set(agent.id, agent);
       return agent;
@@ -7897,9 +7895,9 @@
         } else {
           agent.outer.setLatLng(ll);
         }
-        if (agent.hitLayer) {
+        if (agent.tapMarker) {
           try {
-            agent.hitLayer.setLatLng(ll);
+            agent.tapMarker.setLatLng(ll);
           } catch {
             // ignore
           }
