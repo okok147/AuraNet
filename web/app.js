@@ -6827,6 +6827,13 @@
 
     const randomViewLatLng = (margin = 40) => {
       const size = map.getSize();
+      if (!size || size.x < 120 || size.y < 120) {
+        const c = map.getCenter();
+        const dist = randBetween(120, 1400);
+        const ang = Math.random() * Math.PI * 2;
+        const ll = offsetLatLngMeters(c, Math.cos(ang) * dist, Math.sin(ang) * dist) || c;
+        return L.latLng(clamp(ll.lat, -85, 85), wrapLng(ll.lng));
+      }
       const x = margin + Math.random() * Math.max(1, size.x - margin * 2);
       const y = margin + Math.random() * Math.max(1, size.y - margin * 2);
       const ll = map.containerPointToLatLng([x, y]);
@@ -6835,6 +6842,12 @@
 
     const targetFrom = (startLatLng, minPx, maxPx, margin = 40) => {
       const size = map.getSize();
+      if (!size || size.x < 120 || size.y < 120) {
+        const distM = randBetween(Math.max(160, minPx * 3.2), Math.max(420, maxPx * 4.4));
+        const ang = Math.random() * Math.PI * 2;
+        const ll = offsetLatLngMeters(startLatLng, Math.cos(ang) * distM, Math.sin(ang) * distM) || startLatLng;
+        return L.latLng(clamp(ll.lat, -85, 85), wrapLng(ll.lng));
+      }
       const pt = map.latLngToContainerPoint(startLatLng);
       const dist = minPx + Math.random() * (maxPx - minPx);
       const ang = Math.random() * Math.PI * 2;
@@ -7004,15 +7017,21 @@
       return Math.round(min + t * (max - min));
     };
 
-    const createAuraLayer = (latLng, fill, radius, fillOpacity, { renderer = simRenderer } = {}) => {
+    const createAuraLayer = (
+      latLng,
+      fill,
+      radius,
+      fillOpacity,
+      { renderer = simRenderer, interactive = false, bubblingMouseEvents = true } = {}
+    ) => {
       return L.circleMarker(latLng, {
         renderer,
         radius,
         stroke: false,
         fillColor: fill,
         fillOpacity,
-        interactive: true,
-        bubblingMouseEvents: false
+        interactive,
+        bubblingMouseEvents
       }).addTo(map);
     };
 
@@ -7063,9 +7082,21 @@
       if (!latLng) return;
       if (userAuraLayers.length === 0) {
         userAuraLayers = [
-          createAuraLayer(latLng, userAuraColor, 70, 0.06, { renderer: selfAuraRenderer }),
-          createAuraLayer(latLng, userAuraColor, 52, 0.09, { renderer: selfAuraRenderer }),
-          createAuraLayer(latLng, userAuraColor, 36, 0.12, { renderer: selfAuraRenderer })
+          createAuraLayer(latLng, userAuraColor, 70, 0.06, {
+            renderer: selfAuraRenderer,
+            interactive: true,
+            bubblingMouseEvents: false
+          }),
+          createAuraLayer(latLng, userAuraColor, 52, 0.09, {
+            renderer: selfAuraRenderer,
+            interactive: true,
+            bubblingMouseEvents: false
+          }),
+          createAuraLayer(latLng, userAuraColor, 36, 0.12, {
+            renderer: selfAuraRenderer,
+            interactive: true,
+            bubblingMouseEvents: false
+          })
         ];
 
         const onClick = (e) => {
@@ -7572,6 +7603,13 @@
           // ignore
         }
       }
+      if (agent.hitLayer) {
+        try {
+          agent.hitLayer.remove();
+        } catch {
+          // ignore
+        }
+      }
     };
 
     const removeBlockedAgents = () => {
@@ -7649,6 +7687,29 @@
 
       await fillPool("driving");
       await fillPool("walking");
+
+      const synthForProfile = (profile, desired) => {
+        const center = map.getCenter();
+        const maxCount = Math.max(2, desired);
+        for (let i = pool[profile].length; i < maxCount; i++) {
+          const startDist = profile === "walking" ? randBetween(80, 900) : randBetween(280, 1800);
+          const endDist = profile === "walking" ? randBetween(220, 1500) : randBetween(900, 4600);
+          const a0 = Math.random() * Math.PI * 2;
+          const a1 = Math.random() * Math.PI * 2;
+          const start = offsetLatLngMeters(center, Math.cos(a0) * startDist, Math.sin(a0) * startDist);
+          const end = offsetLatLngMeters(center, Math.cos(a1) * endDist, Math.sin(a1) * endDist);
+          if (!start || !end) continue;
+          const route = buildRouteFromPoints(profile, [
+            L.latLng(clamp(start.lat, -85, 85), wrapLng(start.lng)),
+            L.latLng(clamp(end.lat, -85, 85), wrapLng(end.lng))
+          ]);
+          if (!route || route.totalM < (profile === "walking" ? 120 : 300)) continue;
+          pool[profile].push(route);
+        }
+      };
+
+      if (!pool.driving.length) synthForProfile("driving", desiredDriving);
+      if (!pool.walking.length) synthForProfile("walking", desiredWalking);
       return pool;
     };
 
@@ -7669,9 +7730,16 @@
       const baseRadii = [baseOuterRadius, baseOuterRadius * 0.72, baseOuterRadius * 0.48];
       const baseOpacities = [0.05, 0.08, 0.12];
       const layers = baseRadii.map((r, i) =>
-        createAuraLayer(route.points[0], persona.fill, r, baseOpacities[i] || 0.08)
+        createAuraLayer(route.points[0], persona.fill, r, baseOpacities[i] || 0.08, {
+          interactive: true,
+          bubblingMouseEvents: false
+        })
       );
       const outer = layers[0];
+      const hitLayer = createAuraLayer(route.points[0], "#000000", Math.max(26, baseOuterRadius * 0.92 + 18), 0.001, {
+        interactive: true,
+        bubblingMouseEvents: false
+      });
 
       const distM = randBetween(0, route.totalM);
       const dir = Math.random() < 0.5 ? 1 : -1;
@@ -7688,6 +7756,7 @@
         onTimePct,
         outer,
         layers,
+        hitLayer,
         route,
         persona,
         mix: agentInitMix(persona),
@@ -7715,6 +7784,7 @@
       agent.hintIdx = pos.idx;
       const ll = jitterLatLng(pos.latLng, agent.jitterPx);
       for (const l of layers) l.setLatLng(ll);
+      hitLayer.setLatLng(ll);
       agent.auraHex = mixWeightedHex(agent.mix);
       applyAgentStyle(agent, now);
 
@@ -7733,6 +7803,7 @@
       for (const l of layers) {
         l.on("click", onClick);
       }
+      hitLayer.on("click", onClick);
       syncAgentDialog(agent);
       agentsById.set(agent.id, agent);
       return agent;
@@ -7816,6 +7887,13 @@
           for (const l of agent.layers) l.setLatLng(ll);
         } else {
           agent.outer.setLatLng(ll);
+        }
+        if (agent.hitLayer) {
+          try {
+            agent.hitLayer.setLatLng(ll);
+          } catch {
+            // ignore
+          }
         }
         if (selectedAgentPopup && selectedAgentId && selectedAgentId === String(agent.id || "")) {
           try {
@@ -8474,8 +8552,24 @@
 
         let rec = eventLayers.get(id) || null;
         if (!rec) {
-          const c0 = L.circle(ll, { pane: "overlayPane", renderer: simRenderer, radius: rM * 1.22, stroke: false, fillColor: color, fillOpacity: op0 }).addTo(map);
-          const c1 = L.circle(ll, { pane: "overlayPane", renderer: simRenderer, radius: rM * 0.86, stroke: false, fillColor: color, fillOpacity: op1 }).addTo(map);
+          const c0 = L.circle(ll, {
+            pane: "overlayPane",
+            renderer: simRenderer,
+            radius: rM * 1.22,
+            stroke: false,
+            fillColor: color,
+            fillOpacity: op0,
+            interactive: false
+          }).addTo(map);
+          const c1 = L.circle(ll, {
+            pane: "overlayPane",
+            renderer: simRenderer,
+            radius: rM * 0.86,
+            stroke: false,
+            fillColor: color,
+            fillOpacity: op1,
+            interactive: false
+          }).addTo(map);
           rec = { circles: [c0, c1], tooltipBound: false };
           eventLayers.set(id, rec);
         }
