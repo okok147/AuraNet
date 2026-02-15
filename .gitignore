@@ -14,6 +14,11 @@ coverage/
 .turbo/
 .cache/
 
+# Python artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
 # Per AGENTS.md: keep local-only
 firebase-config.js
 web/firebase-config.js
