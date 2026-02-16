@@ -2666,6 +2666,10 @@ body > main.shell {
   overflow: hidden;
 }
 
+.inboxDock__panel[hidden] {
+  display: none;
+}
+
 .inboxDock__head {
   display: flex;
   align-items: center;

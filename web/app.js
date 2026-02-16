@@ -3403,6 +3403,13 @@
   let inboxOpen = false;
   let inboxSelectedHandle = "";
 
+  const initInboxUi = () => {
+    inboxOpen = false;
+    if (els.inboxDock) els.inboxDock.classList.remove("inboxDock--open");
+    if (els.inboxPanel) els.inboxPanel.hidden = true;
+    if (els.inboxToggle) els.inboxToggle.setAttribute("aria-expanded", "false");
+  };
+
   const collectInboxMessages = () => {
     const arr = state && state.social && Array.isArray(state.social.sent) ? state.social.sent : [];
     return arr
@@ -3463,6 +3470,11 @@
         }
       });
     }
+  };
+
+  const closeInbox = () => {
+    inboxOpen = false;
+    renderInbox();
   };
 
   const renderInbox = () => {
@@ -9748,10 +9760,7 @@
   }
 
   if (els.inboxClose) {
-    els.inboxClose.addEventListener("click", () => {
-      inboxOpen = false;
-      renderInbox();
-    });
+    els.inboxClose.addEventListener("click", closeInbox);
   }
 
   if (els.inboxThreads) {
@@ -9773,11 +9782,18 @@
     });
   }
 
+  window.addEventListener("pointerdown", (e) => {
+    if (!inboxOpen) return;
+    if (!els.inboxDock) return;
+    const target = e && e.target ? e.target : null;
+    if (target && els.inboxDock.contains(target)) return;
+    closeInbox();
+  });
+
   window.addEventListener("keydown", (e) => {
     if (!e || e.key !== "Escape") return;
     if (!inboxOpen) return;
-    inboxOpen = false;
-    renderInbox();
+    closeInbox();
   });
 
   if (els.authLogin) {
@@ -9804,6 +9820,7 @@
     });
   }
 
+  initInboxUi();
   bindSectionTabs();
   bindNetworkPill();
   bindDataTools();
