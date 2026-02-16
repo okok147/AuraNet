@@ -969,6 +969,57 @@
       </div>
     </main>
 
+    <aside class="inboxDock" id="inboxDock" aria-label="Inbox">
+      <button
+        class="inboxDock__fab"
+        type="button"
+        id="inboxToggle"
+        aria-haspopup="dialog"
+        aria-controls="inboxPanel"
+        aria-expanded="false"
+      >
+        <span data-i18n="inbox_open">Inbox</span>
+        <span class="inboxDock__count" id="inboxCount" hidden>0</span>
+      </button>
+
+      <section class="inboxDock__panel" id="inboxPanel" role="dialog" aria-modal="false" aria-label="Inbox panel" hidden>
+        <header class="inboxDock__head">
+          <div class="inboxDock__title" data-i18n="inbox_title">Inbox</div>
+          <button class="btn btn--ghost btn--compact" type="button" id="inboxClose">
+            <span data-i18n="room_close">Close</span>
+          </button>
+        </header>
+
+        <div class="inboxDock__body">
+          <div class="inboxDock__threads" id="inboxThreads" aria-label="Conversations"></div>
+          <div class="inboxDock__messages" id="inboxMessages" aria-live="polite"></div>
+        </div>
+
+        <form class="inboxDock__composer" id="inboxComposer" autocomplete="off">
+          <label class="sr-only" for="inboxTo" data-i18n="inbox_to_label">To</label>
+          <input
+            class="input inboxDock__to"
+            id="inboxTo"
+            maxlength="32"
+            placeholder="@handle"
+            data-i18n-placeholder="inbox_to_placeholder"
+          />
+          <label class="sr-only" for="inboxText" data-i18n="inbox_message_placeholder">Type a message</label>
+          <textarea
+            class="input inboxDock__text"
+            id="inboxText"
+            rows="2"
+            maxlength="280"
+            placeholder="Type a message…"
+            data-i18n-placeholder="inbox_message_placeholder"
+          ></textarea>
+          <button class="btn btn--primary inboxDock__send" type="submit" id="inboxSend">
+            <span data-i18n="inbox_send">Send</span>
+          </button>
+        </form>
+      </section>
+    </aside>
+
     <div class="toast toast--global" id="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
 
     <div class="modal" id="roomModal" hidden>

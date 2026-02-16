@@ -76,6 +76,17 @@
     activityList: $("activityList"),
     langSelect: $("langSelect"),
     toast: $("toast"),
+    inboxDock: $("inboxDock"),
+    inboxToggle: $("inboxToggle"),
+    inboxCount: $("inboxCount"),
+    inboxPanel: $("inboxPanel"),
+    inboxClose: $("inboxClose"),
+    inboxThreads: $("inboxThreads"),
+    inboxMessages: $("inboxMessages"),
+    inboxComposer: $("inboxComposer"),
+    inboxTo: $("inboxTo"),
+    inboxText: $("inboxText"),
+    inboxSend: $("inboxSend"),
 
     areaRadius: $("areaRadius"),
     areaRadiusValue: $("areaRadiusValue"),
@@ -418,6 +429,15 @@
       toast_contact_unblocked: "Unblocked {handle}.",
       toast_dm_saved: "Message saved for {handle}.",
       toast_dm_empty: "Message can’t be empty.",
+      toast_dm_need_handle: "Enter a valid @handle.",
+      inbox_open: "Inbox",
+      inbox_title: "Inbox",
+      inbox_threads_empty: "No contacts yet.",
+      inbox_empty: "No messages yet.",
+      inbox_to_label: "To",
+      inbox_to_placeholder: "@handle",
+      inbox_message_placeholder: "Type a message…",
+      inbox_send: "Send",
       activity_start: "Start",
       activity_stop_log: "Stop & log",
       activity_clear: "Clear log",
@@ -728,6 +748,15 @@
       toast_contact_unblocked: "已解除封鎖 {handle}。",
       toast_dm_saved: "已儲存給 {handle} 的訊息。",
       toast_dm_empty: "訊息內容不能為空。",
+      toast_dm_need_handle: "請輸入有效的 @帳號。",
+      inbox_open: "收件匣",
+      inbox_title: "收件匣",
+      inbox_threads_empty: "尚無聯絡人。",
+      inbox_empty: "尚無訊息。",
+      inbox_to_label: "收件人",
+      inbox_to_placeholder: "@帳號",
+      inbox_message_placeholder: "輸入訊息…",
+      inbox_send: "送出",
       activity_start: "開始",
       activity_stop_log: "結束並紀錄",
       activity_clear: "清除紀錄",
@@ -1038,6 +1067,15 @@
       toast_contact_unblocked: "{handle} のブロックを解除しました。",
       toast_dm_saved: "{handle} へのメッセージを保存しました。",
       toast_dm_empty: "メッセージを入力してください。",
+      toast_dm_need_handle: "有効な @handle を入力してください。",
+      inbox_open: "受信箱",
+      inbox_title: "受信箱",
+      inbox_threads_empty: "連絡先はまだありません。",
+      inbox_empty: "メッセージはまだありません。",
+      inbox_to_label: "宛先",
+      inbox_to_placeholder: "@handle",
+      inbox_message_placeholder: "メッセージ…",
+      inbox_send: "送信",
       activity_start: "開始",
       activity_stop_log: "停止して記録",
       activity_clear: "ログを消去",
@@ -1322,6 +1360,7 @@
     if (typeof renderTaskRoom === "function") renderTaskRoom();
     if (typeof renderNetworkPill === "function") renderNetworkPill();
     if (typeof renderAuthUi === "function") renderAuthUi();
+    if (typeof renderInbox === "function") renderInbox();
     if (typeof syncInstallButton === "function") syncInstallButton();
   };
 
@@ -3357,7 +3396,193 @@
     });
     state.social.sent = state.social.sent.slice(0, 400);
     saveState();
+    if (typeof renderInbox === "function") renderInbox();
     return { ok: true, handle: to };
+  };
+
+  let inboxOpen = false;
+  let inboxSelectedHandle = "";
+
+  const collectInboxMessages = () => {
+    const arr = state && state.social && Array.isArray(state.social.sent) ? state.social.sent : [];
+    return arr
+      .map((m) => {
+        const to = normalizeContactHandle(m && m.to);
+        const text = normalizeActivityText((m && m.text) || "").slice(0, 280);
+        const sentAt = Number(m && m.sentAt) || 0;
+        if (!to || !text) return null;
+        return {
+          id: String((m && m.id) || uid()),
+          to,
+          text,
+          sentAt
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.sentAt - b.sentAt);
+  };
+
+  const collectInboxThreads = () => {
+    const map = new Map();
+    for (const msg of collectInboxMessages()) {
+      const key = msg.to;
+      const rec = map.get(key) || {
+        handle: key,
+        count: 0,
+        lastAt: 0,
+        lastText: ""
+      };
+      rec.count += 1;
+      if ((Number(msg.sentAt) || 0) >= rec.lastAt) {
+        rec.lastAt = Number(msg.sentAt) || 0;
+        rec.lastText = msg.text;
+      }
+      map.set(key, rec);
+    }
+    return Array.from(map.values()).sort((a, b) => b.lastAt - a.lastAt);
+  };
+
+  const openInboxForHandle = (handleRaw = "") => {
+    const handle = normalizeContactHandle(handleRaw);
+    if (handle) inboxSelectedHandle = handle;
+    inboxOpen = true;
+    renderInbox();
+    if (els.inboxTo) {
+      els.inboxTo.value = handle || inboxSelectedHandle || els.inboxTo.value || "";
+    }
+    if (els.inboxText) {
+      window.requestAnimationFrame(() => {
+        try {
+          els.inboxText.focus({ preventScroll: true });
+        } catch {
+          try {
+            els.inboxText.focus();
+          } catch {
+            // ignore
+          }
+        }
+      });
+    }
+  };
+
+  const renderInbox = () => {
+    if (!els.inboxDock || !els.inboxToggle || !els.inboxPanel || !els.inboxThreads || !els.inboxMessages) return;
+
+    const threads = collectInboxThreads();
+    const allMessages = collectInboxMessages();
+
+    if (!threads.some((x) => x.handle === inboxSelectedHandle)) {
+      inboxSelectedHandle = threads.length ? threads[0].handle : "";
+    }
+
+    els.inboxDock.classList.toggle("inboxDock--open", inboxOpen);
+    els.inboxPanel.hidden = !inboxOpen;
+    els.inboxToggle.setAttribute("aria-expanded", inboxOpen ? "true" : "false");
+
+    if (els.inboxCount) {
+      const n = allMessages.length;
+      els.inboxCount.hidden = n <= 0;
+      els.inboxCount.textContent = n > 99 ? "99+" : String(n);
+    }
+
+    els.inboxThreads.replaceChildren();
+    if (!threads.length) {
+      const empty = document.createElement("div");
+      empty.className = "inboxThread inboxThread--empty";
+      empty.textContent = t("inbox_threads_empty");
+      els.inboxThreads.appendChild(empty);
+    } else {
+      for (const th of threads) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "inboxThread";
+        if (th.handle === inboxSelectedHandle) btn.classList.add("inboxThread--active");
+        btn.setAttribute("data-handle", th.handle);
+
+        const top = document.createElement("div");
+        top.className = "inboxThread__top";
+
+        const who = document.createElement("span");
+        who.className = "inboxThread__who";
+        who.textContent = th.handle;
+
+        const when = document.createElement("span");
+        when.className = "inboxThread__time";
+        when.textContent = th.lastAt ? fmtHm(th.lastAt) : "—";
+
+        top.appendChild(who);
+        top.appendChild(when);
+
+        const preview = document.createElement("div");
+        preview.className = "inboxThread__preview";
+        preview.textContent = th.lastText || "—";
+
+        btn.appendChild(top);
+        btn.appendChild(preview);
+        els.inboxThreads.appendChild(btn);
+      }
+    }
+
+    els.inboxMessages.replaceChildren();
+    const threadMessages = inboxSelectedHandle
+      ? allMessages.filter((m) => m.to === inboxSelectedHandle)
+      : [];
+
+    if (!threadMessages.length) {
+      const empty = document.createElement("div");
+      empty.className = "inboxMsg inboxMsg--empty";
+      empty.textContent = t("inbox_empty");
+      els.inboxMessages.appendChild(empty);
+    } else {
+      for (const m of threadMessages) {
+        const row = document.createElement("div");
+        row.className = "inboxMsg inboxMsg--me";
+
+        const bubble = document.createElement("div");
+        bubble.className = "inboxMsg__bubble";
+        bubble.textContent = m.text;
+
+        const meta = document.createElement("div");
+        meta.className = "inboxMsg__meta";
+        meta.textContent = `${m.to} • ${fmtHm(m.sentAt || nowMs())}`;
+
+        row.appendChild(bubble);
+        row.appendChild(meta);
+        els.inboxMessages.appendChild(row);
+      }
+      const last = els.inboxMessages.lastElementChild;
+      if (last && typeof last.scrollIntoView === "function") {
+        last.scrollIntoView({ block: "end", behavior: "smooth" });
+      }
+    }
+
+    if (els.inboxTo && !els.inboxTo.matches(":focus")) {
+      els.inboxTo.value = inboxSelectedHandle || "";
+    }
+  };
+
+  const sendInboxMessage = () => {
+    const handle = normalizeContactHandle(
+      (els.inboxTo && els.inboxTo.value) || inboxSelectedHandle || ""
+    );
+    if (!handle) {
+      toast(t("toast_dm_need_handle"));
+      if (els.inboxTo) els.inboxTo.focus();
+      return;
+    }
+    const text = els.inboxText ? els.inboxText.value : "";
+    const res = saveDirectMessage(handle, text);
+    if (!res.ok) {
+      if (res.reason === "empty") toast(t("toast_dm_empty"));
+      return;
+    }
+    inboxSelectedHandle = res.handle;
+    inboxOpen = true;
+    if (els.inboxTo) els.inboxTo.value = res.handle;
+    if (els.inboxText) els.inboxText.value = "";
+    renderInbox();
+    toast(t("toast_dm_saved", { handle: res.handle }));
+    if (els.inboxText) els.inboxText.focus();
   };
 
   const renderActivityList = () => {
@@ -5941,6 +6166,7 @@
     renderTasks();
     renderMarket();
     renderEvents();
+    renderInbox();
     startTaskEngine();
   };
 
@@ -7467,14 +7693,7 @@
             ev.preventDefault();
             ev.stopPropagation();
           }
-          const msg = window.prompt(t("popup_message_prompt", { handle }), "");
-          if (msg === null) return;
-          const res = saveDirectMessage(handle, msg);
-          if (!res.ok) {
-            if (res.reason === "empty") toast(t("toast_dm_empty"));
-            return;
-          }
-          toast(t("toast_dm_saved", { handle: res.handle }));
+          openInboxForHandle(handle);
         });
       }
 
@@ -7930,13 +8149,6 @@
         if (agent.tapMarker) {
           try {
             agent.tapMarker.setLatLng(ll);
-          } catch {
-            // ignore
-          }
-        }
-        if (selectedAgentPopup && selectedAgentId && selectedAgentId === String(agent.id || "")) {
-          try {
-            selectedAgentPopup.setLatLng(ll);
           } catch {
             // ignore
           }
@@ -9516,6 +9728,57 @@
       addApproved();
     });
   }
+
+  if (els.inboxToggle) {
+    els.inboxToggle.addEventListener("click", () => {
+      inboxOpen = !inboxOpen;
+      renderInbox();
+      if (inboxOpen && els.inboxText) {
+        try {
+          els.inboxText.focus({ preventScroll: true });
+        } catch {
+          try {
+            els.inboxText.focus();
+          } catch {
+            // ignore
+          }
+        }
+      }
+    });
+  }
+
+  if (els.inboxClose) {
+    els.inboxClose.addEventListener("click", () => {
+      inboxOpen = false;
+      renderInbox();
+    });
+  }
+
+  if (els.inboxThreads) {
+    els.inboxThreads.addEventListener("click", (e) => {
+      const btn = e && e.target ? e.target.closest("button[data-handle]") : null;
+      if (!btn) return;
+      const handle = normalizeContactHandle(btn.getAttribute("data-handle"));
+      if (!handle) return;
+      inboxSelectedHandle = handle;
+      inboxOpen = true;
+      renderInbox();
+    });
+  }
+
+  if (els.inboxComposer) {
+    els.inboxComposer.addEventListener("submit", (e) => {
+      e.preventDefault();
+      sendInboxMessage();
+    });
+  }
+
+  window.addEventListener("keydown", (e) => {
+    if (!e || e.key !== "Escape") return;
+    if (!inboxOpen) return;
+    inboxOpen = false;
+    renderInbox();
+  });
 
   if (els.authLogin) {
     els.authLogin.addEventListener("click", () => {

@@ -2590,6 +2590,244 @@ body > main.shell {
   gap: 10px;
 }
 
+.inboxDock {
+  position: fixed;
+  right: max(14px, env(safe-area-inset-right, 0px));
+  bottom: max(14px, env(safe-area-inset-bottom, 0px));
+  z-index: 950;
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.inboxDock__fab {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 9px 14px;
+  border: 1px solid rgba(255, 106, 0, 0.34);
+  border-radius: 999px;
+  background: rgba(255, 250, 242, 0.96);
+  color: rgba(32, 24, 18, 0.92);
+  box-shadow: var(--shadow2);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    transform var(--motion-fast) ease,
+    box-shadow var(--motion-base) var(--ease-smooth),
+    border-color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease;
+}
+
+.inboxDock__fab:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow3);
+}
+
+.inboxDock__fab:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(255, 106, 0, 0.22),
+    var(--shadow2);
+}
+
+.inboxDock__count {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(32, 24, 18, 0.16);
+  display: inline-grid;
+  place-items: center;
+  background: rgba(255, 106, 0, 0.2);
+  color: rgba(32, 24, 18, 0.92);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.03em;
+}
+
+.inboxDock__panel {
+  pointer-events: auto;
+  width: min(360px, calc(100vw - 22px));
+  max-height: min(74vh, 620px);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  border-radius: 14px;
+  border: 1px solid var(--stroke2);
+  background: rgba(255, 250, 242, 0.96);
+  box-shadow: 0 24px 58px rgba(24, 16, 10, 0.24);
+  overflow: hidden;
+}
+
+.inboxDock__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 10px 8px;
+  border-bottom: 1px solid rgba(32, 24, 18, 0.1);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.38));
+}
+
+.inboxDock__title {
+  font-family: var(--font-ui);
+  font-weight: 900;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(32, 24, 18, 0.86);
+}
+
+.inboxDock__body {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.inboxDock__threads {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px dashed rgba(32, 24, 18, 0.14);
+  max-height: 158px;
+  overflow: auto;
+}
+
+.inboxThread {
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(32, 24, 18, 0.14);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.56);
+  padding: 7px 9px;
+  color: rgba(32, 24, 18, 0.88);
+  cursor: pointer;
+}
+
+.inboxThread--active {
+  border-color: rgba(255, 106, 0, 0.4);
+  background: rgba(255, 106, 0, 0.12);
+}
+
+.inboxThread--empty {
+  border-style: dashed;
+  cursor: default;
+  font-size: 11px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.inboxThread__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.inboxThread__who {
+  font-family: var(--font-ui);
+  font-weight: 900;
+  font-size: 11px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.inboxThread__time {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
+.inboxThread__preview {
+  margin-top: 4px;
+  color: rgba(32, 24, 18, 0.74);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inboxDock__messages {
+  min-height: 0;
+  overflow: auto;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.inboxMsg {
+  max-width: 90%;
+  justify-self: start;
+}
+
+.inboxMsg--me {
+  justify-self: end;
+}
+
+.inboxMsg--empty {
+  justify-self: stretch;
+  border: 1px dashed rgba(32, 24, 18, 0.14);
+  border-radius: 10px;
+  padding: 9px 10px;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.inboxMsg__bubble {
+  border: 1px solid rgba(255, 106, 0, 0.28);
+  border-radius: 10px 10px 2px 10px;
+  background: rgba(255, 106, 0, 0.12);
+  padding: 8px 10px;
+  color: rgba(32, 24, 18, 0.92);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.inboxMsg__meta {
+  margin-top: 3px;
+  text-align: right;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
+.inboxDock__composer {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid rgba(32, 24, 18, 0.1);
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.inboxDock__to,
+.inboxDock__text {
+  width: 100%;
+}
+
+.inboxDock__text {
+  resize: vertical;
+  min-height: 58px;
+  max-height: 140px;
+}
+
+.inboxDock__send.btn {
+  justify-self: end;
+}
+
 .dialog {
   border: 0;
   padding: 0;
@@ -3252,6 +3490,21 @@ body > main.shell {
     width: 100%;
   }
 
+  .inboxDock {
+    right: max(10px, env(safe-area-inset-right, 0px));
+    left: max(10px, env(safe-area-inset-left, 0px));
+    justify-items: stretch;
+  }
+
+  .inboxDock__fab {
+    justify-self: end;
+  }
+
+  .inboxDock__panel {
+    width: 100%;
+    max-height: min(64vh, 520px);
+  }
+
   .modal {
     padding: 0;
   }
@@ -3310,6 +3563,8 @@ body > main.shell {
   .mapWrap,
   .mapWrap::after,
   .mapFilterBtn,
+  .inboxDock__fab,
+  .inboxDock__panel,
   .sectionTabs__btn,
   .dialog__panel,
   .modal__panel,
