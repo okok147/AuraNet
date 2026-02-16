@@ -85,7 +85,9 @@
     inboxMessages: $("inboxMessages"),
     inboxComposer: $("inboxComposer"),
     inboxTo: $("inboxTo"),
+    inboxToList: $("inboxToList"),
     inboxText: $("inboxText"),
+    inboxHint: $("inboxHint"),
     inboxSend: $("inboxSend"),
 
     areaRadius: $("areaRadius"),
@@ -437,6 +439,8 @@
       inbox_to_label: "To",
       inbox_to_placeholder: "@handle",
       inbox_message_placeholder: "Type a message…",
+      inbox_hint_empty: "Pick a contact or type a @handle.",
+      inbox_hint_ready: "Enter sends. Shift+Enter adds a new line.",
       inbox_send: "Send",
       activity_start: "Start",
       activity_stop_log: "Stop & log",
@@ -756,6 +760,8 @@
       inbox_to_label: "收件人",
       inbox_to_placeholder: "@帳號",
       inbox_message_placeholder: "輸入訊息…",
+      inbox_hint_empty: "請選聯絡人，或直接輸入 @帳號。",
+      inbox_hint_ready: "按 Enter 送出，Shift+Enter 換行。",
       inbox_send: "送出",
       activity_start: "開始",
       activity_stop_log: "結束並紀錄",
@@ -1075,6 +1081,8 @@
       inbox_to_label: "宛先",
       inbox_to_placeholder: "@handle",
       inbox_message_placeholder: "メッセージ…",
+      inbox_hint_empty: "連絡先を選ぶか、@handle を入力してください。",
+      inbox_hint_ready: "Enter で送信、Shift+Enter で改行。",
       inbox_send: "送信",
       activity_start: "開始",
       activity_stop_log: "停止して記録",
@@ -3402,6 +3410,7 @@
 
   let inboxOpen = false;
   let inboxSelectedHandle = "";
+  let inboxDraftHandle = "";
 
   const initInboxUi = () => {
     inboxOpen = false;
@@ -3410,53 +3419,78 @@
     if (els.inboxToggle) els.inboxToggle.setAttribute("aria-expanded", "false");
   };
 
-  const collectInboxMessages = () => {
-    const arr = state && state.social && Array.isArray(state.social.sent) ? state.social.sent : [];
-    return arr
-      .map((m) => {
-        const to = normalizeContactHandle(m && m.to);
-        const text = normalizeActivityText((m && m.text) || "").slice(0, 280);
-        const sentAt = Number(m && m.sentAt) || 0;
-        if (!to || !text) return null;
-        return {
-          id: String((m && m.id) || uid()),
-          to,
-          text,
-          sentAt
-        };
-      })
-      .filter(Boolean)
-      .sort((a, b) => a.sentAt - b.sentAt);
-  };
+  const deriveInboxData = () => {
+    const source = state && state.social && Array.isArray(state.social.sent) ? state.social.sent : [];
+    const messages = [];
+    const byHandle = new Map();
+    const suggested = new Set();
 
-  const collectInboxThreads = () => {
-    const map = new Map();
-    for (const msg of collectInboxMessages()) {
-      const key = msg.to;
-      const rec = map.get(key) || {
-        handle: key,
+    for (const raw of source) {
+      if (!raw || typeof raw !== "object") continue;
+      const to = normalizeContactHandle(raw.to);
+      const text = normalizeActivityText(raw.text).slice(0, 280);
+      const sentAt = Number(raw.sentAt) || 0;
+      if (!to || !text) continue;
+      const msg = {
+        id: String(raw.id || uid()),
+        to,
+        text,
+        sentAt
+      };
+      messages.push(msg);
+      suggested.add(to);
+
+      const rec = byHandle.get(to) || {
+        handle: to,
         count: 0,
         lastAt: 0,
         lastText: ""
       };
       rec.count += 1;
-      if ((Number(msg.sentAt) || 0) >= rec.lastAt) {
-        rec.lastAt = Number(msg.sentAt) || 0;
-        rec.lastText = msg.text;
+      if (sentAt >= rec.lastAt) {
+        rec.lastAt = sentAt;
+        rec.lastText = text;
       }
-      map.set(key, rec);
+      byHandle.set(to, rec);
     }
-    return Array.from(map.values()).sort((a, b) => b.lastAt - a.lastAt);
+
+    const allowlist = Array.isArray(state && state.activity && state.activity.prefs && state.activity.prefs.allowlist)
+      ? state.activity.prefs.allowlist
+      : [];
+    for (const h of allowlist) {
+      const handle = normalizeContactHandle(h);
+      if (!handle) continue;
+      if (isBlockedContact(handle)) continue;
+      suggested.add(handle);
+    }
+
+    messages.sort((a, b) => a.sentAt - b.sentAt);
+    const threads = Array.from(byHandle.values()).sort((a, b) => b.lastAt - a.lastAt);
+    const handles = Array.from(suggested).sort((a, b) => a.localeCompare(b));
+    return { messages, threads, handles };
+  };
+
+  const syncInboxComposerState = () => {
+    const typed = (els.inboxTo && els.inboxTo.value) || inboxDraftHandle || inboxSelectedHandle || "";
+    const handle = normalizeContactHandle(typed);
+    const text = els.inboxText ? normalizeActivityText(els.inboxText.value).slice(0, 280) : "";
+    const canSend = Boolean(handle && text);
+
+    if (els.inboxSend) els.inboxSend.disabled = !canSend;
+    if (els.inboxHint) {
+      els.inboxHint.textContent = handle ? t("inbox_hint_ready") : t("inbox_hint_empty");
+    }
   };
 
   const openInboxForHandle = (handleRaw = "") => {
     const handle = normalizeContactHandle(handleRaw);
-    if (handle) inboxSelectedHandle = handle;
+    if (handle) {
+      inboxSelectedHandle = handle;
+      inboxDraftHandle = handle;
+    }
     inboxOpen = true;
     renderInbox();
-    if (els.inboxTo) {
-      els.inboxTo.value = handle || inboxSelectedHandle || els.inboxTo.value || "";
-    }
+    if (els.inboxTo) els.inboxTo.value = inboxDraftHandle || inboxSelectedHandle || "";
     if (els.inboxText) {
       window.requestAnimationFrame(() => {
         try {
@@ -3480,21 +3514,31 @@
   const renderInbox = () => {
     if (!els.inboxDock || !els.inboxToggle || !els.inboxPanel || !els.inboxThreads || !els.inboxMessages) return;
 
-    const threads = collectInboxThreads();
-    const allMessages = collectInboxMessages();
+    const data = deriveInboxData();
+    const { messages, threads, handles } = data;
 
     if (!threads.some((x) => x.handle === inboxSelectedHandle)) {
       inboxSelectedHandle = threads.length ? threads[0].handle : "";
     }
+    if (!inboxDraftHandle) inboxDraftHandle = inboxSelectedHandle || "";
 
     els.inboxDock.classList.toggle("inboxDock--open", inboxOpen);
     els.inboxPanel.hidden = !inboxOpen;
     els.inboxToggle.setAttribute("aria-expanded", inboxOpen ? "true" : "false");
 
     if (els.inboxCount) {
-      const n = allMessages.length;
+      const n = messages.length;
       els.inboxCount.hidden = n <= 0;
       els.inboxCount.textContent = n > 99 ? "99+" : String(n);
+    }
+
+    if (els.inboxToList) {
+      els.inboxToList.replaceChildren();
+      for (const handle of handles) {
+        const op = document.createElement("option");
+        op.value = handle;
+        els.inboxToList.appendChild(op);
+      }
     }
 
     els.inboxThreads.replaceChildren();
@@ -3518,12 +3562,21 @@
         who.className = "inboxThread__who";
         who.textContent = th.handle;
 
+        const metaWrap = document.createElement("span");
+        metaWrap.className = "inboxThread__meta";
+
+        const count = document.createElement("span");
+        count.className = "inboxThread__count";
+        count.textContent = String(Math.max(1, Number(th.count) || 1));
+
         const when = document.createElement("span");
         when.className = "inboxThread__time";
         when.textContent = th.lastAt ? fmtHm(th.lastAt) : "—";
 
+        metaWrap.appendChild(count);
+        metaWrap.appendChild(when);
         top.appendChild(who);
-        top.appendChild(when);
+        top.appendChild(metaWrap);
 
         const preview = document.createElement("div");
         preview.className = "inboxThread__preview";
@@ -3535,11 +3588,16 @@
       }
     }
 
-    els.inboxMessages.replaceChildren();
-    const threadMessages = inboxSelectedHandle
-      ? allMessages.filter((m) => m.to === inboxSelectedHandle)
+    const activeHandle = normalizeContactHandle(
+      (els.inboxTo && els.inboxTo.matches(":focus") ? els.inboxTo.value : "") ||
+      inboxDraftHandle ||
+      inboxSelectedHandle
+    );
+    const threadMessages = activeHandle
+      ? messages.filter((m) => m.to === activeHandle)
       : [];
 
+    els.inboxMessages.replaceChildren();
     if (!threadMessages.length) {
       const empty = document.createElement("div");
       empty.className = "inboxMsg inboxMsg--empty";
@@ -3569,26 +3627,30 @@
     }
 
     if (els.inboxTo && !els.inboxTo.matches(":focus")) {
-      els.inboxTo.value = inboxSelectedHandle || "";
+      els.inboxTo.value = inboxDraftHandle || inboxSelectedHandle || "";
     }
+    syncInboxComposerState();
   };
 
   const sendInboxMessage = () => {
     const handle = normalizeContactHandle(
-      (els.inboxTo && els.inboxTo.value) || inboxSelectedHandle || ""
+      (els.inboxTo && els.inboxTo.value) || inboxDraftHandle || inboxSelectedHandle || ""
     );
     if (!handle) {
       toast(t("toast_dm_need_handle"));
       if (els.inboxTo) els.inboxTo.focus();
+      syncInboxComposerState();
       return;
     }
     const text = els.inboxText ? els.inboxText.value : "";
     const res = saveDirectMessage(handle, text);
     if (!res.ok) {
       if (res.reason === "empty") toast(t("toast_dm_empty"));
+      syncInboxComposerState();
       return;
     }
     inboxSelectedHandle = res.handle;
+    inboxDraftHandle = res.handle;
     inboxOpen = true;
     if (els.inboxTo) els.inboxTo.value = res.handle;
     if (els.inboxText) els.inboxText.value = "";
@@ -9745,14 +9807,20 @@
     els.inboxToggle.addEventListener("click", () => {
       inboxOpen = !inboxOpen;
       renderInbox();
-      if (inboxOpen && els.inboxText) {
-        try {
-          els.inboxText.focus({ preventScroll: true });
-        } catch {
+      if (inboxOpen) {
+        const activeHandle = normalizeContactHandle(
+          (els.inboxTo && els.inboxTo.value) || inboxDraftHandle || inboxSelectedHandle
+        );
+        const focusTarget = activeHandle ? els.inboxText : els.inboxTo;
+        if (focusTarget) {
           try {
-            els.inboxText.focus();
+            focusTarget.focus({ preventScroll: true });
           } catch {
-            // ignore
+            try {
+              focusTarget.focus();
+            } catch {
+              // ignore
+            }
           }
         }
       }
@@ -9763,6 +9831,30 @@
     els.inboxClose.addEventListener("click", closeInbox);
   }
 
+  if (els.inboxTo) {
+    els.inboxTo.addEventListener("input", () => {
+      inboxDraftHandle = normalizeContactHandle(els.inboxTo.value);
+      syncInboxComposerState();
+    });
+    els.inboxTo.addEventListener("blur", () => {
+      const handle = normalizeContactHandle(els.inboxTo.value);
+      inboxDraftHandle = handle;
+      if (handle) inboxSelectedHandle = handle;
+      if (handle) els.inboxTo.value = handle;
+      renderInbox();
+    });
+  }
+
+  if (els.inboxText) {
+    els.inboxText.addEventListener("input", syncInboxComposerState);
+    els.inboxText.addEventListener("keydown", (e) => {
+      if (!e || e.key !== "Enter") return;
+      if (e.shiftKey) return;
+      e.preventDefault();
+      sendInboxMessage();
+    });
+  }
+
   if (els.inboxThreads) {
     els.inboxThreads.addEventListener("click", (e) => {
       const btn = e && e.target ? e.target.closest("button[data-handle]") : null;
@@ -9770,8 +9862,20 @@
       const handle = normalizeContactHandle(btn.getAttribute("data-handle"));
       if (!handle) return;
       inboxSelectedHandle = handle;
+      inboxDraftHandle = handle;
       inboxOpen = true;
       renderInbox();
+      if (els.inboxText) {
+        try {
+          els.inboxText.focus({ preventScroll: true });
+        } catch {
+          try {
+            els.inboxText.focus();
+          } catch {
+            // ignore
+          }
+        }
+      }
     });
   }
 

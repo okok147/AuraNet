@@ -1001,9 +1001,11 @@
             class="input inboxDock__to"
             id="inboxTo"
             maxlength="32"
+            list="inboxToList"
             placeholder="@handle"
             data-i18n-placeholder="inbox_to_placeholder"
           />
+          <datalist id="inboxToList"></datalist>
           <label class="sr-only" for="inboxText" data-i18n="inbox_message_placeholder">Type a message</label>
           <textarea
             class="input inboxDock__text"
@@ -1013,6 +1015,7 @@
             placeholder="Type a message…"
             data-i18n-placeholder="inbox_message_placeholder"
           ></textarea>
+          <div class="inboxDock__hint" id="inboxHint" aria-live="polite"></div>
           <button class="btn btn--primary inboxDock__send" type="submit" id="inboxSend">
             <span data-i18n="inbox_send">Send</span>
           </button>

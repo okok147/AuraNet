@@ -2713,6 +2713,24 @@ body > main.shell {
   padding: 7px 9px;
   color: rgba(32, 24, 18, 0.88);
   cursor: pointer;
+  transition:
+    transform var(--motion-fast) ease,
+    border-color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease,
+    box-shadow var(--motion-base) var(--ease-smooth);
+}
+
+.inboxThread:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 106, 0, 0.24);
+  box-shadow: 0 8px 14px rgba(24, 16, 10, 0.08);
+}
+
+.inboxThread:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(255, 106, 0, 0.16),
+    0 8px 14px rgba(24, 16, 10, 0.08);
 }
 
 .inboxThread--active {
@@ -2741,6 +2759,26 @@ body > main.shell {
   font-size: 11px;
   letter-spacing: 0.11em;
   text-transform: uppercase;
+}
+
+.inboxThread__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.inboxThread__count {
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  border: 1px solid rgba(32, 24, 18, 0.14);
+  background: rgba(255, 106, 0, 0.14);
+  color: rgba(32, 24, 18, 0.86);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  display: inline-grid;
+  place-items: center;
 }
 
 .inboxThread__time {
@@ -2822,6 +2860,13 @@ body > main.shell {
   width: 100%;
 }
 
+.inboxDock__hint {
+  min-height: 14px;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+}
+
 .inboxDock__text {
   resize: vertical;
   min-height: 58px;
@@ -2830,6 +2875,12 @@ body > main.shell {
 
 .inboxDock__send.btn {
   justify-self: end;
+}
+
+.inboxDock__send.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .dialog {
