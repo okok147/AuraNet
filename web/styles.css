@@ -2935,6 +2935,115 @@ body > main.shell {
   margin-top: 4px;
 }
 
+.cmdDialog {
+  max-width: 620px;
+}
+
+.cmdDialog__panel {
+  gap: 10px;
+}
+
+.cmdDialog__input {
+  width: 100%;
+}
+
+.cmdDialog__list {
+  max-height: min(52vh, 420px);
+  overflow: auto;
+  display: grid;
+  gap: 8px;
+  padding-right: 2px;
+}
+
+.cmdDialog__group {
+  margin-top: 2px;
+  margin-bottom: -2px;
+  color: var(--muted2);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cmdDialog__item {
+  width: 100%;
+  border: 1px solid rgba(32, 24, 18, 0.14);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.56);
+  color: rgba(32, 24, 18, 0.9);
+  text-align: left;
+  padding: 10px 11px;
+  cursor: pointer;
+  transition:
+    transform var(--motion-fast) ease,
+    border-color var(--motion-fast) ease,
+    box-shadow var(--motion-base) var(--ease-soft),
+    background-color var(--motion-fast) ease;
+}
+
+.cmdDialog__item:hover,
+.cmdDialog__item.cmdDialog__item--active {
+  transform: translateY(-1px);
+  border-color: rgba(255, 106, 0, 0.32);
+  background: rgba(255, 106, 0, 0.12);
+  box-shadow: 0 10px 16px rgba(24, 16, 10, 0.08);
+}
+
+.cmdDialog__item:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(255, 106, 0, 0.18),
+    0 10px 16px rgba(24, 16, 10, 0.08);
+}
+
+.cmdDialog__itemTitle {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cmdDialog__itemMeta {
+  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cmdDialog__chip {
+  border: 1px solid rgba(32, 24, 18, 0.12);
+  border-radius: 999px;
+  padding: 3px 7px;
+  background: rgba(255, 255, 255, 0.52);
+  color: rgba(32, 24, 18, 0.72);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.03em;
+}
+
+.cmdDialog__empty {
+  border: 1px dashed rgba(32, 24, 18, 0.16);
+  border-radius: 12px;
+  padding: 12px;
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.cmdDialog__hint {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -3620,6 +3729,7 @@ body > main.shell {
   .mapFilterBtn,
   .inboxDock__fab,
   .inboxDock__panel,
+  .cmdDialog__item,
   .sectionTabs__btn,
   .dialog__panel,
   .modal__panel,

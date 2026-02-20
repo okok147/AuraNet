@@ -188,6 +188,11 @@
     reviewStars: $("reviewStars"),
     reviewNote: $("reviewNote"),
     reviewSubmit: $("reviewSubmit"),
+
+    cmdDialog: $("cmdDialog"),
+    cmdClose: $("cmdClose"),
+    cmdInput: $("cmdInput"),
+    cmdList: $("cmdList"),
   };
 
   const nowMs = () => Date.now();
@@ -375,6 +380,22 @@
       quick_post_task: "Post task",
       quick_post_service: "Post service",
       quick_schedule_event: "Schedule event",
+      cmd_title: "Command palette",
+      cmd_placeholder: "Search command…",
+      cmd_empty: "No matching command",
+      cmd_hint: "Enter run • Esc close",
+      cmd_group_actions: "Actions",
+      cmd_group_filters: "Map filters",
+      cmd_action_start_activity: "Start activity",
+      cmd_action_locate_me: "Center map on my location",
+      cmd_action_reset_map: "Reset map view",
+      cmd_action_open_inbox: "Open inbox",
+      cmd_action_post_task: "Post task",
+      cmd_action_post_service: "Post service",
+      cmd_action_schedule_event: "Schedule event",
+      cmd_action_toggle_people: "Toggle People layer",
+      cmd_action_toggle_events: "Toggle Event layer",
+      cmd_action_toggle_services: "Toggle Service layer",
       net_online: "ONLINE",
       net_offline: "OFFLINE",
       install_app: "Install app",
@@ -696,6 +717,22 @@
       quick_post_task: "發布任務",
       quick_post_service: "發布服務",
       quick_schedule_event: "建立排程",
+      cmd_title: "指令面板",
+      cmd_placeholder: "搜尋指令…",
+      cmd_empty: "沒有符合的指令",
+      cmd_hint: "Enter 執行 • Esc 關閉",
+      cmd_group_actions: "操作",
+      cmd_group_filters: "地圖篩選",
+      cmd_action_start_activity: "開始活動",
+      cmd_action_locate_me: "地圖置中到我的位置",
+      cmd_action_reset_map: "重置地圖視角",
+      cmd_action_open_inbox: "開啟收件匣",
+      cmd_action_post_task: "發布任務",
+      cmd_action_post_service: "發布服務",
+      cmd_action_schedule_event: "建立活動排程",
+      cmd_action_toggle_people: "切換人物圖層",
+      cmd_action_toggle_events: "切換活動圖層",
+      cmd_action_toggle_services: "切換服務圖層",
       net_online: "連線中",
       net_offline: "離線",
       install_app: "安裝 App",
@@ -1017,6 +1054,22 @@
       quick_post_task: "タスク投稿",
       quick_post_service: "サービス投稿",
       quick_schedule_event: "予定を作成",
+      cmd_title: "コマンドパレット",
+      cmd_placeholder: "コマンドを検索…",
+      cmd_empty: "一致するコマンドがありません",
+      cmd_hint: "Enter 実行 • Esc 閉じる",
+      cmd_group_actions: "アクション",
+      cmd_group_filters: "地図フィルター",
+      cmd_action_start_activity: "アクティビティ開始",
+      cmd_action_locate_me: "現在地に地図を中央寄せ",
+      cmd_action_reset_map: "地図表示をリセット",
+      cmd_action_open_inbox: "受信箱を開く",
+      cmd_action_post_task: "タスクを投稿",
+      cmd_action_post_service: "サービスを投稿",
+      cmd_action_schedule_event: "予定を作成",
+      cmd_action_toggle_people: "人物レイヤー切替",
+      cmd_action_toggle_events: "イベントレイヤー切替",
+      cmd_action_toggle_services: "サービスレイヤー切替",
       net_online: "オンライン",
       net_offline: "オフライン",
       install_app: "アプリをインストール",
@@ -1369,6 +1422,7 @@
     if (typeof renderNetworkPill === "function") renderNetworkPill();
     if (typeof renderAuthUi === "function") renderAuthUi();
     if (typeof renderInbox === "function") renderInbox();
+    if (typeof renderCmdPalette === "function" && cmdOpen) renderCmdPalette();
     if (typeof syncInstallButton === "function") syncInstallButton();
   };
 
@@ -6350,6 +6404,243 @@
     }
   };
 
+  // --- Command Palette ---
+
+  let cmdOpen = false;
+  let cmdActiveIndex = -1;
+  let cmdFiltered = [];
+
+  const commandActions = () => [
+    {
+      id: "start-activity",
+      title: t("cmd_action_start_activity"),
+      group: t("cmd_group_actions"),
+      keywords: "activity start logger track",
+      run: () => {
+        scrollToSection("activitySection");
+        focusElementSoon(els.activityText);
+      }
+    },
+    {
+      id: "locate-me",
+      title: t("cmd_action_locate_me"),
+      group: t("cmd_group_actions"),
+      keywords: "map locate gps center",
+      run: () => {
+        scrollToSection("mapSection");
+        if (els.mapLocate) els.mapLocate.click();
+      }
+    },
+    {
+      id: "reset-map",
+      title: t("cmd_action_reset_map"),
+      group: t("cmd_group_actions"),
+      keywords: "map reset home view",
+      run: () => {
+        scrollToSection("mapSection");
+        if (els.mapReset) els.mapReset.click();
+      }
+    },
+    {
+      id: "open-inbox",
+      title: t("cmd_action_open_inbox"),
+      group: t("cmd_group_actions"),
+      keywords: "inbox message chat",
+      run: () => {
+        openInboxForHandle(inboxSelectedHandle || "");
+      }
+    },
+    {
+      id: "post-task",
+      title: t("cmd_action_post_task"),
+      group: t("cmd_group_actions"),
+      keywords: "task post market",
+      run: () => {
+        openMarketplaceComposer("tasks", "tasksPost", els.taskText);
+      }
+    },
+    {
+      id: "post-service",
+      title: t("cmd_action_post_service"),
+      group: t("cmd_group_actions"),
+      keywords: "service post market",
+      run: () => {
+        openMarketplaceComposer("market", "marketPost", els.marketText, () => {
+          ensureMarketPrefs();
+          state.market.prefs.kind = "service";
+          renderMarketForm();
+        });
+      }
+    },
+    {
+      id: "schedule-event",
+      title: t("cmd_action_schedule_event"),
+      group: t("cmd_group_actions"),
+      keywords: "event schedule",
+      run: () => {
+        openMarketplaceComposer("events", "eventsPost", els.eventsText);
+      }
+    },
+    {
+      id: "toggle-people",
+      title: t("cmd_action_toggle_people"),
+      group: t("cmd_group_filters"),
+      keywords: "map filter people aura",
+      run: () => {
+        scrollToSection("mapSection");
+        toggleMapLayerFilter("people");
+      }
+    },
+    {
+      id: "toggle-events",
+      title: t("cmd_action_toggle_events"),
+      group: t("cmd_group_filters"),
+      keywords: "map filter events",
+      run: () => {
+        scrollToSection("mapSection");
+        toggleMapLayerFilter("events");
+      }
+    },
+    {
+      id: "toggle-services",
+      title: t("cmd_action_toggle_services"),
+      group: t("cmd_group_filters"),
+      keywords: "map filter services",
+      run: () => {
+        scrollToSection("mapSection");
+        toggleMapLayerFilter("services");
+      }
+    }
+  ];
+
+  const closeCmdPalette = () => {
+    cmdOpen = false;
+    cmdActiveIndex = -1;
+    cmdFiltered = [];
+    if (!els.cmdDialog) return;
+    if (typeof els.cmdDialog.close === "function" && els.cmdDialog.open) {
+      try {
+        els.cmdDialog.close();
+      } catch {
+        // ignore
+      }
+    } else {
+      els.cmdDialog.removeAttribute("open");
+      els.cmdDialog.hidden = true;
+    }
+  };
+
+  const openCmdPalette = () => {
+    if (!els.cmdDialog || !els.cmdInput) return;
+    if (cmdOpen) return;
+    cmdOpen = true;
+    if (typeof els.cmdDialog.showModal === "function") {
+      try {
+        els.cmdDialog.showModal();
+      } catch {
+        els.cmdDialog.hidden = false;
+        els.cmdDialog.setAttribute("open", "true");
+      }
+    } else {
+      els.cmdDialog.hidden = false;
+      els.cmdDialog.setAttribute("open", "true");
+    }
+    els.cmdInput.value = "";
+    renderCmdPalette();
+    window.requestAnimationFrame(() => {
+      try {
+        els.cmdInput.focus({ preventScroll: true });
+      } catch {
+        try {
+          els.cmdInput.focus();
+        } catch {
+          // ignore
+        }
+      }
+    });
+  };
+
+  const normalizeCmdQuery = (value) =>
+    String(value || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9\u3040-\u30ff\u4e00-\u9fff\u3400-\u4dbf]+/g, " ")
+      .trim();
+
+  const renderCmdPalette = () => {
+    if (!els.cmdList) return;
+    const all = commandActions();
+    const q = normalizeCmdQuery(els.cmdInput ? els.cmdInput.value : "");
+    const tokens = q ? q.split(/\s+/).filter(Boolean) : [];
+    cmdFiltered = !tokens.length
+      ? all
+      : all.filter((it) => {
+          const hay = normalizeCmdQuery(`${it.title} ${it.keywords} ${it.group}`);
+          return tokens.every((tk) => hay.includes(tk));
+        });
+
+    if (cmdFiltered.length === 0) cmdActiveIndex = -1;
+    else cmdActiveIndex = clamp(cmdActiveIndex, 0, cmdFiltered.length - 1);
+    if (cmdFiltered.length > 0 && cmdActiveIndex < 0) cmdActiveIndex = 0;
+
+    els.cmdList.replaceChildren();
+    if (!cmdFiltered.length) {
+      const empty = document.createElement("div");
+      empty.className = "cmdDialog__empty";
+      empty.textContent = t("cmd_empty");
+      els.cmdList.appendChild(empty);
+      return;
+    }
+
+    let prevGroup = "";
+    for (let i = 0; i < cmdFiltered.length; i++) {
+      const item = cmdFiltered[i];
+      if (item.group !== prevGroup) {
+        prevGroup = item.group;
+        const g = document.createElement("div");
+        g.className = "cmdDialog__group";
+        g.textContent = item.group;
+        els.cmdList.appendChild(g);
+      }
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "cmdDialog__item";
+      if (i === cmdActiveIndex) btn.classList.add("cmdDialog__item--active");
+      btn.setAttribute("data-cmd-index", String(i));
+      btn.setAttribute("role", "option");
+      btn.setAttribute("aria-selected", i === cmdActiveIndex ? "true" : "false");
+
+      const title = document.createElement("span");
+      title.className = "cmdDialog__itemTitle";
+      title.textContent = item.title;
+
+      const meta = document.createElement("span");
+      meta.className = "cmdDialog__itemMeta";
+
+      const groupChip = document.createElement("span");
+      groupChip.className = "cmdDialog__chip";
+      groupChip.textContent = item.group;
+
+      meta.appendChild(groupChip);
+      btn.appendChild(title);
+      btn.appendChild(meta);
+      els.cmdList.appendChild(btn);
+    }
+  };
+
+  const runCmdActionByIndex = (idx) => {
+    const i = Number(idx);
+    if (!Number.isFinite(i)) return;
+    const action = cmdFiltered[i];
+    if (!action || typeof action.run !== "function") return;
+    closeCmdPalette();
+    try {
+      action.run();
+    } catch {
+      // ignore
+    }
+  };
+
   const renderNetworkPill = () => {
     if (!els.netPill) return;
     const online = typeof navigator === "undefined" ? true : navigator.onLine !== false;
@@ -9886,6 +10177,69 @@
     });
   }
 
+  if (els.cmdClose) {
+    els.cmdClose.addEventListener("click", closeCmdPalette);
+  }
+
+  if (els.cmdDialog) {
+    els.cmdDialog.addEventListener("cancel", (e) => {
+      e.preventDefault();
+      closeCmdPalette();
+    });
+  }
+
+  if (els.cmdInput) {
+    els.cmdInput.addEventListener("input", () => {
+      cmdActiveIndex = 0;
+      renderCmdPalette();
+    });
+
+    els.cmdInput.addEventListener("keydown", (e) => {
+      if (!e) return;
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeCmdPalette();
+        return;
+      }
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (!cmdFiltered.length) return;
+        cmdActiveIndex = (cmdActiveIndex + 1 + cmdFiltered.length) % cmdFiltered.length;
+        renderCmdPalette();
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        if (!cmdFiltered.length) return;
+        cmdActiveIndex = (cmdActiveIndex - 1 + cmdFiltered.length) % cmdFiltered.length;
+        renderCmdPalette();
+        return;
+      }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (cmdActiveIndex < 0) return;
+        runCmdActionByIndex(cmdActiveIndex);
+      }
+    });
+  }
+
+  if (els.cmdList) {
+    els.cmdList.addEventListener("click", (e) => {
+      const btn = e && e.target ? e.target.closest("button[data-cmd-index]") : null;
+      if (!btn) return;
+      runCmdActionByIndex(btn.getAttribute("data-cmd-index"));
+    });
+
+    els.cmdList.addEventListener("mousemove", (e) => {
+      const btn = e && e.target ? e.target.closest("button[data-cmd-index]") : null;
+      if (!btn) return;
+      const idx = Number(btn.getAttribute("data-cmd-index"));
+      if (!Number.isFinite(idx) || idx === cmdActiveIndex) return;
+      cmdActiveIndex = idx;
+      renderCmdPalette();
+    });
+  }
+
   window.addEventListener("pointerdown", (e) => {
     if (!inboxOpen) return;
     if (!els.inboxDock) return;
@@ -9895,6 +10249,18 @@
   });
 
   window.addEventListener("keydown", (e) => {
+    if (!e) return;
+    if ((e.metaKey || e.ctrlKey) && String(e.key || "").toLowerCase() === "k") {
+      e.preventDefault();
+      if (cmdOpen) closeCmdPalette();
+      else openCmdPalette();
+      return;
+    }
+    if (cmdOpen && e.key === "Escape") {
+      e.preventDefault();
+      closeCmdPalette();
+      return;
+    }
     if (!e || e.key !== "Escape") return;
     if (!inboxOpen) return;
     closeInbox();

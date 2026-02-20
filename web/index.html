@@ -1023,6 +1023,29 @@
       </section>
     </aside>
 
+    <dialog class="dialog cmdDialog" id="cmdDialog">
+      <div class="dialog__panel cmdDialog__panel">
+        <div class="dialog__head">
+          <div class="dialog__title" data-i18n="cmd_title">Command palette</div>
+          <button class="btn btn--ghost btn--compact" type="button" id="cmdClose">
+            <span data-i18n="room_close">Close</span>
+          </button>
+        </div>
+        <label class="sr-only" for="cmdInput" data-i18n="cmd_placeholder">Search command…</label>
+        <input
+          class="input cmdDialog__input"
+          id="cmdInput"
+          type="search"
+          data-i18n-placeholder="cmd_placeholder"
+          placeholder="Search command…"
+          autocomplete="off"
+          maxlength="72"
+        />
+        <div class="cmdDialog__list" id="cmdList" role="listbox" aria-label="Commands"></div>
+        <div class="cmdDialog__hint" data-i18n="cmd_hint">Enter run • Esc close</div>
+      </div>
+    </dialog>
+
     <div class="toast toast--global" id="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
 
     <div class="modal" id="roomModal" hidden>
