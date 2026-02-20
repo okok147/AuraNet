@@ -618,3 +618,10 @@
 - execution: Implemented and shipped in commit f020514.
 - commit: f020514
 - reuse_tags: [stability, map, uiux]
+
+### [SB-0087] Restore original warm color tuning
+- status: solved
+- mission: Roll back Tailark cool palette to the project's original warm color theme
+- execution: Implemented and shipped in commit efff4e3.
+- commit: efff4e3
+- reuse_tags: [uiux, theme, rollback]
