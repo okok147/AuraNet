@@ -590,3 +590,10 @@
 - execution: Implemented and shipped in commit 3a1fbb7.
 - commit: 3a1fbb7
 - reuse_tags: [uiux, social]
+
+### [SB-0083] Add command palette and fast workflow shortcuts
+- status: solved
+- mission: Add command palette and fast workflow shortcuts
+- execution: Implemented and shipped in commit b419fd8.
+- commit: b419fd8
+- reuse_tags: [uiux, map, marketplace, social]
