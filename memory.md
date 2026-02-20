@@ -604,3 +604,10 @@
 - execution: Implemented and shipped in commit de44a7c.
 - commit: de44a7c
 - reuse_tags: [performance, stability, map, uiux]
+
+### [SB-0085] Tailark-style UI system refresh
+- status: solved
+- mission: Research Tailark UI direction and restyle AuraNet to match
+- execution: Implemented and shipped in commit dc7a0ee.
+- commit: dc7a0ee
+- reuse_tags: [uiux, design-system, frontend]
