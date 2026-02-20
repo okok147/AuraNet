@@ -611,3 +611,10 @@
 - execution: Implemented and shipped in commit dc7a0ee.
 - commit: dc7a0ee
 - reuse_tags: [uiux, design-system, frontend]
+
+### [SB-0086] Stabilize aura popup size and close accessibility
+- status: solved
+- mission: Ensure clicked aura components popup stays usable and closable without zoom adjustment
+- execution: Implemented and shipped in commit f020514.
+- commit: f020514
+- reuse_tags: [stability, map, uiux]
