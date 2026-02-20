@@ -7665,6 +7665,29 @@
       }).addTo(map);
     };
 
+    const auraPopupOptions = ({ closeOnClick = true } = {}) => {
+      const vw = Math.max(320, Number(window && window.innerWidth) || 0);
+      const vh = Math.max(360, Number(window && window.innerHeight) || 0);
+      const compact = vw <= 640;
+      const maxWidth = clamp(vw - 30, 196, 320);
+      const minWidth = clamp(maxWidth - 28, 168, 250);
+      const maxHeight = clamp(vh - (compact ? 220 : 170), 170, 360);
+
+      return {
+        className: "auraPopup",
+        closeButton: true,
+        autoPan: true,
+        keepInView: true,
+        closeOnClick,
+        offset: [0, -6],
+        maxWidth,
+        minWidth,
+        maxHeight,
+        autoPanPaddingTopLeft: [14, compact ? 118 : 78],
+        autoPanPaddingBottomRight: [14, compact ? 28 : 20]
+      };
+    };
+
     const makeAgentTapIcon = (diameterPx) => {
       const dRaw = Number(diameterPx) || 0;
       const d = Math.max(34, Math.min(140, Math.round(dRaw)));
@@ -7763,7 +7786,7 @@
             longTerm.hex
           )}</div>${rows}</div>`;
 
-          L.popup({ closeButton: true, autoPan: true, offset: [0, -6] })
+          L.popup(auraPopupOptions())
             .setLatLng(llClick)
             .setContent(html)
             .openOn(map);
@@ -8118,7 +8141,7 @@
 
     const openAgentPopup = (agent, latLng) => {
       const html = agentPopupHtml(agent);
-      const popup = L.popup({ closeButton: true, autoPan: true, closeOnClick: false, offset: [0, -6] })
+      const popup = L.popup(auraPopupOptions({ closeOnClick: false }))
         .setLatLng(latLng)
         .setContent(html)
         .openOn(map);

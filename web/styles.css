@@ -3745,6 +3745,53 @@ body > header.shell::after {
   background: rgba(37, 99, 235, 0.1);
 }
 
+.card--map .leaflet-popup-content {
+  margin: 10px 12px 12px;
+  max-height: min(52vh, 320px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding-right: 2px;
+}
+
+.card--map .leaflet-popup-close-button {
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  line-height: 26px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  background: rgba(255, 255, 255, 0.95);
+  color: rgba(15, 23, 42, 0.86);
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.card--map .leaflet-popup-close-button:hover {
+  border-color: rgba(37, 99, 235, 0.34);
+  background: rgba(239, 246, 255, 0.94);
+  color: rgba(15, 23, 42, 0.92);
+}
+
+.auraPop {
+  min-width: 0;
+  width: min(280px, calc(100vw - 68px));
+  max-width: 100%;
+}
+
+.auraPop__actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.auraPop__action {
+  min-height: 32px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 @media (max-width: 940px) {
   .grid {
     grid-template-columns: 1fr;
@@ -3783,6 +3830,19 @@ body > header.shell::after {
 @media (max-width: 520px) {
   .shell {
     padding: 18px 14px;
+  }
+
+  .auraPop {
+    width: min(242px, calc(100vw - 86px));
+  }
+
+  .card--map .leaflet-popup-content {
+    max-height: min(46vh, 280px);
+  }
+
+  .card--map .leaflet-popup-close-button {
+    top: 4px;
+    right: 4px;
   }
 
   body > header.shell {
