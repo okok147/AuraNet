@@ -225,6 +225,39 @@
     return Math.max(min, Math.min(max, n));
   };
 
+  const debounce = (fn, waitMs = 120) => {
+    const wait = Math.max(0, clampInt(waitMs, 0, 5000, 120));
+    let timer = null;
+    return (...args) => {
+      if (timer !== null) window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        timer = null;
+        fn(...args);
+      }, wait);
+    };
+  };
+
+  const makeRafRenderer = (renderNow) => {
+    let rafId = null;
+    return (opts = {}) => {
+      const immediate = Boolean(opts && opts.immediate);
+      if (immediate) {
+        if (rafId !== null) {
+          window.cancelAnimationFrame(rafId);
+          rafId = null;
+        }
+        renderNow();
+        return;
+      }
+
+      if (rafId !== null) return;
+      rafId = window.requestAnimationFrame(() => {
+        rafId = null;
+        renderNow();
+      });
+    };
+  };
+
   const randomSubset = (items, count) => {
     const source = Array.isArray(items) ? items : [];
     const n = source.length;
@@ -4839,7 +4872,7 @@
     }
   };
 
-  const renderTasks = () => {
+  const renderTasksNow = () => {
     renderTaskForm();
     renderTaskList();
     const n = state.tasks && Array.isArray(state.tasks.list) ? state.tasks.list.length : 0;
@@ -4851,6 +4884,7 @@
     syncTasksOnMap();
     renderTaskRoom();
   };
+  const renderTasks = makeRafRenderer(renderTasksNow);
 
   const ensureTaskPrefs = () => {
     if (!state.tasks || typeof state.tasks !== "object") state.tasks = defaultState().tasks;
@@ -5849,7 +5883,7 @@
     mapApi.setMarketPosts(state.market.list.slice());
   };
 
-  const renderMarket = () => {
+  const renderMarketNow = () => {
     renderMarketForm();
     renderMarketList();
     const n = state.market && Array.isArray(state.market.list) ? state.market.list.length : 0;
@@ -5860,6 +5894,7 @@
     }
     syncMarketOnMap();
   };
+  const renderMarket = makeRafRenderer(renderMarketNow);
 
   // --- Scheduled Activities (Event Auras) ---
 
@@ -6181,7 +6216,7 @@
     mapApi.setEvents(state.events.list.slice());
   };
 
-  const renderEvents = () => {
+  const renderEventsNow = () => {
     renderEventsForm();
     renderEventsList();
     const n = state.events && Array.isArray(state.events.list) ? state.events.list.length : 0;
@@ -6192,6 +6227,7 @@
     }
     syncEventsOnMap();
   };
+  const renderEvents = makeRafRenderer(renderEventsNow);
 
   const startActivity = () => {
     if (state.activity.active) return;
@@ -6291,9 +6327,9 @@
     renderMapLayerFilters();
     renderMarketplaceTabs();
     applyDropStates();
-    renderTasks();
-    renderMarket();
-    renderEvents();
+    renderTasks({ immediate: true });
+    renderMarket({ immediate: true });
+    renderEvents({ immediate: true });
     renderInbox();
     startTaskEngine();
   };
@@ -9599,10 +9635,11 @@
   }
 
   if (els.taskSearchInput) {
-    els.taskSearchInput.addEventListener("input", () => {
+    const onTaskSearchInput = debounce(() => {
       patchUiListFilter("tasks", { q: els.taskSearchInput.value });
       renderTaskList();
-    });
+    }, 120);
+    els.taskSearchInput.addEventListener("input", onTaskSearchInput);
   }
 
   if (els.taskStatusFilter) {
@@ -9775,10 +9812,11 @@
   }
 
   if (els.marketSearchInput) {
-    els.marketSearchInput.addEventListener("input", () => {
+    const onMarketSearchInput = debounce(() => {
       patchUiListFilter("market", { q: els.marketSearchInput.value });
       renderMarketList();
-    });
+    }, 120);
+    els.marketSearchInput.addEventListener("input", onMarketSearchInput);
   }
 
   if (els.marketKindFilter) {
@@ -9835,10 +9873,11 @@
   }
 
   if (els.eventsSearchInput) {
-    els.eventsSearchInput.addEventListener("input", () => {
+    const onEventsSearchInput = debounce(() => {
       patchUiListFilter("events", { q: els.eventsSearchInput.value });
       renderEventsList();
-    });
+    }, 120);
+    els.eventsSearchInput.addEventListener("input", onEventsSearchInput);
   }
 
   if (els.eventsStateFilter) {
@@ -10297,7 +10336,24 @@
   bindPwaFeatures();
   initFirebaseAuth();
 
-  mapApi = initPaperMap();
+  const MAP_BOOT_MAX_ATTEMPTS = 8;
+  const MAP_BOOT_BASE_DELAY_MS = 160;
+  let mapBootAttempt = 0;
+  const bootMapWithRetry = () => {
+    if (mapApi) return;
+    mapBootAttempt += 1;
+    const api = initPaperMap();
+    if (api) {
+      mapApi = api;
+      return;
+    }
+    if (mapBootAttempt >= MAP_BOOT_MAX_ATTEMPTS) return;
+    const delayMs = Math.min(2400, MAP_BOOT_BASE_DELAY_MS * (2 ** (mapBootAttempt - 1)));
+    setMapStatus(t("map_loading"));
+    window.setTimeout(bootMapWithRetry, delayMs);
+  };
+  bootMapWithRetry();
+
   applyI18n();
   renderClock();
   window.setInterval(renderClock, 10_000);
