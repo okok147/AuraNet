@@ -597,3 +597,10 @@
 - execution: Implemented and shipped in commit b419fd8.
 - commit: b419fd8
 - reuse_tags: [uiux, map, marketplace, social]
+
+### [SB-0084] Optimize render scheduling and harden map bootstrap on first load
+- status: solved
+- mission: Reduce UI render churn and improve first-load map reliability
+- execution: Implemented and shipped in commit de44a7c.
+- commit: de44a7c
+- reuse_tags: [performance, stability, map, uiux]
