@@ -19,10 +19,25 @@
     sectionTabMarket: $("sectionTabMarket"),
     quickActions: $("quickActions"),
     qaStartActivity: $("qaStartActivity"),
+    qaStartActivityLabel: $("qaStartActivityLabel"),
     qaLocateMap: $("qaLocateMap"),
     qaPostTask: $("qaPostTask"),
     qaPostService: $("qaPostService"),
     qaScheduleEvent: $("qaScheduleEvent"),
+    workspaceOverview: $("workspaceOverview"),
+    overviewAuraCard: $("overviewAuraCard"),
+    overviewAuraSwatch: $("overviewAuraSwatch"),
+    overviewAuraValue: $("overviewAuraValue"),
+    overviewAuraMeta: $("overviewAuraMeta"),
+    overviewMapCard: $("overviewMapCard"),
+    overviewMapValue: $("overviewMapValue"),
+    overviewMapMeta: $("overviewMapMeta"),
+    overviewMarketCard: $("overviewMarketCard"),
+    overviewMarketValue: $("overviewMarketValue"),
+    overviewMarketMeta: $("overviewMarketMeta"),
+    overviewInboxCard: $("overviewInboxCard"),
+    overviewInboxValue: $("overviewInboxValue"),
+    overviewInboxMeta: $("overviewInboxMeta"),
     mapSection: $("mapSection"),
     appInstallBtn: $("appInstallBtn"),
     dataExportBtn: $("dataExportBtn"),
@@ -413,6 +428,24 @@
       quick_post_task: "Post task",
       quick_post_service: "Post service",
       quick_schedule_event: "Schedule event",
+      workspace_overview_label: "Workspace overview",
+      overview_aura_title: "Aura status",
+      overview_map_title: "Map state",
+      overview_market_title: "Marketplace",
+      overview_inbox_title: "Inbox",
+      overview_status_idle: "Idle",
+      overview_status_active: "Active",
+      overview_aura_meta_idle: "{count} logs • {hex}",
+      overview_aura_meta_active: "{activity} • {count} logs",
+      overview_map_value_on: "{count}/3 layers on",
+      overview_map_value_off: "Layers paused",
+      overview_map_meta: "{visibility} • {layers}",
+      overview_map_meta_none: "{visibility} • no visible layers",
+      overview_market_value: "{count} open tasks",
+      overview_market_meta: "{listings} listings • {events} active",
+      overview_inbox_empty: "No threads",
+      overview_inbox_value: "{count} threads",
+      overview_inbox_meta: "{count} messages saved",
       cmd_title: "Command palette",
       cmd_placeholder: "Search command…",
       cmd_empty: "No matching command",
@@ -750,6 +783,24 @@
       quick_post_task: "發布任務",
       quick_post_service: "發布服務",
       quick_schedule_event: "建立排程",
+      workspace_overview_label: "工作區概覽",
+      overview_aura_title: "氣場狀態",
+      overview_map_title: "地圖狀態",
+      overview_market_title: "市集總覽",
+      overview_inbox_title: "收件匣",
+      overview_status_idle: "待機",
+      overview_status_active: "進行中",
+      overview_aura_meta_idle: "{count} 筆紀錄 • {hex}",
+      overview_aura_meta_active: "{activity} • {count} 筆紀錄",
+      overview_map_value_on: "{count}/3 圖層開啟",
+      overview_map_value_off: "圖層已暫停",
+      overview_map_meta: "{visibility} • {layers}",
+      overview_map_meta_none: "{visibility} • 沒有可見圖層",
+      overview_market_value: "{count} 個開放任務",
+      overview_market_meta: "{listings} 個刊登 • {events} 個進行中",
+      overview_inbox_empty: "沒有對話",
+      overview_inbox_value: "{count} 個對話",
+      overview_inbox_meta: "已儲存 {count} 則訊息",
       cmd_title: "指令面板",
       cmd_placeholder: "搜尋指令…",
       cmd_empty: "沒有符合的指令",
@@ -1087,6 +1138,24 @@
       quick_post_task: "タスク投稿",
       quick_post_service: "サービス投稿",
       quick_schedule_event: "予定を作成",
+      workspace_overview_label: "ワークスペース概要",
+      overview_aura_title: "オーラ状態",
+      overview_map_title: "マップ状態",
+      overview_market_title: "マーケット概要",
+      overview_inbox_title: "受信箱",
+      overview_status_idle: "待機",
+      overview_status_active: "進行中",
+      overview_aura_meta_idle: "{count} 件の記録 • {hex}",
+      overview_aura_meta_active: "{activity} • {count} 件の記録",
+      overview_map_value_on: "{count}/3 レイヤー表示",
+      overview_map_value_off: "レイヤー停止中",
+      overview_map_meta: "{visibility} • {layers}",
+      overview_map_meta_none: "{visibility} • 表示レイヤーなし",
+      overview_market_value: "{count} 件の募集中タスク",
+      overview_market_meta: "{listings} 件の掲載 • {events} 件進行中",
+      overview_inbox_empty: "スレッドなし",
+      overview_inbox_value: "{count} 件のスレッド",
+      overview_inbox_meta: "{count} 件のメッセージを保存",
       cmd_title: "コマンドパレット",
       cmd_placeholder: "コマンドを検索…",
       cmd_empty: "一致するコマンドがありません",
@@ -1444,6 +1513,9 @@
     if (els.quickActions) {
       els.quickActions.setAttribute("aria-label", t("quick_actions_label"));
     }
+    if (els.workspaceOverview) {
+      els.workspaceOverview.setAttribute("aria-label", t("workspace_overview_label"));
+    }
 
     // Update any draft helpers that include translated labels.
     if (typeof renderActivityAssist === "function") renderActivityAssist();
@@ -1457,6 +1529,7 @@
     if (typeof renderInbox === "function") renderInbox();
     if (typeof renderCmdPalette === "function" && cmdOpen) renderCmdPalette();
     if (typeof syncInstallButton === "function") syncInstallButton();
+    if (typeof renderShell === "function") renderShell();
   };
 
   const defaultState = () => ({
@@ -3717,6 +3790,7 @@
       els.inboxTo.value = inboxDraftHandle || inboxSelectedHandle || "";
     }
     syncInboxComposerState();
+    renderShell();
   };
 
   const sendInboxMessage = () => {
@@ -3934,6 +4008,7 @@
     if (mapApi && typeof mapApi.setLayerFilters === "function") {
       mapApi.setLayerFilters(filters);
     }
+    renderShell();
   };
 
   const toggleMapLayerFilter = (key) => {
@@ -4883,6 +4958,7 @@
     }
     syncTasksOnMap();
     renderTaskRoom();
+    renderShell();
   };
   const renderTasks = makeRafRenderer(renderTasksNow);
 
@@ -5893,6 +5969,7 @@
       els.marketTabMarketCount.hidden = n <= 0;
     }
     syncMarketOnMap();
+    renderShell();
   };
   const renderMarket = makeRafRenderer(renderMarketNow);
 
@@ -6226,6 +6303,7 @@
       els.marketTabEventsCount.hidden = n <= 0;
     }
     syncEventsOnMap();
+    renderShell();
   };
   const renderEvents = makeRafRenderer(renderEventsNow);
 
@@ -6317,9 +6395,133 @@
     syncUserAuraOnMap(nowMs(), auraHex);
 
     if (full) renderActivityList();
+    renderShell();
   };
 
   // --- Render ---
+
+  const visibilitySummaryLabel = () => {
+    const mode = normalizeVisibilityMode(state.activity && state.activity.prefs && state.activity.prefs.visibilityMode);
+    if (mode === "area") {
+      return t("visibility_area_badge", {
+        m: normalizeAreaRadiusM(state.activity && state.activity.prefs && state.activity.prefs.areaRadiusM)
+      });
+    }
+    if (mode === "connected") {
+      const room = state.activity && state.activity.prefs && state.activity.prefs.room ? state.activity.prefs.room : null;
+      const roomCode = normalizeRoomCode(room && room.code);
+      return room && room.joined && roomCode ? `${t("visibility_connected")} • ${roomCode}` : t("visibility_connected");
+    }
+    return t("visibility_everyone");
+  };
+
+  const overviewLayerLabels = (filters) => {
+    const list = [];
+    if (filters.people) list.push(t("map_filter_people"));
+    if (filters.events) list.push(t("map_filter_events"));
+    if (filters.services) list.push(t("map_filter_services"));
+    return list;
+  };
+
+  const setOverviewCurrent = (el, on) => {
+    if (!el) return;
+    el.classList.toggle("overviewCard--current", Boolean(on));
+    el.setAttribute("data-current", on ? "true" : "false");
+  };
+
+  const renderQuickActionsState = () => {
+    const active = Boolean(state.activity && state.activity.active);
+    if (els.qaStartActivityLabel) {
+      els.qaStartActivityLabel.textContent = active ? t("activity_stop_log") : t("quick_start_activity");
+    }
+    if (els.qaStartActivity) {
+      els.qaStartActivity.classList.toggle("quickActionBtn--active", active);
+      els.qaStartActivity.setAttribute("aria-pressed", active ? "true" : "false");
+    }
+  };
+
+  const renderWorkspaceOverview = () => {
+    if (!els.workspaceOverview) return;
+
+    const now = nowMs();
+    const currentAura = computeCurrentAura(now);
+    const longTerm = currentAura.longTerm || computeLongTermAura(now);
+    const logCount = Array.isArray(state.activity && state.activity.log) ? state.activity.log.length : 0;
+    const active = state.activity && state.activity.active ? state.activity.active : null;
+    const activeLabel = active ? normalizeActivityText(active.text || "").slice(0, 28) || "—" : "";
+
+    if (els.overviewAuraSwatch) {
+      const hex = currentAura.hex || longTerm.hex || "#FF6A00";
+      els.overviewAuraSwatch.style.background = `linear-gradient(135deg, ${hex}, ${mixHex(hex, "#FFFFFF", 0.4)})`;
+      els.overviewAuraSwatch.style.borderColor = "rgba(32, 24, 18, 0.12)";
+      els.overviewAuraSwatch.style.boxShadow = `0 0 0 1px rgba(255, 255, 255, 0.6) inset, 0 8px 16px ${mixHex(hex, "#1a120b", 0.74)}22`;
+    }
+    if (els.overviewAuraValue) {
+      els.overviewAuraValue.textContent = active ? t("overview_status_active") : t("overview_status_idle");
+    }
+    if (els.overviewAuraMeta) {
+      els.overviewAuraMeta.textContent = active
+        ? t("overview_aura_meta_active", { activity: activeLabel, count: logCount })
+        : t("overview_aura_meta_idle", { count: logCount, hex: longTerm.hex || "#FF6A00" });
+    }
+
+    const filters = normalizeMapLayerFilters(state && state.ui && state.ui.mapFilters);
+    const enabledLayers = overviewLayerLabels(filters);
+    const enabledCount = enabledLayers.length;
+    const visibility = visibilitySummaryLabel();
+    if (els.overviewMapValue) {
+      els.overviewMapValue.textContent = enabledCount > 0
+        ? t("overview_map_value_on", { count: enabledCount })
+        : t("overview_map_value_off");
+    }
+    if (els.overviewMapMeta) {
+      els.overviewMapMeta.textContent = enabledCount > 0
+        ? t("overview_map_meta", { visibility, layers: enabledLayers.join(" / ") })
+        : t("overview_map_meta_none", { visibility });
+    }
+
+    const tasks = state && state.tasks && Array.isArray(state.tasks.list) ? state.tasks.list : [];
+    const market = state && state.market && Array.isArray(state.market.list) ? state.market.list : [];
+    const events = state && state.events && Array.isArray(state.events.list) ? state.events.list : [];
+    const openTasks = tasks.filter((task) => task && normalizeTaskStatus(task.status) === "open").length;
+    const openListings = market.filter((item) => item && normalizeMarketStatus(item.status) === "open").length;
+    const liveEvents = events.filter((event) => {
+      if (!event || !event.id) return false;
+      const st = computeEventState(event, now);
+      return st === "scheduled" || st === "live";
+    }).length;
+    if (els.overviewMarketValue) {
+      els.overviewMarketValue.textContent = t("overview_market_value", { count: openTasks });
+    }
+    if (els.overviewMarketMeta) {
+      els.overviewMarketMeta.textContent = t("overview_market_meta", { listings: openListings, events: liveEvents });
+    }
+
+    const inbox = deriveInboxData();
+    const threadCount = Array.isArray(inbox.threads) ? inbox.threads.length : 0;
+    const messageCount = Array.isArray(inbox.messages) ? inbox.messages.length : 0;
+    if (els.overviewInboxValue) {
+      els.overviewInboxValue.textContent = threadCount > 0
+        ? t("overview_inbox_value", { count: threadCount })
+        : t("overview_inbox_empty");
+    }
+    if (els.overviewInboxMeta) {
+      els.overviewInboxMeta.textContent = t("overview_inbox_meta", { count: messageCount });
+    }
+
+    const activeSection = normalizeSectionTarget(state && state.ui && state.ui.section);
+    setOverviewCurrent(els.overviewAuraCard, !inboxOpen && activeSection === "activitySection");
+    setOverviewCurrent(els.overviewMapCard, !inboxOpen && activeSection === "mapSection");
+    setOverviewCurrent(els.overviewMarketCard, !inboxOpen && activeSection === "marketplaceSection");
+    setOverviewCurrent(els.overviewInboxCard, inboxOpen);
+  };
+
+  const renderShellNow = () => {
+    renderQuickActionsState();
+    renderWorkspaceOverview();
+  };
+
+  const renderShell = makeRafRenderer(renderShellNow);
 
   const render = () => {
     renderOnboarding();
@@ -6331,6 +6533,7 @@
     renderMarket({ immediate: true });
     renderEvents({ immediate: true });
     renderInbox();
+    renderShell({ immediate: true });
     startTaskEngine();
   };
 
@@ -6362,6 +6565,7 @@
         saveState();
       }
     }
+    renderShell();
   };
 
   const scrollToSection = (sectionId) => {
@@ -6438,6 +6642,22 @@
       const el = document.getElementById(id);
       if (el) observer.observe(el);
     }
+  };
+
+  const bindWorkspaceOverview = () => {
+    if (!els.workspaceOverview) return;
+    els.workspaceOverview.addEventListener("click", (e) => {
+      const btn = e && e.target ? e.target.closest("button") : null;
+      if (!btn) return;
+      const action = String(btn.getAttribute("data-overview-action") || "");
+      if (action === "inbox") {
+        openInboxForHandle(inboxSelectedHandle || "");
+        return;
+      }
+      const sectionId = String(btn.getAttribute("data-section-target") || "");
+      if (!sectionId) return;
+      scrollToSection(sectionId);
+    });
   };
 
   // --- Command Palette ---
@@ -9765,6 +9985,11 @@
 
   if (els.qaStartActivity) {
     els.qaStartActivity.addEventListener("click", () => {
+      if (state.activity && state.activity.active) {
+        stopAndLogActivity();
+        scrollToSection("activitySection");
+        return;
+      }
       scrollToSection("activitySection");
       focusElementSoon(els.activityText);
     });
@@ -10354,6 +10579,7 @@
 
   initInboxUi();
   bindSectionTabs();
+  bindWorkspaceOverview();
   bindNetworkPill();
   bindDataTools();
   bindPwaFeatures();

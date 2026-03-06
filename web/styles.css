@@ -316,6 +316,109 @@ body > main.shell {
     0 10px 18px rgba(24, 16, 10, 0.06);
 }
 
+.quickActionBtn--active {
+  border-color: rgba(255, 106, 0, 0.34);
+  background: linear-gradient(180deg, rgba(255, 239, 226, 0.96), rgba(255, 227, 206, 0.9));
+  box-shadow:
+    0 12px 24px rgba(24, 16, 10, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.66) inset;
+}
+
+.workspaceOverview {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.overviewCard {
+  appearance: none;
+  border: 1px solid rgba(32, 24, 18, 0.12);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 249, 242, 0.88));
+  color: inherit;
+  border-radius: 18px;
+  min-height: 118px;
+  padding: 14px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  box-shadow: 0 12px 22px rgba(24, 16, 10, 0.05);
+  transition:
+    transform var(--motion-fast) ease,
+    box-shadow var(--motion-base) var(--ease-smooth),
+    border-color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease;
+}
+
+.overviewCard:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 106, 0, 0.24);
+  box-shadow: 0 16px 28px rgba(24, 16, 10, 0.08);
+}
+
+.overviewCard:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(255, 106, 0, 0.16),
+    0 16px 28px rgba(24, 16, 10, 0.08);
+}
+
+.overviewCard--current {
+  border-color: rgba(255, 106, 0, 0.34);
+  background: linear-gradient(180deg, rgba(255, 250, 245, 0.98), rgba(255, 236, 219, 0.9));
+  box-shadow:
+    0 18px 30px rgba(24, 16, 10, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+}
+
+.overviewCard__eyebrow {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted2);
+}
+
+.overviewCard__main {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.overviewCard__swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(32, 24, 18, 0.14);
+  background: linear-gradient(135deg, #ff6a00, #ffd1af);
+}
+
+.overviewCard__value {
+  display: block;
+  min-width: 0;
+  font-family: var(--font-ui);
+  font-size: clamp(16px, 1.5vw, 20px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: rgba(32, 24, 18, 0.92);
+}
+
+.overviewCard__meta {
+  display: block;
+  min-width: 0;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
 .sectionTabs {
   display: inline-flex;
   align-items: center;
@@ -3473,6 +3576,17 @@ body > main.shell {
 }
 
 @media (max-width: 940px) {
+  .workspaceOverview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 10px;
+    gap: 8px;
+  }
+
+  .overviewCard {
+    min-height: 108px;
+    padding: 12px;
+  }
+
   .grid {
     grid-template-columns: 1fr;
   }
@@ -3761,6 +3875,16 @@ body > main.shell {
 
   #roomSend {
     grid-area: send;
+  }
+}
+
+@media (max-width: 520px) {
+  .workspaceOverview {
+    grid-template-columns: 1fr;
+  }
+
+  .overviewCard {
+    min-height: auto;
   }
 }
 

@@ -142,7 +142,7 @@
         <div class="quickActions__label" data-i18n="quick_actions_label">Quick actions</div>
         <div class="quickActions__list">
           <button class="quickActionBtn" type="button" id="qaStartActivity">
-            <span data-i18n="quick_start_activity">Start activity</span>
+            <span id="qaStartActivityLabel" data-i18n="quick_start_activity">Start activity</span>
           </button>
           <button class="quickActionBtn" type="button" id="qaLocateMap">
             <span data-i18n="quick_locate_me">Center map</span>
@@ -161,6 +161,55 @@
     </header>
 
     <main class="shell" id="mainContent">
+      <section class="workspaceOverview" id="workspaceOverview" aria-label="Workspace overview">
+        <button
+          class="overviewCard overviewCard--aura"
+          type="button"
+          id="overviewAuraCard"
+          data-section-target="activitySection"
+        >
+          <span class="overviewCard__eyebrow" data-i18n="overview_aura_title">Aura status</span>
+          <span class="overviewCard__main">
+            <span class="overviewCard__swatch" id="overviewAuraSwatch" aria-hidden="true"></span>
+            <span class="overviewCard__value" id="overviewAuraValue">Idle</span>
+          </span>
+          <span class="overviewCard__meta" id="overviewAuraMeta">No activity yet.</span>
+        </button>
+
+        <button
+          class="overviewCard"
+          type="button"
+          id="overviewMapCard"
+          data-section-target="mapSection"
+        >
+          <span class="overviewCard__eyebrow" data-i18n="overview_map_title">Map state</span>
+          <span class="overviewCard__value" id="overviewMapValue">3/3 layers on</span>
+          <span class="overviewCard__meta" id="overviewMapMeta">Everyone • People / Event / Service</span>
+        </button>
+
+        <button
+          class="overviewCard"
+          type="button"
+          id="overviewMarketCard"
+          data-section-target="marketplaceSection"
+        >
+          <span class="overviewCard__eyebrow" data-i18n="overview_market_title">Marketplace</span>
+          <span class="overviewCard__value" id="overviewMarketValue">0 open tasks</span>
+          <span class="overviewCard__meta" id="overviewMarketMeta">0 listings • 0 scheduled</span>
+        </button>
+
+        <button
+          class="overviewCard"
+          type="button"
+          id="overviewInboxCard"
+          data-overview-action="inbox"
+        >
+          <span class="overviewCard__eyebrow" data-i18n="overview_inbox_title">Inbox</span>
+          <span class="overviewCard__value" id="overviewInboxValue">No threads</span>
+          <span class="overviewCard__meta" id="overviewInboxMeta">0 messages saved</span>
+        </button>
+      </section>
+
       <div class="grid">
         <section class="card card--timer" id="activitySection" aria-labelledby="activityTitle" tabindex="-1">
           <div class="card__head">
