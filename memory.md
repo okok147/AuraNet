@@ -625,3 +625,10 @@
 - execution: Implemented and shipped in commit efff4e3.
 - commit: efff4e3
 - reuse_tags: [uiux, theme, rollback]
+
+### [SB-0088] Add workspace overview shell and smarter quick actions
+- status: solved
+- mission: Improve top-level product clarity with a live overview strip, synchronized quick actions, and responsive shell polish
+- execution: Implemented and shipped in commit 0171253.
+- commit: 0171253
+- reuse_tags: [uiux, frontend, productivity, mobile]
