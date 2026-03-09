@@ -1,31 +1,31 @@
 :root {
   color-scheme: light;
 
-  --bg0: #f8f1e6;
-  --bg1: #f2e5d3;
-  --panel: rgba(255, 250, 242, 0.72);
-  --panel2: rgba(255, 250, 242, 0.9);
+  --bg0: #fdf9f1;
+  --bg1: #efe5d4;
+  --panel: rgba(255, 255, 255, 0.78);
+  --panel2: rgba(255, 255, 255, 0.92);
 
-  --stroke: rgba(32, 24, 18, 0.18);
-  --stroke2: rgba(32, 24, 18, 0.12);
+  --stroke: rgba(30, 24, 18, 0.16);
+  --stroke2: rgba(30, 24, 18, 0.1);
 
-  --text: rgba(32, 24, 18, 0.92);
-  --muted: rgba(32, 24, 18, 0.7);
-  --muted2: rgba(32, 24, 18, 0.55);
+  --text: #1f1811;
+  --muted: rgba(31, 24, 17, 0.7);
+  --muted2: rgba(31, 24, 17, 0.52);
 
   --accent: #ff6a00;
-  --accent-soft: rgba(255, 106, 0, 0.18);
+  --accent-soft: rgba(255, 106, 0, 0.16);
   --ok: #0a7a52;
   --ok-soft: rgba(10, 122, 82, 0.14);
   --danger: #b4233a;
   --danger-soft: rgba(180, 35, 58, 0.12);
 
-  --radius: 10px;
-  --radius2: 8px;
+  --radius: 16px;
+  --radius2: 12px;
 
-  --shadow: 0 14px 40px rgba(24, 16, 10, 0.12);
-  --shadow2: 0 10px 22px rgba(24, 16, 10, 0.1);
-  --shadow3: 0 22px 46px rgba(24, 16, 10, 0.16);
+  --shadow: 0 14px 36px rgba(24, 16, 10, 0.1);
+  --shadow2: 0 8px 20px rgba(24, 16, 10, 0.08);
+  --shadow3: 0 20px 42px rgba(24, 16, 10, 0.14);
 
   --motion-fast: 160ms;
   --motion-base: 260ms;
@@ -33,9 +33,9 @@
   --ease-smooth: cubic-bezier(0.2, 0.9, 0.2, 1);
   --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
 
-  --font-ui: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system,
+  --font-ui: "Sora", ui-sans-serif, system-ui, -apple-system,
     Segoe UI, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
     Consolas, "Liberation Mono", monospace;
 }
 
@@ -3442,6 +3442,351 @@ body > main.shell {
     background-color var(--motion-fast) ease;
 }
 
+/* --- 2026 Redesign Layer --- */
+
+body {
+  color: var(--text);
+  background:
+    radial-gradient(1400px 880px at 10% -24%, rgba(255, 139, 57, 0.18), transparent 58%),
+    radial-gradient(1300px 840px at 100% 0%, rgba(15, 98, 210, 0.08), transparent 62%),
+    linear-gradient(180deg, var(--bg0) 0%, var(--bg1) 100%);
+}
+
+.bg {
+  background:
+    radial-gradient(1300px 740px at 8% 0%, rgba(255, 130, 36, 0.18), transparent 56%),
+    radial-gradient(1020px 700px at 90% 6%, rgba(10, 122, 82, 0.1), transparent 58%),
+    radial-gradient(820px 520px at 72% 100%, rgba(31, 24, 17, 0.05), transparent 60%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(31, 24, 17, 0.025),
+      rgba(31, 24, 17, 0.025) 1px,
+      transparent 1px,
+      transparent 10px
+    );
+  opacity: 0.92;
+}
+
+.shell {
+  max-width: 1180px;
+  padding: 24px 20px;
+}
+
+body > header.shell {
+  top: 10px;
+  border: 1px solid rgba(31, 24, 17, 0.08);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(24, 16, 10, 0.08);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.8) 0%,
+    rgba(255, 252, 247, 0.66) 82%,
+    rgba(255, 252, 247, 0.36) 100%
+  );
+}
+
+body > header.shell::after {
+  left: 20px;
+  right: 20px;
+  border-bottom: 1px solid rgba(31, 24, 17, 0.08);
+}
+
+body > main.shell {
+  padding-top: 18px;
+}
+
+.topbar {
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.brand {
+  gap: 16px;
+}
+
+.mark {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 106, 0, 0.4);
+  background: linear-gradient(160deg, rgba(255, 124, 25, 0.26), rgba(255, 106, 0, 0.08));
+  box-shadow: 0 12px 24px rgba(255, 106, 0, 0.14);
+}
+
+.mark__glyph {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.brand__name {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.brand__tag {
+  margin-top: 5px;
+  color: rgba(31, 24, 17, 0.58);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
+.hud {
+  gap: 9px;
+}
+
+.headerStrip {
+  margin-top: 14px;
+  gap: 12px;
+}
+
+.sectionTabs {
+  gap: 6px;
+  padding: 6px;
+  border-radius: 16px;
+  border: 1px solid rgba(31, 24, 17, 0.12);
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 12px 24px rgba(24, 16, 10, 0.07);
+}
+
+.sectionTabs__btn {
+  border-radius: 12px;
+  padding: 10px 13px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+}
+
+.sectionTabs__btn[aria-pressed="true"] {
+  color: #1f1811;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 248, 240, 0.95));
+  box-shadow:
+    0 10px 20px rgba(24, 16, 10, 0.08),
+    0 0 0 1px rgba(255, 106, 0, 0.2) inset;
+}
+
+.workspaceTools {
+  gap: 10px;
+}
+
+.workspaceTools .btn {
+  border-radius: 999px;
+}
+
+.quickActions {
+  margin-top: 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(31, 24, 17, 0.12);
+  background: rgba(255, 255, 255, 0.66);
+  box-shadow: 0 14px 30px rgba(24, 16, 10, 0.08);
+  padding: 10px 12px;
+}
+
+.quickActions__label {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+}
+
+.quickActionBtn {
+  min-height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(31, 24, 17, 0.14);
+  background: rgba(255, 255, 255, 0.82);
+  color: rgba(31, 24, 17, 0.86);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+}
+
+.quickActionBtn:hover {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(255, 106, 0, 0.34);
+}
+
+.quickActionBtn--active {
+  border-color: rgba(255, 106, 0, 0.42);
+  background: linear-gradient(180deg, rgba(255, 236, 220, 0.98), rgba(255, 216, 182, 0.9));
+}
+
+.workspaceOverview {
+  margin-top: 16px;
+  gap: 12px;
+}
+
+.overviewCard {
+  min-height: 124px;
+  border-radius: 20px;
+  border: 1px solid rgba(31, 24, 17, 0.12);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 250, 244, 0.94));
+  box-shadow: 0 14px 28px rgba(24, 16, 10, 0.07);
+  padding: 15px;
+}
+
+.overviewCard__eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+
+.overviewCard__value {
+  font-size: clamp(17px, 1.52vw, 21px);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.overviewCard__meta {
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.overviewCard--current {
+  border-color: rgba(255, 106, 0, 0.42);
+  background: linear-gradient(180deg, rgba(255, 252, 248, 0.98), rgba(255, 233, 210, 0.9));
+  box-shadow:
+    0 18px 32px rgba(24, 16, 10, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.82) inset;
+}
+
+.grid {
+  gap: 18px;
+  grid-template-columns: 430px 1fr;
+}
+
+.card {
+  border-radius: 20px;
+  border: 1px solid rgba(31, 24, 17, 0.12);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(255, 252, 248, 0.82));
+  box-shadow: 0 20px 40px rgba(24, 16, 10, 0.11);
+  padding: 18px 18px 20px;
+}
+
+.card::after {
+  opacity: 0.14;
+  background: linear-gradient(94deg, rgba(255, 106, 0, 0.2), transparent 42%);
+}
+
+.card__head {
+  margin-bottom: 16px;
+  padding-bottom: 13px;
+}
+
+.card__head::after {
+  width: 140px;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(255, 106, 0, 0.86), rgba(255, 106, 0, 0.22));
+}
+
+.h1 {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+}
+
+.stats {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.hud__clock,
+.pill,
+.lang {
+  border: 1px solid rgba(31, 24, 17, 0.12);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 8px 18px rgba(24, 16, 10, 0.08);
+}
+
+.lang__select,
+.input,
+.select {
+  border: 1px solid rgba(31, 24, 17, 0.14);
+  background: rgba(255, 255, 255, 0.86);
+  border-radius: 12px;
+}
+
+.btn {
+  border-radius: 12px;
+  border: 1px solid rgba(31, 24, 17, 0.13);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.btn--primary {
+  border-color: rgba(255, 106, 0, 0.42);
+  background: linear-gradient(180deg, rgba(255, 119, 17, 0.96), rgba(255, 98, 0, 0.94));
+}
+
+.drop {
+  border-radius: 16px;
+  border: 1px solid rgba(31, 24, 17, 0.12);
+  background: rgba(255, 255, 255, 0.58);
+  box-shadow: 0 10px 22px rgba(24, 16, 10, 0.06);
+}
+
+.drop__summary {
+  min-height: 46px;
+  padding: 11px 13px;
+}
+
+.drop__body {
+  padding: 13px;
+}
+
+.mapWrap {
+  border-radius: 20px;
+  border: 1px solid rgba(31, 24, 17, 0.15);
+  box-shadow: 0 20px 36px rgba(24, 16, 10, 0.12);
+}
+
+.mapHud {
+  top: 14px;
+  left: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(31, 24, 17, 0.16);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 14px 26px rgba(24, 16, 10, 0.12);
+}
+
+.mapCanvas {
+  height: min(66vh, 600px);
+}
+
+.mapPaper {
+  opacity: 0.56;
+}
+
+.inboxDock__fab {
+  min-height: 42px;
+  border: 1px solid rgba(255, 106, 0, 0.4);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 16px 34px rgba(24, 16, 10, 0.16);
+}
+
+.inboxDock__panel {
+  width: min(390px, calc(100vw - 24px));
+  border-radius: 18px;
+  border: 1px solid rgba(31, 24, 17, 0.14);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 24px 60px rgba(24, 16, 10, 0.24);
+}
+
+.modal__panel {
+  border-radius: 18px;
+  border: 1px solid rgba(31, 24, 17, 0.14);
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.taskItem,
+.marketItem,
+.eventItem,
+.activityItem,
+.offerItem {
+  border-radius: 14px;
+  border: 1px solid rgba(31, 24, 17, 0.12);
+  background: rgba(255, 255, 255, 0.72);
+}
+
 @media (hover: hover) and (pointer: fine) {
   .card:hover {
     box-shadow: var(--shadow3);
@@ -3885,6 +4230,92 @@ body > main.shell {
 
   .overviewCard {
     min-height: auto;
+  }
+}
+
+@media (max-width: 940px) {
+  body > header.shell {
+    top: 8px;
+    border-radius: 18px;
+  }
+
+  .topbar {
+    align-items: stretch;
+  }
+
+  .quickActions {
+    padding: 10px;
+  }
+
+  .quickActions__list {
+    gap: 7px;
+  }
+
+  .grid {
+    gap: 14px;
+  }
+
+  .card {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .mapCanvas {
+    min-height: 340px;
+    height: min(60vh, 500px);
+  }
+}
+
+@media (max-width: 520px) {
+  body > header.shell {
+    top: 6px;
+    border-radius: 16px;
+  }
+
+  .shell {
+    padding: 16px 12px;
+  }
+
+  .headerStrip {
+    margin-top: 8px;
+  }
+
+  .sectionTabs {
+    border-radius: 14px;
+    padding: 5px;
+  }
+
+  .quickActions {
+    border-radius: 15px;
+  }
+
+  .quickActionBtn {
+    min-height: 33px;
+    font-size: 10px;
+  }
+
+  .overviewCard {
+    border-radius: 16px;
+    padding: 12px;
+  }
+
+  .overviewCard__value {
+    font-size: 17px;
+  }
+
+  .card {
+    border-radius: 16px;
+    padding: 14px;
+  }
+
+  .mapCanvas {
+    min-height: 320px;
+    height: min(58vh, 460px);
+  }
+
+  .inboxDock__panel {
+    border-radius: 16px;
+    max-height: min(66vh, 520px);
   }
 }
 
