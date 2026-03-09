@@ -632,3 +632,10 @@
 - execution: Implemented and shipped in commit 0171253.
 - commit: 0171253
 - reuse_tags: [uiux, frontend, productivity, mobile]
+
+### [SB-0089] Re-redesign full UI/UX visual system
+- status: solved
+- mission: Re-design the whole web app interface with a cleaner, production-grade UI language and better mobile rhythm
+- execution: Implemented and shipped in commit b659f5d.
+- commit: b659f5d
+- reuse_tags: [uiux, design-system, mobile, frontend]
