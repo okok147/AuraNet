@@ -639,3 +639,10 @@
 - execution: Implemented and shipped in commit b659f5d.
 - commit: b659f5d
 - reuse_tags: [uiux, design-system, mobile, frontend]
+
+### [SB-0090] Research-led artistic atlas style rollout
+- status: solved
+- mission: Research top UI/UX guidance and apply an artistic but production-safe style across the app
+- execution: Implemented and shipped in commit b967595.
+- commit: b967595
+- reuse_tags: [uiux, research, design-system, map]
