@@ -4606,6 +4606,342 @@ body > header.shell {
   }
 }
 
+/* --- 2026 Behance "Ilustraciones VARIAS" Inspired Layer --- */
+
+:root {
+  --ink-pop: #3f2f22;
+  --paper-cream: #f6ecdd;
+  --paper-warm: #eadcc8;
+  --pop-orange: #ff5a1a;
+  --pop-pink: #f6a6d9;
+  --pop-blue: #8fb7ff;
+  --pop-lime: #d8ef4a;
+  --pop-violet: #9b7cff;
+  --pop-mint: #8bd5b3;
+  --font-display: "Baloo 2", "Sora", sans-serif;
+  --text: #2a1f15;
+  --muted: rgba(42, 31, 21, 0.72);
+  --muted2: rgba(42, 31, 21, 0.56);
+  --stroke: rgba(63, 47, 34, 0.24);
+  --stroke2: rgba(63, 47, 34, 0.16);
+  --accent: #ff5a1a;
+  --accent-soft: rgba(255, 90, 26, 0.2);
+}
+
+body {
+  background:
+    radial-gradient(1320px 800px at -2% -12%, rgba(255, 90, 26, 0.18), transparent 58%),
+    radial-gradient(980px 680px at 104% 0%, rgba(143, 183, 255, 0.18), transparent 62%),
+    radial-gradient(840px 520px at 82% 100%, rgba(216, 239, 74, 0.12), transparent 58%),
+    linear-gradient(180deg, var(--paper-cream) 0%, var(--paper-warm) 100%);
+}
+
+.bg {
+  opacity: 0.9;
+  background:
+    radial-gradient(circle at 14% 15%, rgba(255, 90, 26, 0.12), transparent 40%),
+    radial-gradient(circle at 82% 14%, rgba(143, 183, 255, 0.12), transparent 42%),
+    radial-gradient(circle at 84% 82%, rgba(246, 166, 217, 0.11), transparent 45%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(63, 47, 34, 0.022),
+      rgba(63, 47, 34, 0.022) 1px,
+      transparent 1px,
+      transparent 10px
+    ),
+    repeating-linear-gradient(
+      80deg,
+      rgba(63, 47, 34, 0.015),
+      rgba(63, 47, 34, 0.015) 1px,
+      transparent 1px,
+      transparent 16px
+    );
+}
+
+body > header.shell {
+  border: 2px solid var(--ink-pop);
+  box-shadow: 9px 9px 0 rgba(63, 47, 34, 0.18);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 248, 239, 0.72));
+}
+
+body > header.shell::after {
+  border-bottom: 2px dashed rgba(63, 47, 34, 0.2);
+}
+
+.mark {
+  border: 2px solid var(--ink-pop);
+  background: linear-gradient(145deg, rgba(255, 90, 26, 0.78), rgba(255, 133, 56, 0.72));
+  box-shadow: 5px 5px 0 rgba(63, 47, 34, 0.2);
+}
+
+.mark__glyph {
+  color: #fff6ee;
+  font-family: var(--font-display);
+}
+
+.brand__name {
+  font-family: var(--font-display);
+  letter-spacing: 0.07em;
+}
+
+.h1 {
+  font-family: var(--font-display);
+  font-size: 17px;
+  letter-spacing: 0.03em;
+  text-transform: none;
+}
+
+.sectionTabs,
+.quickActions,
+.overviewCard,
+.card,
+.drop,
+.dialog__panel,
+.modal__panel,
+.inboxDock__panel {
+  border: 2px solid var(--ink-pop);
+  box-shadow: 6px 6px 0 rgba(63, 47, 34, 0.16);
+}
+
+.sectionTabs {
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.sectionTabs__btn {
+  border-radius: 999px;
+}
+
+.sectionTabs__btn[aria-pressed="true"] {
+  background: linear-gradient(180deg, rgba(255, 90, 26, 0.95), rgba(255, 120, 45, 0.92));
+  color: #fff8f2;
+  box-shadow:
+    0 6px 0 rgba(63, 47, 34, 0.18),
+    0 0 0 2px rgba(63, 47, 34, 0.16) inset;
+}
+
+.quickActions {
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.quickActionBtn,
+.btn,
+.mapFilterBtn,
+.auraPop__action,
+.tabBtn {
+  border: 2px solid var(--ink-pop);
+  box-shadow: 3px 3px 0 rgba(63, 47, 34, 0.16);
+}
+
+.btn,
+.quickActionBtn {
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.btn--primary,
+.auraPop__action--primary {
+  background: linear-gradient(180deg, rgba(255, 90, 26, 0.96), rgba(243, 81, 4, 0.92));
+  color: #fff7ee;
+}
+
+.quickActionBtn:hover,
+.btn:hover,
+.tabBtn:hover {
+  transform: translateY(-2px) rotate(-0.45deg);
+}
+
+#qaStartActivity {
+  background: rgba(255, 90, 26, 0.2);
+}
+
+#qaLocateMap {
+  background: rgba(143, 183, 255, 0.26);
+}
+
+#qaPostTask {
+  background: rgba(216, 239, 74, 0.32);
+}
+
+#qaPostService {
+  background: rgba(246, 166, 217, 0.26);
+}
+
+#qaScheduleEvent {
+  background: rgba(155, 124, 255, 0.2);
+}
+
+.overviewCard {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 248, 240, 0.95)),
+    repeating-linear-gradient(
+      0deg,
+      rgba(63, 47, 34, 0.012),
+      rgba(63, 47, 34, 0.012) 1px,
+      transparent 1px,
+      transparent 13px
+    );
+}
+
+#overviewAuraCard {
+  background-color: rgba(246, 166, 217, 0.34);
+}
+
+#overviewMapCard {
+  background-color: rgba(143, 183, 255, 0.26);
+}
+
+#overviewMarketCard {
+  background-color: rgba(216, 239, 74, 0.3);
+}
+
+#overviewInboxCard {
+  background-color: rgba(255, 90, 26, 0.16);
+}
+
+.overviewCard__value {
+  font-family: var(--font-display);
+}
+
+.card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 249, 240, 0.9)),
+    repeating-linear-gradient(
+      0deg,
+      rgba(63, 47, 34, 0.01),
+      rgba(63, 47, 34, 0.01) 1px,
+      transparent 1px,
+      transparent 14px
+    );
+}
+
+.card__head::after {
+  height: 3px;
+  width: 180px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 90, 26, 0.94),
+    rgba(255, 90, 26, 0.26)
+  );
+}
+
+.tabBtn[aria-selected="true"] {
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 6px 0 rgba(63, 47, 34, 0.14),
+    0 0 0 2px rgba(255, 90, 26, 0.2) inset;
+}
+
+.drop {
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.mapWrap {
+  border: 3px solid var(--ink-pop);
+  box-shadow: 8px 8px 0 rgba(63, 47, 34, 0.18);
+}
+
+.mapPaper {
+  opacity: 0.66;
+  mix-blend-mode: multiply;
+  background:
+    radial-gradient(circle at 20% 18%, rgba(255, 255, 255, 0.86), transparent 52%),
+    radial-gradient(circle at 82% 80%, rgba(63, 47, 34, 0.15), transparent 60%),
+    repeating-linear-gradient(
+      34deg,
+      rgba(63, 47, 34, 0.038) 0,
+      rgba(63, 47, 34, 0.038) 1px,
+      rgba(255, 255, 255, 0) 1px,
+      rgba(255, 255, 255, 0) 7px
+    );
+}
+
+.mapHud {
+  border: 2px solid var(--ink-pop);
+  box-shadow: 4px 4px 0 rgba(63, 47, 34, 0.18);
+}
+
+.mapFilterBtn.mapFilterBtn--on,
+.mapFilterBtn[aria-pressed="true"] {
+  background: rgba(216, 239, 74, 0.42);
+}
+
+.inboxDock__fab {
+  border: 2px solid var(--ink-pop);
+  background: linear-gradient(180deg, rgba(255, 90, 26, 0.92), rgba(246, 111, 43, 0.86));
+  color: #fff9f2;
+  box-shadow: 5px 5px 0 rgba(63, 47, 34, 0.2);
+}
+
+.inboxDock__panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 249, 241, 0.95));
+}
+
+.inboxThread--active {
+  background: rgba(143, 183, 255, 0.28);
+}
+
+.inboxMsg__bubble {
+  border: 2px solid var(--ink-pop);
+}
+
+.inboxMsg--me .inboxMsg__bubble {
+  background: rgba(246, 166, 217, 0.28);
+}
+
+.auraPop__action--danger {
+  border-color: var(--ink-pop);
+}
+
+.btn:focus-visible,
+.quickActionBtn:focus-visible,
+.sectionTabs__btn:focus-visible,
+.mapFilterBtn:focus-visible,
+.tabBtn:focus-visible,
+.input:focus,
+.select:focus,
+.lang__select:focus {
+  box-shadow:
+    0 0 0 4px rgba(255, 90, 26, 0.24),
+    3px 3px 0 rgba(63, 47, 34, 0.16);
+}
+
+@media (max-width: 940px) {
+  body > header.shell {
+    box-shadow: 6px 6px 0 rgba(63, 47, 34, 0.16);
+  }
+
+  .card,
+  .overviewCard,
+  .drop,
+  .inboxDock__panel {
+    box-shadow: 5px 5px 0 rgba(63, 47, 34, 0.14);
+  }
+}
+
+@media (max-width: 520px) {
+  body > header.shell {
+    border-radius: 14px;
+  }
+
+  .brand__name {
+    font-size: 16px;
+  }
+
+  .h1 {
+    font-size: 15px;
+  }
+
+  .card,
+  .overviewCard,
+  .drop,
+  .mapWrap,
+  .inboxDock__panel {
+    border-width: 2px;
+    box-shadow: 4px 4px 0 rgba(63, 47, 34, 0.14);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
