@@ -646,3 +646,10 @@
 - execution: Implemented and shipped in commit b967595.
 - commit: b967595
 - reuse_tags: [uiux, research, design-system, map]
+
+### [SB-0091] Behance-inspired illustrative pop-art style rollout
+- status: solved
+- mission: Apply the visual style direction from Behance "Ilustraciones VARIAS" across the full app UI
+- execution: Implemented and shipped in commit 2cf7825.
+- commit: 2cf7825
+- reuse_tags: [uiux, art-direction, redesign, frontend]
