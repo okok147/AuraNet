@@ -695,3 +695,10 @@
 - execution: Implemented and shipped in commit 34534f6.
 - commit: 34534f6
 - reuse_tags: [ci, workflow, maintenance]
+
+### [SB-0098] Move workflow checkout to the latest official major
+- status: solved
+- mission: Finish the workflow action cleanup by aligning checkout with the latest published major version
+- execution: Implemented and shipped in commit e470cdb.
+- commit: e470cdb
+- reuse_tags: [ci, workflow, maintenance]
