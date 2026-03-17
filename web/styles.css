@@ -5343,7 +5343,10 @@ body > main.shell > .quickActions {
 }
 
 .card--timer {
-  top: 22px;
+  position: static;
+  top: auto;
+  max-height: none;
+  overflow: visible;
 }
 
 .card__head {
