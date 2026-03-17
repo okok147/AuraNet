@@ -688,3 +688,10 @@
 - execution: Implemented and shipped in commit e02c3f6.
 - commit: e02c3f6
 - reuse_tags: [uiux, frontend, ci, workflow, responsive]
+
+### [SB-0097] Upgrade GitHub Actions majors where Node 24 variants exist
+- status: solved
+- mission: Reduce GitHub Actions Node 20 deprecation warnings by moving checkout and setup-node to newer major versions
+- execution: Implemented and shipped in commit 34534f6.
+- commit: 34534f6
+- reuse_tags: [ci, workflow, maintenance]
