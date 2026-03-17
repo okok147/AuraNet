@@ -702,3 +702,10 @@
 - execution: Implemented and shipped in commit e470cdb.
 - commit: e470cdb
 - reuse_tags: [ci, workflow, maintenance]
+
+### [SB-0099] Apply editorial NPR atlas theme across the shell and map
+- status: solved
+- mission: Rebuild the UI around an editorial lab-like reference style and add non-photorealistic watercolor rendering to the hero and map surfaces
+- execution: Implemented and shipped in commit 1993e1b.
+- commit: 1993e1b
+- reuse_tags: [uiux, art-direction, npr, map, frontend]
