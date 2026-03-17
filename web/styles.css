@@ -5005,8 +5005,8 @@ body > header.shell {
   position: static;
   z-index: auto;
   top: auto;
-  padding-top: max(12px, env(safe-area-inset-top, 0px));
-  padding-bottom: 12px;
+  padding-top: max(16px, env(safe-area-inset-top, 0px));
+  padding-bottom: 18px;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -5022,24 +5022,31 @@ body > header.shell::after {
 }
 
 body > main.shell {
-  padding-top: 22px;
+  padding-top: 26px;
 }
 
 .topbar {
   display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: start;
-  gap: 28px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+  align-items: end;
+  gap: 34px;
 }
 
 .brand {
   align-items: flex-start;
-  gap: 12px;
+  gap: 14px;
+  min-height: 72px;
+}
+
+.brand__text {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
 }
 
 .mark {
-  width: 36px;
-  height: 36px;
+  width: 42px;
+  height: 42px;
   border-radius: 999px;
   border: 1.5px solid rgba(31, 26, 21, 0.82);
   background: rgba(255, 252, 247, 0.6);
@@ -5055,25 +5062,48 @@ body > main.shell {
 
 .brand__name {
   font-family: var(--font-display);
-  font-size: 31px;
+  font-size: clamp(30px, 4.1vw, 54px);
   font-weight: 600;
   letter-spacing: 0.01em;
   text-transform: none;
+  line-height: 0.92;
 }
 
 .brand__tag {
-  margin-top: 2px;
-  max-width: 22ch;
+  margin-top: 0;
+  max-width: 34ch;
   color: var(--muted);
   font-family: var(--font-ui);
-  font-size: 14px;
+  font-size: 15px;
   letter-spacing: 0;
   text-transform: none;
+  line-height: 1.35;
 }
 
 .hud {
-  gap: 8px;
-  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px 14px;
+  min-width: 0;
+}
+
+.hud__group {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.hud__group--session {
+  flex: 1 1 280px;
+}
+
+.hud__group--status {
+  flex: 0 1 auto;
 }
 
 .hud__clock,
@@ -5084,6 +5114,15 @@ body > main.shell {
   background: rgba(255, 252, 247, 0.44);
   box-shadow: none;
   color: var(--muted);
+  min-height: 54px;
+  padding-inline: 18px;
+}
+
+.lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding-right: 12px;
 }
 
 .lang__select,
@@ -5098,16 +5137,35 @@ body > main.shell {
 
 .lang__select {
   font-family: var(--font-mono);
+  min-height: 40px;
+  padding-inline: 12px;
+}
+
+.auth {
+  min-width: 0;
+  justify-content: flex-end;
+}
+
+.auth__status {
+  max-width: min(34vw, 360px);
 }
 
 .headerStrip {
-  margin-top: 16px;
-  align-items: flex-end;
-  gap: 18px;
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(31, 26, 21, 0.14);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 18px 22px;
 }
 
 .sectionTabs {
-  gap: 18px;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 22px;
   padding: 0;
   border: 0;
   border-radius: 0;
@@ -5118,7 +5176,7 @@ body > main.shell {
 }
 
 .sectionTabs__btn {
-  padding: 0 0 7px;
+  padding: 0 0 10px;
   border-radius: 0;
   background: transparent;
   color: var(--muted);
@@ -5127,40 +5185,56 @@ body > main.shell {
   font-weight: 500;
   letter-spacing: 0.01em;
   text-transform: none;
+  line-height: 1;
+}
+
+.sectionTabs__btn:hover {
+  color: var(--text);
 }
 
 .sectionTabs__btn[aria-pressed="true"] {
   background: transparent;
   color: var(--text);
-  box-shadow: inset 0 -1px 0 rgba(31, 26, 21, 0.82);
+  box-shadow: inset 0 -2px 0 rgba(31, 26, 21, 0.82);
 }
 
 .workspaceTools {
   margin-left: auto;
-  gap: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 6px;
+  border: 1px dashed rgba(31, 26, 21, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 252, 247, 0.46);
 }
 
 .workspaceTools .btn {
   border-radius: 999px;
+  min-height: 40px;
+  padding-inline: 14px;
+  background: transparent;
 }
 
 .quickActions {
   margin-top: 18px;
-  padding: 12px 0 0;
+  padding: 14px 0 0;
   border: 0;
   border-top: 1px dashed rgba(31, 26, 21, 0.18);
   border-radius: 0;
   background: transparent;
   box-shadow: none;
   display: grid;
-  grid-template-columns: 170px 1fr;
-  align-items: start;
-  gap: 12px;
+  grid-template-columns: 152px 1fr;
+  align-items: center;
+  gap: 16px;
 }
 
 body > main.shell > .quickActions {
   margin-top: 0;
-  margin-bottom: 22px;
+  margin-bottom: 26px;
 }
 
 .quickActions__label,
@@ -5184,6 +5258,9 @@ body > main.shell > .quickActions {
 }
 
 .quickActions__list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 10px;
 }
 
@@ -5204,8 +5281,8 @@ body > main.shell > .quickActions {
 }
 
 .quickActionBtn {
-  min-height: 0;
-  padding: 10px 13px;
+  min-height: 42px;
+  padding: 0 14px;
   font-family: var(--font-ui);
   font-size: 15px;
   font-style: italic;
@@ -5236,19 +5313,20 @@ body > main.shell > .quickActions {
 }
 
 .workspaceOverview {
-  margin-top: 22px;
+  margin-top: 0;
   gap: 18px;
 }
 
 .overviewCard {
-  min-height: 128px;
-  padding: 18px 18px 16px;
+  min-height: 136px;
+  padding: 20px 20px 18px;
   border: 1px solid var(--stroke);
   border-radius: 28px 28px 28px 8px;
   background:
     linear-gradient(180deg, rgba(255, 252, 247, 0.72), rgba(255, 252, 247, 0.44)),
     radial-gradient(160px 120px at 100% 0%, rgba(78, 69, 59, 0.08), transparent 72%);
   box-shadow: none;
+  gap: 14px;
 }
 
 .overviewCard::before {
@@ -5277,6 +5355,7 @@ body > main.shell > .quickActions {
   font-weight: 600;
   letter-spacing: 0;
   color: var(--text);
+  line-height: 0.98;
 }
 
 .overviewCard__meta {
@@ -5284,6 +5363,7 @@ body > main.shell > .quickActions {
   font-family: var(--font-ui);
   font-size: 14px;
   line-height: 1.45;
+  max-width: 32ch;
 }
 
 #overviewAuraCard,
@@ -5614,23 +5694,37 @@ body > main.shell > .quickActions {
 
   .topbar {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 18px;
+  }
+
+  .brand {
+    min-height: 0;
   }
 
   .hud,
+  .hud__group,
   .auth {
     justify-content: flex-start;
   }
 
   .headerStrip {
-    align-items: flex-start;
-    flex-direction: column;
+    grid-template-columns: 1fr;
+    align-items: stretch;
     gap: 14px;
   }
 
   .sectionTabs {
-    gap: 14px;
+    flex-wrap: nowrap;
+    gap: 16px;
     overflow: auto hidden;
+    padding-bottom: 2px;
+  }
+
+  .workspaceTools {
+    margin-left: 0;
+    justify-content: flex-start;
+    width: fit-content;
+    max-width: 100%;
   }
 
   .sectionTabs__btn {
@@ -5641,6 +5735,10 @@ body > main.shell > .quickActions {
   .quickActions {
     grid-template-columns: 1fr;
     gap: 10px;
+  }
+
+  .quickActions__label {
+    padding-top: 0;
   }
 
   .workspaceOverview {
@@ -5670,15 +5768,30 @@ body > main.shell > .quickActions {
   }
 
   body > header.shell {
-    top: auto;
+    padding-top: max(18px, env(safe-area-inset-top, 0px));
+  }
+
+  body > main.shell {
+    padding-top: 18px;
   }
 
   .brand__name {
-    font-size: 24px;
+    font-size: clamp(26px, 9vw, 38px);
   }
 
   .brand__tag {
     font-size: 13px;
+  }
+
+  .auth__status {
+    max-width: 100%;
+  }
+
+  .hud__clock,
+  .pill,
+  .lang {
+    min-height: 48px;
+    padding-inline: 14px;
   }
 
   .sectionTabs__btn {
@@ -5695,6 +5808,11 @@ body > main.shell > .quickActions {
   .quickActionBtn {
     flex: 0 0 auto;
     font-size: 14px;
+  }
+
+  .workspaceTools {
+    border-radius: 20px;
+    padding: 8px;
   }
 
   .workspaceOverview {
