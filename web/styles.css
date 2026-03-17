@@ -5156,6 +5156,11 @@ body > main.shell {
   gap: 12px;
 }
 
+body > main.shell > .quickActions {
+  margin-top: 0;
+  margin-bottom: 22px;
+}
+
 .quickActions__label,
 .overviewCard__eyebrow,
 .stats,
