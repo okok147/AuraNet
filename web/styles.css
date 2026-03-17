@@ -5849,6 +5849,628 @@ body > main.shell > .quickActions {
   }
 }
 
+/* NPR editorial atlas layer */
+
+.nprDefs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+body {
+  color: #171510;
+}
+
+.bg {
+  background:
+    radial-gradient(1200px 760px at 12% 16%, rgba(196, 201, 176, 0.28), transparent 64%),
+    radial-gradient(920px 540px at 86% 10%, rgba(192, 214, 214, 0.16), transparent 62%),
+    radial-gradient(880px 580px at 70% 92%, rgba(223, 208, 164, 0.18), transparent 58%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(35, 29, 22, 0.022),
+      rgba(35, 29, 22, 0.022) 1px,
+      transparent 1px,
+      transparent 9px
+    ),
+    linear-gradient(180deg, #f4f1e8 0%, #f7f3ea 100%);
+  opacity: 1;
+  filter: saturate(0.92);
+}
+
+.bg::before,
+.bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.bg::before {
+  background:
+    radial-gradient(circle at 18% 22%, rgba(250, 243, 221, 0.84), transparent 20%),
+    radial-gradient(circle at 68% 18%, rgba(222, 231, 232, 0.54), transparent 18%),
+    radial-gradient(circle at 52% 70%, rgba(216, 220, 189, 0.42), transparent 17%);
+  mix-blend-mode: multiply;
+  opacity: 0.54;
+  filter: url(#nprWatercolor);
+}
+
+.bg::after {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.22)),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320' viewBox='0 0 320 320'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23n)' opacity='.12'/%3E%3C/svg%3E");
+  background-size: auto, 240px 240px;
+  mix-blend-mode: multiply;
+  opacity: 0.22;
+}
+
+.shell {
+  max-width: 1320px;
+}
+
+body > header.shell {
+  padding-bottom: 12px;
+}
+
+body > header.shell::after {
+  border-bottom-color: rgba(29, 24, 18, 0.12);
+}
+
+.topbar {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 32px;
+}
+
+.brand {
+  gap: 16px;
+}
+
+.mark {
+  width: 54px;
+  height: 54px;
+  border-width: 2px;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.92), rgba(250, 247, 239, 0.72)),
+    linear-gradient(180deg, rgba(148, 156, 121, 0.08), rgba(148, 156, 121, 0.02));
+  box-shadow:
+    0 0 0 3px rgba(123, 137, 98, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.78);
+}
+
+.mark__glyph {
+  font-size: 30px;
+}
+
+.brand__name {
+  font-size: clamp(34px, 3.8vw, 62px);
+  line-height: 0.92;
+}
+
+.brand__tag {
+  max-width: 44ch;
+  color: rgba(44, 38, 30, 0.72);
+  font-size: 17px;
+}
+
+.hud {
+  gap: 12px;
+}
+
+.hud__group {
+  gap: 12px;
+}
+
+.hud__clock,
+.pill,
+.lang {
+  min-height: 52px;
+  border-color: rgba(39, 32, 25, 0.12);
+  background: rgba(252, 249, 244, 0.86);
+  box-shadow:
+    0 8px 22px rgba(33, 26, 18, 0.04),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.62);
+}
+
+.lang {
+  padding-right: 14px;
+}
+
+.auth__status {
+  max-width: min(32vw, 340px);
+}
+
+.headerStrip {
+  margin-top: 18px;
+  padding-top: 18px;
+  gap: 20px 24px;
+}
+
+.sectionTabs {
+  gap: 28px;
+}
+
+.sectionTabs__btn {
+  padding-bottom: 12px;
+  color: rgba(34, 28, 22, 0.72);
+  font-size: 18px;
+  letter-spacing: 0;
+}
+
+.sectionTabs__btn[aria-pressed="true"] {
+  color: #171510;
+  box-shadow: inset 0 -2px 0 rgba(128, 140, 103, 0.9);
+}
+
+.workspaceTools {
+  gap: 8px;
+  padding: 7px;
+  border-style: solid;
+  border-color: rgba(128, 140, 103, 0.18);
+  background: rgba(248, 246, 238, 0.88);
+}
+
+.workspaceTools .btn,
+.btn,
+.quickActionBtn,
+.mapFilterBtn,
+.auraPop__action {
+  border-color: rgba(39, 32, 25, 0.13);
+  background: rgba(255, 253, 249, 0.8);
+  box-shadow:
+    0 6px 14px rgba(33, 26, 18, 0.04),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.56);
+}
+
+.btn--primary,
+.quickActionBtn--active,
+.mapFilterBtn.mapFilterBtn--on,
+.mapFilterBtn[aria-pressed="true"],
+.auraPop__action--primary,
+.tabBtn[aria-selected="true"],
+#authLogin {
+  border-color: rgba(103, 118, 81, 0.82);
+  background: linear-gradient(180deg, rgba(131, 148, 102, 0.96), rgba(111, 127, 86, 0.94));
+  color: #f7f4ea;
+}
+
+.heroFrame {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.26fr) minmax(280px, 360px);
+  gap: 38px;
+  align-items: end;
+  padding: 20px 0 34px;
+}
+
+.heroFrame::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-bottom: 1px solid rgba(29, 24, 18, 0.12);
+  pointer-events: none;
+}
+
+.heroIntro {
+  position: relative;
+  z-index: 1;
+}
+
+.heroKicker {
+  color: rgba(83, 90, 71, 0.94);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.heroTitle {
+  margin: 14px 0 0;
+  display: grid;
+  gap: 4px;
+  max-width: 12ch;
+  color: #11100d;
+  font-family: var(--font-display);
+  font-size: clamp(56px, 8vw, 108px);
+  font-weight: 600;
+  line-height: 0.92;
+  letter-spacing: -0.035em;
+}
+
+.heroTitle span {
+  display: block;
+}
+
+.heroTitle > span:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.16em;
+}
+
+.heroTitle em {
+  color: #7c8662;
+  font-style: normal;
+}
+
+.heroLead {
+  margin: 24px 0 0;
+  max-width: 28ch;
+  color: rgba(42, 36, 29, 0.82);
+  font-family: var(--font-display);
+  font-size: clamp(22px, 2.2vw, 30px);
+  line-height: 1.26;
+}
+
+.heroTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.heroTag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid rgba(127, 139, 101, 0.18);
+  border-radius: 999px;
+  background: rgba(248, 244, 233, 0.8);
+  color: rgba(50, 43, 34, 0.82);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.heroFeature {
+  position: relative;
+  padding: 14px;
+  border: 1px solid rgba(30, 24, 18, 0.12);
+  border-radius: 28px;
+  background: rgba(252, 249, 244, 0.78);
+  box-shadow:
+    0 18px 42px rgba(30, 24, 18, 0.06),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+}
+
+.heroFeature__art {
+  position: relative;
+  min-height: 272px;
+  overflow: hidden;
+  border-radius: 22px;
+  border: 1px solid rgba(29, 24, 18, 0.08);
+  background:
+    linear-gradient(180deg, rgba(245, 227, 206, 0.88), rgba(246, 241, 229, 0.86)),
+    radial-gradient(circle at 20% 20%, rgba(190, 204, 188, 0.48), transparent 44%),
+    radial-gradient(circle at 84% 18%, rgba(244, 212, 166, 0.56), transparent 28%);
+  filter: url(#nprWatercolor);
+}
+
+.heroFeature__art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(28, 23, 18, 0.05),
+      rgba(28, 23, 18, 0.05) 1px,
+      transparent 1px,
+      transparent 5px
+    ),
+    radial-gradient(circle at 22% 78%, rgba(255, 255, 255, 0.16), transparent 22%);
+  mix-blend-mode: multiply;
+  opacity: 0.28;
+}
+
+.heroFeature__wash,
+.heroFeature__terrain,
+.heroFeature__sun {
+  position: absolute;
+  pointer-events: none;
+}
+
+.heroFeature__wash {
+  inset: 0;
+  background:
+    radial-gradient(circle at 18% 26%, rgba(209, 216, 191, 0.88), transparent 22%),
+    radial-gradient(circle at 72% 16%, rgba(247, 214, 170, 0.84), transparent 18%),
+    radial-gradient(circle at 55% 62%, rgba(223, 228, 205, 0.42), transparent 28%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(34, 28, 22, 0.05),
+      rgba(34, 28, 22, 0.05) 1px,
+      transparent 1px,
+      transparent 6px
+    );
+  mix-blend-mode: multiply;
+  opacity: 0.45;
+}
+
+.heroFeature__terrain {
+  inset: auto -8% -4% -8%;
+  height: 64%;
+  background:
+    radial-gradient(60% 90% at 20% 100%, rgba(133, 148, 108, 0.86), transparent 54%),
+    radial-gradient(50% 90% at 50% 100%, rgba(176, 190, 142, 0.78), transparent 58%),
+    radial-gradient(42% 84% at 78% 100%, rgba(120, 133, 96, 0.84), transparent 56%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(29, 24, 18, 0.1),
+      rgba(29, 24, 18, 0.1) 1px,
+      rgba(255, 255, 255, 0) 1px,
+      rgba(255, 255, 255, 0) 5px
+    );
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  mix-blend-mode: multiply;
+  opacity: 0.86;
+}
+
+.heroFeature__sun {
+  top: 22px;
+  right: 24px;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(251, 232, 192, 0.96) 0%, rgba(247, 218, 172, 0.76) 44%, rgba(247, 218, 172, 0) 72%);
+  opacity: 0.86;
+}
+
+.heroFeature__body {
+  padding: 18px 8px 6px;
+}
+
+.heroFeature__label {
+  color: rgba(83, 90, 71, 0.9);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.heroFeature__title {
+  margin-top: 10px;
+  color: #171510;
+  font-family: var(--font-display);
+  font-size: clamp(24px, 2vw, 34px);
+  line-height: 1.08;
+}
+
+.heroFeature__sub {
+  margin-top: 10px;
+  color: rgba(45, 38, 30, 0.74);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.quickActions {
+  grid-template-columns: 140px 1fr;
+  gap: 18px;
+}
+
+.quickActions__label {
+  align-self: start;
+  color: rgba(83, 90, 71, 0.88);
+}
+
+.quickActionBtn {
+  min-height: 44px;
+  border-color: rgba(127, 139, 101, 0.18);
+  background: rgba(249, 246, 238, 0.88);
+}
+
+.workspaceOverview {
+  gap: 20px;
+}
+
+.overviewCard {
+  background:
+    linear-gradient(180deg, rgba(252, 249, 244, 0.88), rgba(247, 244, 236, 0.72)),
+    radial-gradient(circle at 100% 0%, rgba(192, 201, 176, 0.18), transparent 48%);
+  box-shadow:
+    0 18px 42px rgba(32, 24, 18, 0.05),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.66);
+}
+
+.overviewCard--current {
+  border-color: rgba(124, 134, 98, 0.34);
+  background:
+    linear-gradient(180deg, rgba(252, 249, 244, 0.96), rgba(239, 236, 222, 0.84)),
+    radial-gradient(circle at 100% 0%, rgba(149, 160, 126, 0.24), transparent 48%);
+}
+
+.grid {
+  gap: 32px;
+}
+
+.card {
+  border-color: rgba(29, 24, 18, 0.12);
+  background:
+    linear-gradient(180deg, rgba(252, 249, 244, 0.84), rgba(247, 244, 236, 0.68)),
+    repeating-linear-gradient(
+      0deg,
+      rgba(35, 29, 22, 0.018),
+      rgba(35, 29, 22, 0.018) 1px,
+      transparent 1px,
+      transparent 13px
+    );
+  box-shadow:
+    0 20px 48px rgba(31, 24, 18, 0.05),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.64);
+}
+
+.card::after {
+  background:
+    radial-gradient(480px 120px at 0 0, rgba(122, 136, 99, 0.08), transparent 74%),
+    radial-gradient(360px 180px at 100% 100%, rgba(212, 196, 160, 0.12), transparent 70%);
+  opacity: 1;
+}
+
+.mapWrap {
+  border-color: rgba(29, 24, 18, 0.12);
+  background: rgba(250, 247, 241, 0.84);
+  box-shadow:
+    0 18px 42px rgba(31, 24, 18, 0.06),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.68);
+}
+
+.mapWrap::after {
+  border-color: rgba(124, 134, 98, 0.16);
+}
+
+.mapPaper {
+  opacity: 0.72;
+  filter: url(#nprInk);
+  background:
+    radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.86), transparent 44%),
+    radial-gradient(circle at 82% 26%, rgba(244, 220, 183, 0.28), transparent 26%),
+    radial-gradient(circle at 66% 82%, rgba(157, 172, 126, 0.16), transparent 28%),
+    repeating-linear-gradient(
+      28deg,
+      rgba(29, 24, 18, 0.038) 0,
+      rgba(29, 24, 18, 0.038) 1px,
+      rgba(255, 255, 255, 0) 1px,
+      rgba(255, 255, 255, 0) 7px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(29, 24, 18, 0.024) 0,
+      rgba(29, 24, 18, 0.024) 1px,
+      rgba(255, 255, 255, 0) 1px,
+      rgba(255, 255, 255, 0) 10px
+    );
+  mix-blend-mode: multiply;
+}
+
+.mapVignette {
+  box-shadow:
+    inset 0 0 0 1px rgba(29, 24, 18, 0.1),
+    inset 0 0 0 8px rgba(255, 255, 255, 0.1),
+    inset 0 -22px 50px rgba(29, 24, 18, 0.1);
+}
+
+.card--map .leaflet-container {
+  background: #eeeadc;
+}
+
+.card--map .leaflet-tile {
+  filter: url(#nprWatercolor) grayscale(0.12) sepia(0.18) saturate(0.78) contrast(1.04) brightness(1.06);
+}
+
+.card--map .leaflet-control-zoom a,
+.card--map .leaflet-control-attribution,
+.card--map .leaflet-popup-content-wrapper,
+.card--map .leaflet-popup-tip,
+.card--map .leaflet-tooltip.auraDialog,
+.card--map .leaflet-popup-close-button {
+  background: rgba(252, 249, 244, 0.92);
+}
+
+.mapHud,
+.inboxDock__panel,
+.modal__panel,
+.dialog__panel {
+  box-shadow:
+    0 18px 40px rgba(31, 24, 18, 0.08),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.58);
+}
+
+@media (max-width: 1100px) {
+  .heroFrame {
+    grid-template-columns: 1fr;
+    gap: 26px;
+  }
+
+  .heroTitle {
+    max-width: 11ch;
+  }
+
+  .heroFeature {
+    max-width: 420px;
+  }
+}
+
+@media (max-width: 940px) {
+  .topbar {
+    gap: 22px;
+  }
+
+  .brand__tag {
+    max-width: none;
+  }
+
+  .heroFrame {
+    padding-top: 8px;
+    padding-bottom: 28px;
+  }
+
+  .heroTitle {
+    font-size: clamp(46px, 12vw, 72px);
+  }
+
+  .heroLead {
+    max-width: 24ch;
+    font-size: clamp(20px, 4.2vw, 26px);
+  }
+
+  .quickActions {
+    grid-template-columns: 1fr;
+  }
+
+  .heroFeature {
+    max-width: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .mark {
+    width: 46px;
+    height: 46px;
+  }
+
+  .mark__glyph {
+    font-size: 26px;
+  }
+
+  .brand__tag {
+    font-size: 14px;
+  }
+
+  .heroFrame {
+    gap: 22px;
+  }
+
+  .heroTitle {
+    max-width: none;
+    font-size: clamp(38px, 15vw, 56px);
+  }
+
+  .heroLead {
+    font-size: 18px;
+  }
+
+  .heroFeature__art {
+    min-height: 220px;
+  }
+
+  .heroTags {
+    gap: 8px;
+  }
+
+  .heroTag {
+    min-height: 36px;
+    padding-inline: 12px;
+    font-size: 10px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -5878,7 +6500,8 @@ body > main.shell > .quickActions {
   .sectionTabs__btn,
   .dialog__panel,
   .modal__panel,
-  .mapWrap--pick-focus::after {
+  .mapWrap--pick-focus::after,
+  .heroFeature {
     transition: none;
     animation: none;
   }
