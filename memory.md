@@ -667,3 +667,10 @@
 - execution: Implemented and shipped in commit 47a2b3a.
 - commit: 47a2b3a
 - reuse_tags: [uiux, layout, header, mobile]
+
+### [SB-0094] Remove sticky behavior from the top header shell
+- status: solved
+- mission: Keep the main header strip in normal document flow so it does not follow scroll and cover page content
+- execution: Implemented and shipped in commit b6f606d.
+- commit: b6f606d
+- reuse_tags: [uiux, layout, header, mobile]
