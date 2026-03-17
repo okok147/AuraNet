@@ -653,3 +653,10 @@
 - execution: Implemented and shipped in commit 2cf7825.
 - commit: 2cf7825
 - reuse_tags: [uiux, art-direction, redesign, frontend]
+
+### [SB-0092] Rebuild AuraNet as editorial field-notes paper experience
+- status: solved
+- mission: Restructure the UI and background around a monochrome hand-drawn field-notes aesthetic with calmer paper surfaces
+- execution: Implemented and shipped in commit b679a94.
+- commit: b679a94
+- reuse_tags: [uiux, art-direction, editorial, map]
