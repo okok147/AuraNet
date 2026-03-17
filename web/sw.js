@@ -1,14 +1,15 @@
-const CACHE_VERSION = "v5";
+const CACHE_VERSION = "v6";
 const STATIC_CACHE = `auranet-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `auranet-runtime-${CACHE_VERSION}`;
 const OFFLINE_URL = "./offline.html";
+const BUILD_ASSET_VERSION = "20260317b";
 
 const PRECACHE_URLS = [
   "./",
   "./index.html",
-  "./styles.css",
-  "./app.js",
-  "./app.webmanifest",
+  `./styles.css?v=${BUILD_ASSET_VERSION}`,
+  `./app.js?v=${BUILD_ASSET_VERSION}`,
+  `./app.webmanifest?v=${BUILD_ASSET_VERSION}`,
   "./favicon.svg",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
