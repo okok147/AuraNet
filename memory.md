@@ -681,3 +681,10 @@
 - execution: Implemented and shipped in commit 19dada4.
 - commit: 19dada4
 - reuse_tags: [uiux, layout, activity, mobile]
+
+### [SB-0096] Modernize shell layout and move CI to the Node 24 path
+- status: solved
+- mission: Clean up the app shell hierarchy, improve responsive control grouping, and remove GitHub Actions Node 20 deprecation warnings
+- execution: Implemented and shipped in commit e02c3f6.
+- commit: e02c3f6
+- reuse_tags: [uiux, frontend, ci, workflow, responsive]
