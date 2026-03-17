@@ -5002,7 +5002,9 @@ body {
 }
 
 body > header.shell {
-  top: 10px;
+  position: static;
+  z-index: auto;
+  top: auto;
   padding-top: max(12px, env(safe-area-inset-top, 0px));
   padding-bottom: 12px;
   border: 0;
@@ -5665,7 +5667,7 @@ body > main.shell > .quickActions {
   }
 
   body > header.shell {
-    top: 6px;
+    top: auto;
   }
 
   .brand__name {
