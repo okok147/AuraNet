@@ -709,3 +709,10 @@
 - execution: Implemented and shipped in commit 1993e1b.
 - commit: 1993e1b
 - reuse_tags: [uiux, art-direction, npr, map, frontend]
+
+### [SB-0100] Force coherent asset refresh after hero/i18n shell changes
+- status: solved
+- mission: Prevent mixed old-JS/new-HTML builds by versioning shell assets and advancing the service worker cache generation
+- execution: Implemented and shipped in commit bddf033.
+- commit: bddf033
+- reuse_tags: [stability, pwa, cache, i18n, deployment]
