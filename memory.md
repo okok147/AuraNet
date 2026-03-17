@@ -674,3 +674,10 @@
 - execution: Implemented and shipped in commit b6f606d.
 - commit: b6f606d
 - reuse_tags: [uiux, layout, header, mobile]
+
+### [SB-0095] Remove sticky behavior from the activity sidebar card
+- status: solved
+- mission: Stop the activity logger panel from following scroll and overlapping the header/content area
+- execution: Implemented and shipped in commit 19dada4.
+- commit: 19dada4
+- reuse_tags: [uiux, layout, activity, mobile]
