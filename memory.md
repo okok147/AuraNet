@@ -660,3 +660,10 @@
 - execution: Implemented and shipped in commit b679a94.
 - commit: b679a94
 - reuse_tags: [uiux, art-direction, editorial, map]
+
+### [SB-0093] Move quick actions into normal scroll flow
+- status: solved
+- mission: Prevent the quick action bar from sticking with the header and overlaying page content while scrolling
+- execution: Implemented and shipped in commit 47a2b3a.
+- commit: 47a2b3a
+- reuse_tags: [uiux, layout, header, mobile]
