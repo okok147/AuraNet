@@ -9331,13 +9331,49 @@
       });
     }
 
+    const MY_LOCATION_ZOOM = 17;
+
+    const focusMapOnUserLocation = ({ lat, lng, zoom = MY_LOCATION_ZOOM, duration = 0.8 } = {}) => {
+      const la = Number(lat);
+      const ln = Number(lng);
+      if (!Number.isFinite(la) || !Number.isFinite(ln)) return false;
+      if (typeof map.stop === "function") map.stop();
+      map.flyTo([clamp(la, -85, 85), wrapLng(ln)], Math.max(map.getZoom(), clamp(zoom, 2, 18)), {
+        duration
+      });
+      window.requestAnimationFrame(() => map.invalidateSize());
+      return true;
+    };
+
+    const focusKnownUserLocation = ({ zoom = MY_LOCATION_ZOOM, duration = 0.55 } = {}) => {
+      if (!lastUserLatLngRaw) return false;
+      selfPreciseMode = true;
+      lastUserLatLng = lastUserLatLngRaw;
+      if (userAuraEnabled) {
+        ensureUserAuraLayers(lastUserLatLng);
+        for (const l of userAuraLayers) l.setLatLng(lastUserLatLng);
+      }
+      return focusMapOnUserLocation({
+        lat: lastUserLatLngRaw.lat,
+        lng: lastUserLatLngRaw.lng,
+        zoom,
+        duration
+      });
+    };
+
     const showMyLocation = () => {
       if (!els.mapLocate) return;
+      const hadKnownFix = focusKnownUserLocation({ duration: 0.4 });
       if (!canUseGeolocation()) {
         setGpsBadge(t("map_gps_unsupported"), "warn");
         const msg = navigator.geolocation ? t("gps_secure_context") : t("gps_unsupported");
-        setMapStatus(msg, true);
-        toast(msg);
+        if (hadKnownFix) {
+          setGpsBadge(t("map_gps_on"), "ok");
+          setMapStatus(t("map_status_gps_private"));
+        } else {
+          setMapStatus(msg, true);
+          toast(msg);
+        }
         return;
       }
 
@@ -9354,17 +9390,19 @@
         .then((pos) => {
           const fix = applyPositionFix(pos, { preciseMode: true });
           if (!fix) throw new Error("invalid geolocation fix");
-          map.flyTo([clamp(fix.lat, -85, 85), wrapLng(fix.lng)], Math.max(map.getZoom(), 16), {
-            duration: 0.8
-          });
+          focusMapOnUserLocation({ lat: fix.lat, lng: fix.lng, zoom: MY_LOCATION_ZOOM, duration: 0.9 });
 
           setGpsBadge(t("map_gps_on"), "ok");
           setMapStatus(t("map_status_gps_private"));
           toast(t("gps_ready"));
-
-          window.requestAnimationFrame(() => map.invalidateSize());
         })
         .catch((err) => {
+          if (hadKnownFix || focusKnownUserLocation()) {
+            setGpsBadge(t("map_gps_on"), "ok");
+            setMapStatus(t("map_status_gps_private"));
+            toast(t("gps_ready"));
+            return;
+          }
           const msg = gpsErrorMessage(err);
           setGpsBadge(t("map_gps_off"), "warn");
           setMapStatus(msg, true);
