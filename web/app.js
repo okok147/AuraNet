@@ -2666,6 +2666,17 @@
     return h >>> 0;
   };
 
+  const seededRandom01 = (seed, offset = 0) => {
+    // Deterministic pseudo-random in [0,1), keyed by text hash.
+    let x = (Number(seed) >>> 0) + Math.imul(0x9e3779b1, (Number(offset) >>> 0) + 1);
+    x ^= x >>> 16;
+    x = Math.imul(x, 0x7feb352d);
+    x ^= x >>> 15;
+    x = Math.imul(x, 0x846ca68b);
+    x ^= x >>> 16;
+    return (x >>> 0) / 4294967296;
+  };
+
   const hslToRgb = (h, s, l) => {
     const hh = ((((Number(h) || 0) % 360) + 360) % 360) / 360;
     const ss = clamp((Number(s) || 0) / 100, 0, 1);
@@ -2698,10 +2709,12 @@
   const activityColorHex = (textOrKey) => {
     const key = activityKeyFromText(textOrKey);
     if (!key) return "#4A4A4A";
-    const h = fnv1a32(key);
-    const hue = h % 360;
-    const sat = 58 + ((h >>> 8) % 18); // 58–75
-    const lig = 46 + ((h >>> 16) % 16); // 46–61
+
+    // Make aura colors feel random, but still deterministic for the same text.
+    const seed = fnv1a32(key);
+    const hue = Math.round(seededRandom01(seed, 0) * 359);
+    const sat = 56 + Math.round(seededRandom01(seed, 1) * 24); // 56–80
+    const lig = 44 + Math.round(seededRandom01(seed, 2) * 20); // 44–64
     const rgb = hslToRgb(hue, sat, lig);
     return rgbToHex(rgb.r, rgb.g, rgb.b);
   };
@@ -2722,9 +2735,7 @@
     const rr = clamp(Math.round(r), 0, 255);
     const gg = clamp(Math.round(g), 0, 255);
     const bb = clamp(Math.round(b), 0, 255);
-    const luminance = rr * 0.2126 + gg * 0.7152 + bb * 0.0722;
-    const gray = clamp(Math.round(42 + (luminance / 255) * 146), 42, 188);
-    return `#${[gray, gray, gray].map((x) => x.toString(16).padStart(2, "0")).join("")}`.toUpperCase();
+    return `#${[rr, gg, bb].map((x) => x.toString(16).padStart(2, "0")).join("")}`.toUpperCase();
   };
 
   const paperHex = (hex, fallback = "#4A4A4A") => {
@@ -2816,7 +2827,7 @@
       if (!key) continue;
 
       const legacyColor = legacyType && ACTIVITY_TYPES[legacyType] ? ACTIVITY_TYPES[legacyType].color : null;
-      const colorHex = paperHex(String(entry.colorHex || entry.color || legacyColor || activityColorHex(key)).trim());
+      const colorHex = paperHex(String(activityColorHex(key) || entry.colorHex || entry.color || legacyColor).trim());
 
       const dayId = dayISOFromMs(endedAt);
       const perKey = buckets.get(key) || new Map();
@@ -3391,7 +3402,7 @@
       if (!key) continue;
 
       const legacyColor = legacyType && ACTIVITY_TYPES[legacyType] ? ACTIVITY_TYPES[legacyType].color : null;
-      const colorHex = paperHex(String(entry.colorHex || entry.color || legacyColor || activityColorHex(key)).trim());
+      const colorHex = paperHex(String(activityColorHex(key) || entry.colorHex || entry.color || legacyColor).trim());
 
       const prev = seen.get(key) || {
         key,
@@ -4005,7 +4016,7 @@
       const fallbackLabel = text || (legacyType ? typeLabel(legacyType) : "—");
       const key = activityKeyFromText(entry.key || text || fallbackLabel);
       const legacyColor = legacyType && ACTIVITY_TYPES[legacyType] ? ACTIVITY_TYPES[legacyType].color : null;
-      const colorHex = paperHex(String(entry.colorHex || entry.color || legacyColor || activityColorHex(key)).trim());
+      const colorHex = paperHex(String(activityColorHex(key) || entry.colorHex || entry.color || legacyColor).trim());
       const dur = Math.max(0, (entry.endedAt || 0) - (entry.startedAt || 0));
 
       const li = document.createElement("li");
