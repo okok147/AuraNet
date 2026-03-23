@@ -1,8 +1,8 @@
-const CACHE_VERSION = "v8";
+const CACHE_VERSION = "v9";
 const STATIC_CACHE = `auranet-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `auranet-runtime-${CACHE_VERSION}`;
 const OFFLINE_URL = "./offline.html";
-const BUILD_ASSET_VERSION = "20260323c";
+const BUILD_ASSET_VERSION = "20260323d";
 
 const PRECACHE_URLS = [
   "./",

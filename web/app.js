@@ -2241,7 +2241,7 @@
   const derivedCache = {
     lastEndedAt: { rev: -1, value: 0 },
     knownActivities: { rev: -1, data: [] },
-    longTermAura: { rev: -1, bucket: -1, data: { hex: "#FF6A00", byActivity: [] } },
+    longTermAura: { rev: -1, bucket: -1, data: { hex: "#4A4A4A", byActivity: [] } },
     auraStrength: { rev: -1, bucket: -1, data: { strength: 0, counts: [] } },
     auraLegendSig: "",
     similarity: new Map(),
@@ -2574,31 +2574,31 @@
   const ACTIVITY_TYPES = {
     work: {
       label: { en: "Work", "zh-Hant": "工作", ja: "仕事" },
-      color: "#2a5b8a"
+      color: "#323232"
     },
     study: {
       label: { en: "Study", "zh-Hant": "學習", ja: "勉強" },
-      color: "#0a7a52"
+      color: "#4A4A4A"
     },
     exercise: {
       label: { en: "Exercise", "zh-Hant": "運動", ja: "運動" },
-      color: "#b4233a"
+      color: "#1F1F1F"
     },
     social: {
       label: { en: "Social", "zh-Hant": "社交", ja: "交流" },
-      color: "#f1b83a"
+      color: "#6A6A6A"
     },
     travel: {
       label: { en: "Travel", "zh-Hant": "移動", ja: "移動" },
-      color: "#ff6a00"
+      color: "#565656"
     },
     food: {
       label: { en: "Food", "zh-Hant": "飲食", ja: "食事" },
-      color: "#7a5a2b"
+      color: "#7A7A7A"
     },
     rest: {
       label: { en: "Rest", "zh-Hant": "休息", ja: "休憩" },
-      color: "#5a6a7a"
+      color: "#909090"
     }
   };
 
@@ -2697,7 +2697,7 @@
 
   const activityColorHex = (textOrKey) => {
     const key = activityKeyFromText(textOrKey);
-    if (!key) return "#FF6A00";
+    if (!key) return "#4A4A4A";
     const h = fnv1a32(key);
     const hue = h % 360;
     const sat = 58 + ((h >>> 8) % 18); // 58–75
@@ -2722,7 +2722,15 @@
     const rr = clamp(Math.round(r), 0, 255);
     const gg = clamp(Math.round(g), 0, 255);
     const bb = clamp(Math.round(b), 0, 255);
-    return `#${[rr, gg, bb].map((x) => x.toString(16).padStart(2, "0")).join("")}`.toUpperCase();
+    const luminance = rr * 0.2126 + gg * 0.7152 + bb * 0.0722;
+    const gray = clamp(Math.round(42 + (luminance / 255) * 146), 42, 188);
+    return `#${[gray, gray, gray].map((x) => x.toString(16).padStart(2, "0")).join("")}`.toUpperCase();
+  };
+
+  const paperHex = (hex, fallback = "#4A4A4A") => {
+    const rgb = hexToRgb(hex);
+    if (!rgb) return fallback;
+    return rgbToHex(rgb.r, rgb.g, rgb.b);
   };
 
   const srgbToLinear = (c01) => {
@@ -2738,7 +2746,7 @@
   const mixHex = (aHex, bHex, t) => {
     const a = hexToRgb(aHex);
     const b = hexToRgb(bHex);
-    if (!a || !b) return String(aHex || "#FF6A00");
+    if (!a || !b) return paperHex(aHex, "#4A4A4A");
     const tt = clamp(t, 0, 1);
 
     const ar = srgbToLinear(a.r / 255);
@@ -2808,7 +2816,7 @@
       if (!key) continue;
 
       const legacyColor = legacyType && ACTIVITY_TYPES[legacyType] ? ACTIVITY_TYPES[legacyType].color : null;
-      const colorHex = String(entry.colorHex || entry.color || legacyColor || activityColorHex(key)).trim();
+      const colorHex = paperHex(String(entry.colorHex || entry.color || legacyColor || activityColorHex(key)).trim());
 
       const dayId = dayISOFromMs(endedAt);
       const perKey = buckets.get(key) || new Map();
@@ -2866,7 +2874,7 @@
     }
 
     if (wSum <= 0) {
-      const empty = { hex: "#FF6A00", byActivity: [] };
+      const empty = { hex: "#4A4A4A", byActivity: [] };
       derivedCache.longTermAura = { rev: activityLogRevision, bucket, data: empty };
       return empty;
     }
@@ -2993,7 +3001,7 @@
       top.push({
         key: "other",
         label: i18nLang === "zh-Hant" ? "其他" : i18nLang === "ja" ? "その他" : "Other",
-        colorHex: "#201812",
+        colorHex: "#1F1F1F",
         strokeOpacity: 0.28,
         weight: otherW
       });
@@ -3013,7 +3021,7 @@
         cy,
         r,
         fill: "none",
-        stroke: (entry && entry.colorHex) || "#FF6A00",
+        stroke: paperHex((entry && entry.colorHex) || "#4A4A4A"),
         "stroke-opacity": Number.isFinite(Number(entry && entry.strokeOpacity)) ? Number(entry.strokeOpacity) : 1,
         "stroke-width": strokeW,
         "stroke-linecap": "butt",
@@ -3034,14 +3042,14 @@
 
       const li = document.createElement("li");
       li.className = "auraLegend__item";
-      const raw = String((entry && entry.colorHex) || "#FF6A00").trim();
+      const raw = paperHex(String((entry && entry.colorHex) || "#4A4A4A").trim());
       const rgb = hexToRgb(raw);
       const tint = rgb ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.12)` : raw;
       li.style.setProperty("--auraTint", tint);
 
       const dot = document.createElement("span");
       dot.className = "auraLegend__dot";
-      dot.style.background = (entry && entry.colorHex) || "#FF6A00";
+      dot.style.background = paperHex((entry && entry.colorHex) || "#4A4A4A");
 
       const name = document.createElement("span");
       name.className = "auraLegend__name";
@@ -3063,7 +3071,7 @@
     const active = state.activity.active;
     if (!active) return { hex: longTerm.hex, longTerm };
 
-    const activityHex = String(active.colorHex || activityColorHex(active.key || active.text)).trim();
+    const activityHex = paperHex(String(active.colorHex || activityColorHex(active.key || active.text)).trim());
     const elapsed = Math.max(0, now - active.startedAt);
     const t = clamp(elapsed / (30 * 60 * 1000), 0, 1);
     const w = clamp(0.25 + t * 0.35, 0.25, 0.6);
@@ -3085,7 +3093,7 @@
     if (els.auraSwatch) {
       els.auraSwatch.style.background = `linear-gradient(135deg, ${hex}, ${mixHex(hex, "#FFFFFF", 0.35)})`;
       els.auraSwatch.style.borderColor = "rgba(32, 24, 18, 0.18)";
-      els.auraSwatch.style.boxShadow = `0 10px 18px rgba(24, 16, 10, 0.10), 0 0 0 6px rgba(255, 106, 0, 0.08) inset`;
+      els.auraSwatch.style.boxShadow = `0 10px 18px rgba(24, 16, 10, 0.10), 0 0 0 6px rgba(17, 17, 17, 0.08) inset`;
     }
 
     if (els.auraValue) {
@@ -3245,14 +3253,14 @@
 
     const dot = document.createElement("span");
     dot.className = "activityColorPreview__dot";
-    dot.style.background = String(hex);
+    dot.style.background = paperHex(String(hex));
 
     const label = document.createElement("span");
     label.textContent = t("activity_color_label");
 
     const code = document.createElement("span");
     code.className = "activityColorPreview__hex";
-    code.textContent = String(hex).toUpperCase();
+    code.textContent = paperHex(String(hex)).toUpperCase();
 
     el.appendChild(dot);
     el.appendChild(label);
@@ -3383,7 +3391,7 @@
       if (!key) continue;
 
       const legacyColor = legacyType && ACTIVITY_TYPES[legacyType] ? ACTIVITY_TYPES[legacyType].color : null;
-      const colorHex = String(entry.colorHex || entry.color || legacyColor || activityColorHex(key)).trim();
+      const colorHex = paperHex(String(entry.colorHex || entry.color || legacyColor || activityColorHex(key)).trim());
 
       const prev = seen.get(key) || {
         key,
@@ -3456,7 +3464,7 @@
 
       const dot = document.createElement("span");
       dot.className = "activitySuggest__dot";
-      dot.style.background = item.colorHex;
+      dot.style.background = paperHex(item.colorHex);
 
       const text = document.createElement("span");
       text.className = "activitySuggest__text";
@@ -3464,7 +3472,7 @@
 
       const hex = document.createElement("span");
       hex.className = "activitySuggest__hex";
-      hex.textContent = item.colorHex.toUpperCase();
+      hex.textContent = paperHex(item.colorHex).toUpperCase();
 
       btn.appendChild(dot);
       btn.appendChild(text);
@@ -3496,7 +3504,7 @@
 
     if (active) {
       setSuggestHidden(true);
-      setActivityColorPreview(active.colorHex || activityColorHex(active.key || active.text));
+      setActivityColorPreview(paperHex(active.colorHex || activityColorHex(active.key || active.text)));
       return;
     }
 
@@ -3620,7 +3628,7 @@
 
       const dot = document.createElement("span");
       dot.className = "approvedDot";
-      dot.style.background = mixHex(activityColorHex(handle), "#8f8580", 0.45);
+      dot.style.background = mixHex(activityColorHex(handle), "#8E8E8E", 0.45);
 
       const name = document.createElement("span");
       name.className = "approvedName";
@@ -3997,7 +4005,7 @@
       const fallbackLabel = text || (legacyType ? typeLabel(legacyType) : "—");
       const key = activityKeyFromText(entry.key || text || fallbackLabel);
       const legacyColor = legacyType && ACTIVITY_TYPES[legacyType] ? ACTIVITY_TYPES[legacyType].color : null;
-      const colorHex = String(entry.colorHex || entry.color || legacyColor || activityColorHex(key)).trim();
+      const colorHex = paperHex(String(entry.colorHex || entry.color || legacyColor || activityColorHex(key)).trim());
       const dur = Math.max(0, (entry.endedAt || 0) - (entry.startedAt || 0));
 
       const li = document.createElement("li");
@@ -6523,7 +6531,7 @@
         id: active.id,
         text: active.text,
         key: active.key || activityKeyFromText(active.text),
-        colorHex: active.colorHex || activityColorHex(active.key || active.text),
+        colorHex: paperHex(active.colorHex || activityColorHex(active.key || active.text)),
         startedAt: active.startedAt,
         endedAt
       });
@@ -6621,10 +6629,10 @@
     const activeLabel = active ? normalizeActivityText(active.text || "").slice(0, 28) || "—" : "";
 
     if (els.overviewAuraSwatch) {
-      const hex = currentAura.hex || longTerm.hex || "#FF6A00";
+      const hex = currentAura.hex || longTerm.hex || "#4A4A4A";
       els.overviewAuraSwatch.style.background = `linear-gradient(135deg, ${hex}, ${mixHex(hex, "#FFFFFF", 0.4)})`;
       els.overviewAuraSwatch.style.borderColor = "rgba(32, 24, 18, 0.12)";
-      els.overviewAuraSwatch.style.boxShadow = `0 0 0 1px rgba(255, 255, 255, 0.6) inset, 0 8px 16px ${mixHex(hex, "#1a120b", 0.74)}22`;
+      els.overviewAuraSwatch.style.boxShadow = `0 0 0 1px rgba(255, 255, 255, 0.6) inset, 0 8px 16px ${mixHex(hex, "#1A1A1A", 0.74)}22`;
     }
     if (els.overviewAuraValue) {
       els.overviewAuraValue.textContent = active ? t("overview_status_active") : t("overview_status_idle");
@@ -6632,7 +6640,7 @@
     if (els.overviewAuraMeta) {
       els.overviewAuraMeta.textContent = active
         ? t("overview_aura_meta_active", { activity: activeLabel, count: logCount })
-        : t("overview_aura_meta_idle", { count: logCount, hex: longTerm.hex || "#FF6A00" });
+        : t("overview_aura_meta_idle", { count: logCount, hex: longTerm.hex || "#4A4A4A" });
     }
 
     const filters = normalizeMapLayerFilters(state && state.ui && state.ui.mapFilters);
@@ -7286,7 +7294,7 @@
   const setMapStatus = (message, isError = false) => {
     if (!els.mapStatus) return;
     els.mapStatus.textContent = message;
-    els.mapStatus.style.color = isError ? "rgba(180, 35, 58, 0.9)" : "";
+    els.mapStatus.style.color = isError ? "rgba(17, 17, 17, 0.92)" : "";
     if (els.mapSection) {
       const txt = String(message || "").toLowerCase();
       const busy = !isError && /(load|request|fetch|載入|請求|取得|読み込み|要求|取得中)/.test(txt);
@@ -7415,7 +7423,7 @@
     let myAccuracyRing = null;
     let userAuraLayers = [];
     let userAuraEnabled = false;
-    let userAuraColor = "#FF6A00";
+    let userAuraColor = "#4A4A4A";
     let userAuraAgeMs = 0;
     let userAuraStrength = 0;
     let userAuraVerified = Boolean(state && state.tasks && state.tasks.prefs && state.tasks.prefs.userVerified);
@@ -7707,7 +7715,7 @@
       const accepted = status === "accepted";
       return {
         pane: "taskPane",
-        color: accepted ? "rgba(255, 106, 0, 0.55)" : "rgba(32, 24, 18, 0.35)",
+        color: accepted ? "rgba(17, 17, 17, 0.55)" : "rgba(32, 24, 18, 0.35)",
         weight: accepted ? 2.2 : 1.8,
         opacity: 0.9,
         lineCap: "round",
@@ -7818,7 +7826,7 @@
     const STREET_MIN_ZOOM = 12;
     const DIALOG_MIN_ZOOM = STREET_MIN_ZOOM;
     const SHOW_SIM_ACTIVITY_DIALOGS = false;
-    const AURA_GRAY_HEX = "#b8b1a5";
+    const AURA_GRAY_HEX = "#B7B7B7";
     const DECAY_MINUTE_MS = 60_000;
     const DECAY_CURVE = [
       [0, 1.0],
@@ -8145,7 +8153,7 @@
       {
         kind: "WALK",
         profile: "walking",
-        fill: "#0a7a52",
+        fill: "#595959",
         speedMps: [1.3, 2.2],
         jitterPx: [0.7, 1.7],
         microStopPerS: 0.06
@@ -8153,7 +8161,7 @@
       {
         kind: "TRANSIT",
         profile: "driving",
-        fill: "#ff6a00",
+        fill: "#3F3F3F",
         speedMps: [5.5, 10.5],
         jitterPx: [0.4, 1.0],
         microStopPerS: 0.045
@@ -8161,7 +8169,7 @@
       {
         kind: "RIDE",
         profile: "driving",
-        fill: "#2a5b8a",
+        fill: "#747474",
         speedMps: [9.5, 16.0],
         jitterPx: [0.25, 0.75],
         microStopPerS: 0.015
@@ -8169,7 +8177,7 @@
       {
         kind: "RUSH",
         profile: "driving",
-        fill: "#b4233a",
+        fill: "#1E1E1E",
         speedMps: [12.0, 20.0],
         jitterPx: [0.22, 0.7],
         microStopPerS: 0.01
@@ -8252,8 +8260,8 @@
 
     const applyUserAuraStyle = () => {
       if (!userAuraLayers.length) return;
-      const GRAY_HEX = "#b8b1a5";
-      const BOUND_MIX_HEX = "#201812";
+      const GRAY_HEX = "#B7B7B7";
+      const BOUND_MIX_HEX = "#1F1F1F";
       const age = Math.max(0, Number(userAuraAgeMs) || 0);
       const decay = decayFactor(age);
       const strength = clamp(Number(userAuraStrength) || 0, 0, 1);
@@ -8318,7 +8326,7 @@
           const rows = total
             ? parts
                 .map((it) => {
-                  const color = (it && it.colorHex) || "#FF6A00";
+                  const color = paperHex((it && it.colorHex) || "#4A4A4A");
                   const name = escapeHtml(normalizeActivityText((it && it.label) || "—"));
                   const pct = Math.round(((Number(it && it.weight) || 0) / total) * 100);
                   return `<div class="auraPop__row"><span class="auraPop__dot" style="background:${color}"></span><span class="auraPop__name">${name}</span><span class="auraPop__val">${pct}%</span></div>`;
@@ -8535,7 +8543,7 @@
         lb += srgbToLinear(rgb.b / 255) * w;
         wSum += w;
       }
-      if (wSum <= 0) return "#FF6A00";
+      if (wSum <= 0) return "#4A4A4A";
       return rgbToHex(
         linearToSrgb(lr / wSum) * 255,
         linearToSrgb(lg / wSum) * 255,
@@ -8611,7 +8619,7 @@
         ? parts
             .map(([type, pct]) => {
               const cfg = ACTIVITY_TYPES[type];
-              const color = (cfg && cfg.color) || "#FF6A00";
+              const color = paperHex((cfg && cfg.color) || "#4A4A4A");
               const name = escapeHtml(typeLabel(type));
               const p = Math.round(pct);
               return `<div class="auraPop__row"><span class="auraPop__dot" style="background:${color}"></span><span class="auraPop__name">${name}</span><span class="auraPop__val">${p}%</span></div>`;
@@ -8627,7 +8635,7 @@
         t("popup_action_block")
       )}</button></div>`;
 
-      return `<div class="auraPop"><div class="auraPop__title">${escapeHtml(title)}</div><div class="auraPop__sub">${escapeHtml(who)} • ${escapeHtml(handle)}${verified}</div><div class="auraPop__hex">${escapeHtml(agent.auraHex || "#FF6A00")}</div>${rows || empty}${actions}</div>`;
+      return `<div class="auraPop"><div class="auraPop__title">${escapeHtml(title)}</div><div class="auraPop__sub">${escapeHtml(who)} • ${escapeHtml(handle)}${verified}</div><div class="auraPop__hex">${escapeHtml(agent.auraHex || "#4A4A4A")}</div>${rows || empty}${actions}</div>`;
     };
 
     const bindAgentPopupActions = (popup, agent) => {
@@ -8696,7 +8704,7 @@
     const applyAgentStyle = (agent, now) => {
       const tNow = Number.isFinite(Number(now)) ? Number(now) : simNow();
       let fill = agent.auraHex || agent.persona.fill;
-      const BOUND_MIX_HEX = "#201812";
+      const BOUND_MIX_HEX = "#1F1F1F";
       let radiusBoost = 1;
       let opacityBoost = 1;
 
@@ -8982,7 +8990,7 @@
         route,
         persona,
         mix: agentInitMix(persona),
-        auraHex: "#FF6A00",
+        auraHex: "#4A4A4A",
         needsStyle: true,
         baseOuterRadius,
         baseRadii,
@@ -9603,7 +9611,7 @@
       if (!draftRouteLine) {
         draftRouteLine = L.polyline([], {
           pane: "taskPane",
-          color: "rgba(255, 106, 0, 0.35)",
+          color: "rgba(17, 17, 17, 0.32)",
           weight: 1.8,
           opacity: 0.85,
           dashArray: "2 10",
@@ -9618,7 +9626,7 @@
           stroke: true,
           color: "rgba(32, 24, 18, 0.30)",
           weight: 1,
-          fillColor: "rgba(255, 106, 0, 0.85)",
+          fillColor: "rgba(26, 26, 26, 0.82)",
           fillOpacity: 0.6
         }).addTo(map);
       }
@@ -9630,7 +9638,7 @@
           stroke: true,
           color: "rgba(32, 24, 18, 0.30)",
           weight: 1,
-          fillColor: "rgba(10, 122, 82, 0.85)",
+          fillColor: "rgba(132, 132, 132, 0.78)",
           fillOpacity: 0.55
         }).addTo(map);
       }

@@ -6888,3 +6888,488 @@ body > header.shell {
     min-height: 190px;
   }
 }
+
+:root {
+  --bg0: #f7f6f1;
+  --bg1: #ebe9e2;
+  --panel: rgba(255, 255, 252, 0.84);
+  --panel2: rgba(255, 255, 252, 0.96);
+  --stroke: rgba(17, 17, 17, 0.14);
+  --stroke2: rgba(17, 17, 17, 0.08);
+  --text: #111111;
+  --muted: rgba(17, 17, 17, 0.7);
+  --muted2: rgba(17, 17, 17, 0.48);
+  --accent: #111111;
+  --accent-soft: rgba(17, 17, 17, 0.06);
+  --ok: #111111;
+  --ok-soft: rgba(17, 17, 17, 0.05);
+  --danger: #111111;
+  --danger-soft: rgba(17, 17, 17, 0.08);
+}
+
+body {
+  color: var(--text);
+  font-family: var(--font-display);
+  line-height: 1.55;
+  background: linear-gradient(180deg, var(--bg0) 0%, var(--bg1) 100%);
+}
+
+.bg {
+  background:
+    radial-gradient(1100px 620px at 18% 0%, rgba(17, 17, 17, 0.06), transparent 58%),
+    radial-gradient(920px 540px at 100% 0%, rgba(17, 17, 17, 0.04), transparent 54%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(17, 17, 17, 0.018) 0,
+      rgba(17, 17, 17, 0.018) 1px,
+      rgba(255, 255, 255, 0) 1px,
+      rgba(255, 255, 255, 0) 10px
+    ),
+    linear-gradient(180deg, var(--bg0) 0%, var(--bg1) 100%);
+  opacity: 1;
+}
+
+body > header.shell {
+  background: linear-gradient(180deg, rgba(247, 246, 241, 0.94) 0%, rgba(247, 246, 241, 0.82) 76%, rgba(247, 246, 241, 0) 100%);
+}
+
+.mark {
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(243, 241, 235, 0.94));
+  border-color: rgba(17, 17, 17, 0.18);
+  box-shadow: none;
+}
+
+.mark__glyph {
+  color: rgba(17, 17, 17, 0.94);
+}
+
+.brand__name {
+  font-family: var(--font-ui);
+  color: rgba(17, 17, 17, 0.94);
+}
+
+.brand__tag,
+.quickActions__label,
+.overviewCard__eyebrow,
+.field__label,
+.drop__label,
+.panelHead__title,
+.lang__label,
+.stats,
+.pill,
+.badge {
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.brand__tag,
+.stats,
+.overviewCard__meta,
+.heroFeature__sub,
+.activity__hint {
+  color: var(--muted);
+}
+
+.heroTitle {
+  max-width: 12ch;
+  color: rgba(17, 17, 17, 0.97);
+}
+
+.heroTitle em {
+  font-style: italic;
+}
+
+.heroLead {
+  max-width: 32ch;
+  color: rgba(17, 17, 17, 0.76);
+}
+
+.heroTag {
+  border-color: rgba(17, 17, 17, 0.14);
+  background: rgba(255, 255, 255, 0.72);
+  color: rgba(17, 17, 17, 0.8);
+}
+
+.heroFeature {
+  border-color: rgba(17, 17, 17, 0.12);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 252, 0.96) 0%, rgba(241, 239, 233, 0.96) 100%);
+}
+
+.heroFeature__art {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.92), transparent 28%),
+    radial-gradient(circle at 82% 20%, rgba(17, 17, 17, 0.1), transparent 24%),
+    linear-gradient(180deg, rgba(243, 242, 237, 0.98) 0%, rgba(225, 223, 216, 0.98) 100%);
+  filter: grayscale(1) contrast(1.06);
+}
+
+.heroFeature__wash,
+.heroFeature__terrain,
+.heroFeature__sun {
+  filter: grayscale(1);
+}
+
+.heroFeature__label {
+  color: var(--muted2);
+}
+
+.heroFeature__title {
+  color: rgba(17, 17, 17, 0.95);
+}
+
+.quickActions,
+.overviewCard,
+.card,
+.drop,
+.onboard,
+.auraViz,
+.marketTabs {
+  background: var(--panel2);
+  border-color: rgba(17, 17, 17, 0.1);
+  box-shadow: 0 16px 36px rgba(17, 17, 17, 0.06);
+}
+
+.sectionTabs,
+.marketTabs,
+.lang,
+.hud__clock,
+.pill {
+  background: rgba(255, 255, 252, 0.86);
+  border-color: rgba(17, 17, 17, 0.08);
+}
+
+.quickActionBtn,
+.sectionTabs__btn,
+.tabBtn,
+.btn {
+  color: rgba(17, 17, 17, 0.9);
+}
+
+.quickActionBtn,
+.btn,
+.input,
+.select,
+.lang__select {
+  border-color: rgba(17, 17, 17, 0.12);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: none;
+}
+
+.quickActionBtn:hover,
+.btn:hover,
+.tabBtn:hover,
+.sectionTabs__btn:hover {
+  background: rgba(245, 244, 239, 0.96);
+  border-color: rgba(17, 17, 17, 0.18);
+}
+
+.quickActionBtn--active,
+.sectionTabs__btn[aria-pressed="true"],
+.tabBtn[aria-selected="true"] {
+  background: rgba(17, 17, 17, 0.96);
+  color: #f8f6f1;
+  box-shadow: none;
+}
+
+.btn--primary {
+  border-color: rgba(17, 17, 17, 0.92);
+  background: linear-gradient(180deg, rgba(24, 24, 24, 1), rgba(6, 6, 6, 1));
+  color: #f8f6f1;
+}
+
+.btn--primary:hover {
+  background: linear-gradient(180deg, rgba(34, 34, 34, 1), rgba(12, 12, 12, 1));
+}
+
+.btn--ghost {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.btn:focus-visible,
+.sectionTabs__btn:focus-visible,
+.quickActionBtn:focus-visible,
+.tabBtn:focus-visible,
+.input:focus,
+.select:focus,
+.lang__select:focus {
+  box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.1);
+  border-color: rgba(17, 17, 17, 0.26);
+}
+
+.overviewCard__value,
+.h1 {
+  color: rgba(17, 17, 17, 0.96);
+}
+
+.overviewCard--current {
+  border-color: rgba(17, 17, 17, 0.18);
+  background: linear-gradient(180deg, rgba(255, 255, 252, 0.98), rgba(243, 241, 235, 0.98));
+}
+
+.card::before {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.68);
+}
+
+.card__head::after {
+  width: 84px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(17, 17, 17, 0.54), transparent);
+}
+
+.drop[open] > .drop__summary,
+.onboard__body,
+.panelHead {
+  border-color: rgba(17, 17, 17, 0.1);
+}
+
+.drop__summary::after,
+.onboard__summary::after {
+  border-color: rgba(17, 17, 17, 0.64);
+}
+
+.auraViz,
+.auraLegend__item,
+.activityColorPreview,
+.activitySuggest,
+.activitySuggest__btn,
+.timeBar,
+.taskItem,
+.marketItem,
+.eventItem,
+.offerItem,
+.inboxDock__panel,
+.dialog__panel,
+.modal__panel {
+  border-color: rgba(17, 17, 17, 0.1);
+}
+
+.pill,
+.badge,
+.taskChip,
+.tabBtn__count,
+.drop__count,
+.rangeMeta__value {
+  background: rgba(243, 242, 237, 0.9);
+  color: rgba(17, 17, 17, 0.82);
+  border-color: rgba(17, 17, 17, 0.12);
+}
+
+.pill--ok,
+.pill--warn,
+.pill--bad,
+.badge--ok,
+.badge--warn {
+  background: rgba(17, 17, 17, 0.05);
+  color: rgba(17, 17, 17, 0.92);
+  border-color: rgba(17, 17, 17, 0.16);
+}
+
+.timeBar {
+  background: rgba(17, 17, 17, 0.08);
+}
+
+.timeBar__fill {
+  background: linear-gradient(90deg, rgba(17, 17, 17, 0.92), rgba(17, 17, 17, 0.55));
+}
+
+.card--map .mapWrap {
+  background:
+    linear-gradient(180deg, rgba(247, 246, 241, 0.98) 0%, rgba(232, 230, 223, 0.98) 100%);
+}
+
+.mapPaper {
+  opacity: 0.92;
+  mix-blend-mode: multiply;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 252, 0.84) 0%, rgba(233, 231, 224, 0.7) 100%),
+    radial-gradient(circle at 16% 18%, rgba(255, 255, 255, 0.96), transparent 28%),
+    repeating-linear-gradient(
+      24deg,
+      rgba(17, 17, 17, 0.016) 0,
+      rgba(17, 17, 17, 0.016) 1px,
+      rgba(255, 255, 255, 0) 1px,
+      rgba(255, 255, 255, 0) 12px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(17, 17, 17, 0.016) 0,
+      rgba(17, 17, 17, 0.016) 1px,
+      rgba(255, 255, 255, 0) 1px,
+      rgba(255, 255, 255, 0) 9px
+    );
+  filter: none;
+}
+
+.mapPaper::before {
+  opacity: 0.82;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320' viewBox='0 0 320 320'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.88' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23g)' opacity='0.22'/%3E%3C/svg%3E")
+      center/320px 320px repeat;
+}
+
+.mapPaper::after {
+  opacity: 0.42;
+  background:
+    radial-gradient(circle at 88% 84%, rgba(17, 17, 17, 0.1), transparent 18%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420' viewBox='0 0 420 420'%3E%3Cg fill='none' stroke='%23111111' stroke-opacity='.12' stroke-width='1.2' stroke-linecap='round'%3E%3Cpath d='M26 78c49-19 92 18 143 8 40-8 58-34 103-28 38 5 70 34 122 18'/%3E%3Cpath d='M-10 166c45-13 82 13 126 3 47-10 77-40 126-30 32 7 64 25 98 17'/%3E%3Cpath d='M21 294c33-10 72 16 117 10 46-6 67-35 112-30 40 5 77 29 138 19'/%3E%3C/g%3E%3C/svg%3E")
+      center/420px 420px repeat;
+}
+
+.mapVignette {
+  box-shadow:
+    inset 0 0 0 1px rgba(17, 17, 17, 0.12),
+    inset 0 0 0 10px rgba(255, 255, 255, 0.14),
+    inset 0 -24px 52px rgba(17, 17, 17, 0.14);
+}
+
+.card--map .leaflet-container {
+  background: linear-gradient(180deg, rgba(239, 237, 229, 0.98) 0%, rgba(227, 225, 217, 0.98) 100%);
+}
+
+.card--map .leaflet-tile {
+  filter: grayscale(1) contrast(1.1) brightness(1.08);
+}
+
+.card--map .leaflet-control-zoom a,
+.card--map .leaflet-control-attribution,
+.card--map .leaflet-popup-content-wrapper,
+.card--map .leaflet-popup-tip,
+.card--map .leaflet-tooltip.auraDialog,
+.card--map .leaflet-popup-close-button {
+  background: rgba(255, 255, 252, 0.94);
+  color: rgba(17, 17, 17, 0.9);
+  border-color: rgba(17, 17, 17, 0.12);
+}
+
+:root {
+  --shadow: 0 18px 44px rgba(17, 17, 17, 0.08);
+  --shadow2: 0 10px 24px rgba(17, 17, 17, 0.06);
+  --shadow3: 0 24px 56px rgba(17, 17, 17, 0.12);
+}
+
+body > header.shell::after {
+  border-bottom-color: rgba(17, 17, 17, 0.08);
+}
+
+.skipLink,
+.toast--global,
+.auth__status,
+.inboxDock__fab,
+.cmdDialog__chip {
+  border-color: rgba(17, 17, 17, 0.16);
+  background: rgba(255, 255, 252, 0.94);
+  color: rgba(17, 17, 17, 0.9);
+  box-shadow: var(--shadow2);
+}
+
+.activitySuggest__btn[aria-selected="true"],
+.cmdDialog__item:hover,
+.cmdDialog__item.cmdDialog__item--active,
+.mapFilterBtn.mapFilterBtn--on,
+.mapFilterBtn[aria-pressed="true"] {
+  border-color: rgba(17, 17, 17, 0.26);
+  background: rgba(17, 17, 17, 0.1);
+  box-shadow: 0 10px 18px rgba(17, 17, 17, 0.08);
+}
+
+.activitySuggest__btn[aria-selected="true"],
+.mapFilterBtn.mapFilterBtn--on,
+.mapFilterBtn[aria-pressed="true"] {
+  color: rgba(17, 17, 17, 0.92);
+}
+
+.cmdDialog__item:focus-visible,
+.mapFilterBtn:focus-visible,
+.inboxThread:focus-visible,
+.auraPop__action:focus-visible,
+.inboxDock__fab:focus-visible {
+  box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.12), 0 10px 18px rgba(17, 17, 17, 0.08);
+}
+
+.inboxDock__fab:hover,
+.inboxThread:hover,
+.auraPop__action:hover {
+  border-color: rgba(17, 17, 17, 0.2);
+  background: rgba(245, 244, 239, 0.98);
+  box-shadow: 0 10px 18px rgba(17, 17, 17, 0.08);
+}
+
+.inboxDock__count,
+.inboxThread__count {
+  border-color: rgba(17, 17, 17, 0.16);
+  background: rgba(17, 17, 17, 0.08);
+  color: rgba(17, 17, 17, 0.9);
+}
+
+.inboxDock__panel,
+.dialog__panel,
+.modal__panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 252, 0.98) 0%, rgba(241, 239, 233, 0.98) 100%);
+  border-color: rgba(17, 17, 17, 0.12);
+  box-shadow: 0 28px 64px rgba(17, 17, 17, 0.14);
+}
+
+.dialog::backdrop,
+.modal__backdrop {
+  background: rgba(17, 17, 17, 0.22);
+}
+
+.inboxDock__head,
+.inboxDock__composer,
+.modal__head,
+.roomControls,
+.roomForm {
+  border-color: rgba(17, 17, 17, 0.1);
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.inboxThread,
+.cmdDialog__item,
+.cmdDialog__empty,
+.reviewStars,
+.reviewStar,
+.msg__bubble,
+.msg__photo,
+.msg__loc,
+.inboxMsg__bubble,
+.inboxMsg--empty {
+  border-color: rgba(17, 17, 17, 0.14);
+  background: rgba(255, 255, 255, 0.68);
+  color: rgba(17, 17, 17, 0.9);
+}
+
+.inboxThread--active,
+.reviewStar[aria-checked="true"],
+.msg--me .msg__bubble,
+.inboxMsg--me .inboxMsg__bubble,
+.auraPop__action--primary,
+.auraPop__action--danger {
+  border-color: rgba(17, 17, 17, 0.22);
+  background: rgba(17, 17, 17, 0.9);
+  color: #f8f6f1;
+}
+
+.auraPop__action,
+.mapFilterBtn {
+  border-color: rgba(17, 17, 17, 0.14);
+  background: rgba(255, 255, 255, 0.82);
+  color: rgba(17, 17, 17, 0.9);
+  box-shadow: none;
+}
+
+.roomBody {
+  background:
+    radial-gradient(1200px 520px at 24% 0%, rgba(17, 17, 17, 0.07), transparent 60%),
+    radial-gradient(900px 520px at 100% 0%, rgba(17, 17, 17, 0.04), transparent 62%),
+    rgba(255, 255, 255, 0.22);
+}
+
+.msg__from,
+.modal__title,
+.inboxDock__title,
+.cmdDialog__hint {
+  color: rgba(17, 17, 17, 0.76);
+}
