@@ -565,6 +565,7 @@
       popup_action_block: "Block",
       popup_message_prompt: "Message to {handle}",
       gps_unsupported: "Geolocation not supported.",
+      gps_secure_context: "Location needs HTTPS or localhost.",
       gps_denied: "Location permission denied.",
       gps_unavailable: "Location unavailable.",
       gps_timeout: "Location request timed out.",
@@ -932,6 +933,7 @@
       popup_action_block: "封鎖",
       popup_message_prompt: "傳送訊息給 {handle}",
       gps_unsupported: "此瀏覽器不支援定位。",
+      gps_secure_context: "定位需要 HTTPS 或 localhost。",
       gps_denied: "定位權限被拒絕。",
       gps_unavailable: "無法取得定位。",
       gps_timeout: "定位請求逾時。",
@@ -1299,6 +1301,7 @@
       popup_action_block: "ブロック",
       popup_message_prompt: "{handle} へのメッセージ",
       gps_unsupported: "位置情報に対応していません。",
+      gps_secure_context: "位置情報の利用には HTTPS または localhost が必要です。",
       gps_denied: "位置情報の許可が拒否されました。",
       gps_unavailable: "位置情報を取得できません。",
       gps_timeout: "位置情報の取得がタイムアウトしました。",
@@ -6720,6 +6723,10 @@
       keywords: "map locate gps center",
       run: () => {
         scrollToSection("mapSection");
+        if (mapApi && typeof mapApi.locateSelf === "function") {
+          mapApi.locateSelf();
+          return;
+        }
         if (els.mapLocate) els.mapLocate.click();
       }
     },
@@ -7366,6 +7373,155 @@
       els.mapGps.textContent = message;
       els.mapGps.classList.toggle("badge--ok", kind === "ok");
       els.mapGps.classList.toggle("badge--warn", kind === "warn");
+    };
+
+    const isLocalGeolocationHost = () => {
+      const host = String((window.location && window.location.hostname) || "")
+        .trim()
+        .toLowerCase();
+      return host === "localhost" || host === "127.0.0.1" || host === "::1" || host === "[::1]";
+    };
+
+    const canUseGeolocation = () => {
+      if (!navigator.geolocation) return false;
+      if (window.isSecureContext) return true;
+      return isLocalGeolocationHost();
+    };
+
+    const readGeolocationPermissionState = async () => {
+      if (!navigator.permissions || typeof navigator.permissions.query !== "function") return "";
+      try {
+        const status = await navigator.permissions.query({ name: "geolocation" });
+        return status && typeof status.state === "string" ? status.state : "";
+      } catch {
+        return "";
+      }
+    };
+
+    const gpsErrorMessage = (err) => {
+      if (!navigator.geolocation) return t("gps_unsupported");
+      if (!canUseGeolocation()) return t("gps_secure_context");
+      const code = err && typeof err.code === "number" ? err.code : 0;
+      if (code === 1) return t("gps_denied");
+      if (code === 2) return t("gps_unavailable");
+      if (code === 3) return t("gps_timeout");
+      return t("gps_error");
+    };
+
+    const getCurrentPositionOnce = ({ enableHighAccuracy = true, timeout = 10_000, maximumAge = 0 } = {}) => {
+      return new Promise((resolve, reject) => {
+        try {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy,
+            timeout,
+            maximumAge
+          });
+        } catch (err) {
+          reject(err);
+        }
+      });
+    };
+
+    const watchForPositionFix = ({ enableHighAccuracy = true, timeout = 12_000, maximumAge = 0 } = {}) => {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation || typeof navigator.geolocation.watchPosition !== "function") {
+          reject(new Error("geolocation watch unavailable"));
+          return;
+        }
+
+        let settled = false;
+        let watchId = null;
+        let timeoutId = null;
+
+        const finalize = (fn, value) => {
+          if (settled) return;
+          settled = true;
+          if (timeoutId !== null) window.clearTimeout(timeoutId);
+          if (watchId !== null) {
+            try {
+              navigator.geolocation.clearWatch(watchId);
+            } catch {
+              // ignore
+            }
+          }
+          fn(value);
+        };
+
+        timeoutId = window.setTimeout(() => {
+          const err = new Error("geolocation timeout");
+          err.code = 3;
+          finalize(reject, err);
+        }, Math.max(2_000, Number(timeout) || 12_000) + 1_000);
+
+        try {
+          watchId = navigator.geolocation.watchPosition(
+            (pos) => finalize(resolve, pos),
+            (err) => {
+              const code = err && typeof err.code === "number" ? err.code : 0;
+              if (code === 2 || code === 3) return;
+              finalize(reject, err || new Error("geolocation error"));
+            },
+            {
+              enableHighAccuracy,
+              timeout,
+              maximumAge
+            }
+          );
+        } catch (err) {
+          finalize(reject, err);
+        }
+      });
+    };
+
+    const requestGeolocationFix = async ({
+      enableHighAccuracy = true,
+      timeout = 10_000,
+      maximumAge = 0,
+      retryWithWatch = true
+    } = {}) => {
+      if (!navigator.geolocation) {
+        const err = new Error(t("gps_unsupported"));
+        err.code = 0;
+        throw err;
+      }
+      if (!canUseGeolocation()) {
+        const err = new Error(t("gps_secure_context"));
+        err.code = 0;
+        throw err;
+      }
+
+      const permissionState = await readGeolocationPermissionState();
+      if (permissionState === "denied") {
+        const err = new Error(t("gps_denied"));
+        err.code = 1;
+        throw err;
+      }
+
+      try {
+        return await getCurrentPositionOnce({ enableHighAccuracy, timeout, maximumAge });
+      } catch (err) {
+        const code = err && typeof err.code === "number" ? err.code : 0;
+        const shouldRetryWithWatch =
+          retryWithWatch && code !== 1 && typeof navigator.geolocation.watchPosition === "function";
+        if (!shouldRetryWithWatch) throw err;
+        return watchForPositionFix({
+          enableHighAccuracy,
+          timeout: Math.max(Number(timeout) || 10_000, 12_000),
+          maximumAge: 0
+        });
+      }
+    };
+
+    const applyPositionFix = (pos, { preciseMode = false } = {}) => {
+      if (!pos || !pos.coords) return null;
+      const lat = Number(pos.coords.latitude);
+      const lng = Number(pos.coords.longitude);
+      const accuracy = Number(pos.coords.accuracy) || 0;
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+      if (preciseMode) selfPreciseMode = true;
+      setUserLatLng(lat, lng, accuracy, { ensureRing: false });
+      maybeSaveHomeFromRaw(lastUserLatLngRaw);
+      return { lat, lng, accuracy };
     };
 
     const setAuraBadge = (message, kind = "off") => {
@@ -8155,53 +8311,44 @@
 
     const primeUserLocationOnce = () => {
       if (lastUserLatLngRaw || userPrimePending) return;
-      if (!navigator.geolocation) return;
+      if (!canUseGeolocation()) return;
       userPrimePending = true;
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          const accuracy = Number(pos.coords.accuracy) || 0;
-          setUserLatLng(lat, lng, accuracy, { ensureRing: false });
-          maybeSaveHomeFromRaw(lastUserLatLngRaw);
+      requestGeolocationFix({
+        enableHighAccuracy: true,
+        timeout: 8_000,
+        maximumAge: 0,
+        retryWithWatch: false
+      })
+        .then((pos) => {
+          applyPositionFix(pos);
           setGpsBadge(t("map_gps_on"), "ok");
+        })
+        .catch(() => {
+          // ignore
+        })
+        .finally(() => {
           userPrimePending = false;
-        },
-        () => {
-          userPrimePending = false;
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 8_000,
-          maximumAge: 0
-        }
-      );
+        });
     };
 
     const startUserWatch = () => {
       if (userWatchId !== null) return;
-      if (!navigator.geolocation) {
+      if (!canUseGeolocation()) {
         setGpsBadge(t("map_gps_unsupported"), "warn");
-        toast(t("gps_unsupported"));
+        const msg = navigator.geolocation ? t("gps_secure_context") : t("gps_unsupported");
+        setMapStatus(msg, true);
+        toast(msg);
         return;
       }
 
       setGpsBadge(t("map_gps_request"), "off");
       userWatchId = navigator.geolocation.watchPosition(
         (pos) => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          const accuracy = Number(pos.coords.accuracy) || 0;
-          setUserLatLng(lat, lng, accuracy, { ensureRing: false });
-          maybeSaveHomeFromRaw(lastUserLatLngRaw);
+          applyPositionFix(pos);
           setGpsBadge(t("map_gps_on"), "ok");
         },
         (err) => {
-          const code = err && typeof err.code === "number" ? err.code : 0;
-          let msg = t("gps_error");
-          if (code === 1) msg = t("gps_denied");
-          if (code === 2) msg = t("gps_unavailable");
-          if (code === 3) msg = t("gps_timeout");
+          const msg = gpsErrorMessage(err);
           setGpsBadge(t("map_gps_off"), "warn");
           setMapStatus(msg, true);
           stopUserWatch();
@@ -9044,10 +9191,11 @@
 
     const showMyLocation = () => {
       if (!els.mapLocate) return;
-      if (!navigator.geolocation) {
+      if (!canUseGeolocation()) {
         setGpsBadge(t("map_gps_unsupported"), "warn");
-        setMapStatus(t("gps_unsupported"), true);
-        toast(t("gps_unsupported"));
+        const msg = navigator.geolocation ? t("gps_secure_context") : t("gps_unsupported");
+        setMapStatus(msg, true);
+        toast(msg);
         return;
       }
 
@@ -9055,16 +9203,16 @@
       setGpsBadge(t("map_gps_request"), "off");
       setMapStatus(t("map_status_requesting_gps"));
 
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          const accuracy = Number(pos.coords.accuracy) || 0;
-
-          selfPreciseMode = true;
-          setUserLatLng(lat, lng, accuracy, { ensureRing: false });
-          maybeSaveHomeFromRaw(lastUserLatLngRaw);
-          map.flyTo([clamp(lat, -85, 85), wrapLng(lng)], Math.max(map.getZoom(), 16), {
+      requestGeolocationFix({
+        enableHighAccuracy: true,
+        timeout: 12_000,
+        maximumAge: 15_000,
+        retryWithWatch: true
+      })
+        .then((pos) => {
+          const fix = applyPositionFix(pos, { preciseMode: true });
+          if (!fix) throw new Error("invalid geolocation fix");
+          map.flyTo([clamp(fix.lat, -85, 85), wrapLng(fix.lng)], Math.max(map.getZoom(), 16), {
             duration: 0.8
           });
 
@@ -9073,26 +9221,16 @@
           toast(t("gps_ready"));
 
           window.requestAnimationFrame(() => map.invalidateSize());
-          els.mapLocate.disabled = false;
-        },
-        (err) => {
-          const code = err && typeof err.code === "number" ? err.code : 0;
-          let msg = t("gps_error");
-          if (code === 1) msg = t("gps_denied");
-          if (code === 2) msg = t("gps_unavailable");
-          if (code === 3) msg = t("gps_timeout");
-
+        })
+        .catch((err) => {
+          const msg = gpsErrorMessage(err);
           setGpsBadge(t("map_gps_off"), "warn");
           setMapStatus(msg, true);
           toast(msg);
+        })
+        .finally(() => {
           els.mapLocate.disabled = false;
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10_000,
-          maximumAge: 60_000
-        }
-      );
+        });
     };
 
     if (els.mapLocate) {
@@ -9666,42 +9804,39 @@
       },
       requestGpsOnce: () => {
         return new Promise((resolve, reject) => {
-          if (!navigator.geolocation) {
+          if (!canUseGeolocation()) {
             setGpsBadge(t("map_gps_unsupported"), "warn");
-            reject(new Error("geolocation unsupported"));
+            const msg = navigator.geolocation ? t("gps_secure_context") : t("gps_unsupported");
+            setMapStatus(msg, true);
+            reject(new Error(msg));
             return;
           }
 
           setGpsBadge(t("map_gps_request"), "off");
           setMapStatus(t("map_status_requesting_gps"));
-          navigator.geolocation.getCurrentPosition(
-            (pos) => {
-              const lat = pos.coords.latitude;
-              const lng = pos.coords.longitude;
-              const accuracy = Number(pos.coords.accuracy) || 0;
-              setUserLatLng(lat, lng, accuracy, { ensureRing: false });
-              maybeSaveHomeFromRaw(lastUserLatLngRaw);
+          requestGeolocationFix({
+            enableHighAccuracy: true,
+            timeout: 12_000,
+            maximumAge: 15_000,
+            retryWithWatch: true
+          })
+            .then((pos) => {
+              const fix = applyPositionFix(pos);
+              if (!fix) throw new Error("invalid geolocation fix");
               setGpsBadge(t("map_gps_on"), "ok");
               setMapStatus(t("map_status_ready"));
-              resolve({ lat, lng, accuracy });
-            },
-            (err) => {
-              const code = err && typeof err.code === "number" ? err.code : 0;
-              let msg = t("gps_error");
-              if (code === 1) msg = t("gps_denied");
-              if (code === 2) msg = t("gps_unavailable");
-              if (code === 3) msg = t("gps_timeout");
+              resolve(fix);
+            })
+            .catch((err) => {
+              const msg = gpsErrorMessage(err);
               setGpsBadge(t("map_gps_off"), "warn");
               setMapStatus(msg, true);
               reject(new Error(msg));
-            },
-            {
-              enableHighAccuracy: true,
-              timeout: 10_000,
-              maximumAge: 60_000
-            }
-          );
+            });
         });
+      },
+      locateSelf: () => {
+        showMyLocation();
       },
       setTasks: (tasks) => {
         tasksForLines = Array.isArray(tasks) ? tasks.slice() : [];
@@ -9831,7 +9966,7 @@
       refreshI18n: () => {
         setSimUi();
         setVisBadge(userVisibilityMode, "ok");
-        if (!navigator.geolocation) {
+        if (!canUseGeolocation()) {
           setGpsBadge(t("map_gps_unsupported"), "warn");
         } else if (userWatchId !== null) {
           setGpsBadge(t("map_gps_on"), "ok");
@@ -10034,6 +10169,10 @@
   if (els.qaLocateMap) {
     els.qaLocateMap.addEventListener("click", () => {
       scrollToSection("mapSection");
+      if (mapApi && typeof mapApi.locateSelf === "function") {
+        mapApi.locateSelf();
+        return;
+      }
       if (els.mapLocate) els.mapLocate.click();
     });
   }
