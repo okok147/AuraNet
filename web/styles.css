@@ -7919,3 +7919,13 @@ body > main.shell {
     transform: none;
   }
 }
+
+.tabBtn[aria-selected="true"] .tabBtn__label {
+  color: #f8f6f1;
+}
+
+.tabBtn[aria-selected="true"] .tabBtn__count {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8f6f1;
+}
