@@ -331,6 +331,29 @@
     return SUPPORTED_LANGS.includes(v) ? v : "en";
   };
 
+  const GLOBAL_LANG_KEY = `${STORAGE_KEY}:lang`;
+  const LOCAL_DEMO_AUTH_SUB = "local-demo";
+
+  const readPreferredLang = (fallback) => {
+    try {
+      const raw = String(localStorage.getItem(GLOBAL_LANG_KEY) || "").trim();
+      if (SUPPORTED_LANGS.includes(raw)) return raw;
+    } catch {
+      // ignore
+    }
+    return normalizeLang(fallback);
+  };
+
+  const persistPreferredLang = (value) => {
+    const lang = normalizeLang(value);
+    try {
+      localStorage.setItem(GLOBAL_LANG_KEY, lang);
+    } catch {
+      // ignore
+    }
+    return lang;
+  };
+
   const normalizeMapLayerFilters = (value) => {
     const raw = value && typeof value === "object" ? value : {};
     return {
@@ -414,9 +437,13 @@
     en: {
       ui_language: "Language",
       auth_not_configured: "Firebase login not configured",
+      auth_local_ready: "Local demo available",
       auth_signed_out: "Not signed in",
       auth_signed_in_as: "Signed in: {name}",
+      auth_signed_in_local_as: "Local profile: {name}",
       auth_login_google: "Sign in with Google",
+      auth_login_local: "Continue locally",
+      auth_local_user: "Local demo",
       auth_logout: "Sign out",
       skip_main: "Skip to main content",
       brand_tagline: "Field notes on human presence",
@@ -774,6 +801,7 @@
       toast_pwa_update_ready: "App update ready. Refresh to use the latest version.",
       toast_pwa_update_applied: "App updated.",
       toast_auth_signed_in: "Signed in with Google.",
+      toast_auth_signed_in_local: "Signed in locally.",
       toast_auth_signed_out: "Signed out.",
       toast_auth_unavailable: "Firebase login is unavailable.",
       toast_auth_sign_in_failed: "Could not sign in with Google.",
@@ -782,9 +810,13 @@
     "zh-Hant": {
       ui_language: "語言",
       auth_not_configured: "Firebase 登入尚未設定",
+      auth_local_ready: "可使用本機示範模式",
       auth_signed_out: "尚未登入",
       auth_signed_in_as: "已登入：{name}",
+      auth_signed_in_local_as: "本機模式：{name}",
       auth_login_google: "使用 Google 登入",
+      auth_login_local: "使用本機模式",
+      auth_local_user: "本機示範",
       auth_logout: "登出",
       skip_main: "跳到主要內容",
       brand_tagline: "人類存在的田野筆記",
@@ -1142,6 +1174,7 @@
       toast_pwa_update_ready: "已有新版可用，重新整理即可更新。",
       toast_pwa_update_applied: "應用程式已更新。",
       toast_auth_signed_in: "已使用 Google 登入。",
+      toast_auth_signed_in_local: "已使用本機模式登入。",
       toast_auth_signed_out: "已登出。",
       toast_auth_unavailable: "Firebase 登入目前無法使用。",
       toast_auth_sign_in_failed: "無法使用 Google 登入。",
@@ -1150,9 +1183,13 @@
     ja: {
       ui_language: "言語",
       auth_not_configured: "Firebase ログイン未設定",
+      auth_local_ready: "ローカルデモを利用できます",
       auth_signed_out: "未ログイン",
       auth_signed_in_as: "ログイン中: {name}",
+      auth_signed_in_local_as: "ローカルプロフィール: {name}",
       auth_login_google: "Google でログイン",
+      auth_login_local: "ローカルで続ける",
+      auth_local_user: "ローカルデモ",
       auth_logout: "ログアウト",
       skip_main: "メインコンテンツへスキップ",
       brand_tagline: "人の気配のフィールドノート",
@@ -1510,6 +1547,7 @@
       toast_pwa_update_ready: "新しいバージョンを利用できます。再読み込みしてください。",
       toast_pwa_update_applied: "アプリを更新しました。",
       toast_auth_signed_in: "Google でログインしました。",
+      toast_auth_signed_in_local: "ローカルでログインしました。",
       toast_auth_signed_out: "ログアウトしました。",
       toast_auth_unavailable: "Firebase ログインは現在利用できません。",
       toast_auth_sign_in_failed: "Google でログインできませんでした。",
@@ -1676,7 +1714,36 @@
     return `user:${sanitizeProfileId(user.sub)}`;
   };
 
-  let activeProfileId = GUEST_PROFILE_ID;
+  const LOCAL_DEMO_SESSION_KEY = `${STORAGE_KEY}:local-demo-session`;
+
+  const readLocalDemoSessionUser = () => {
+    try {
+      const raw = localStorage.getItem(LOCAL_DEMO_SESSION_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      const user = normalizeAuthUser(parsed);
+      return user && user.sub === LOCAL_DEMO_AUTH_SUB ? user : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const persistLocalDemoSession = (user) => {
+    const nextUser = normalizeAuthUser(user);
+    try {
+      if (nextUser && nextUser.sub === LOCAL_DEMO_AUTH_SUB) {
+        localStorage.setItem(LOCAL_DEMO_SESSION_KEY, JSON.stringify(nextUser));
+      } else {
+        localStorage.removeItem(LOCAL_DEMO_SESSION_KEY);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const bootLocalDemoUser = readLocalDemoSessionUser();
+
+  let activeProfileId = bootLocalDemoUser ? profileIdForAuthUser(bootLocalDemoUser) : GUEST_PROFILE_ID;
   let activeStorageKey = storageKeyForProfile(activeProfileId);
 
   const migrateLegacyGuestStorage = () => {
@@ -2083,6 +2150,10 @@
 
   migrateLegacyGuestStorage();
   let state = loadState(activeStorageKey);
+  if (bootLocalDemoUser) {
+    state.auth = state.auth && typeof state.auth === "object" ? state.auth : defaultState().auth;
+    state.auth.user = bootLocalDemoUser;
+  }
   const trimActivityLogInPlace = () => {
     if (!state.activity || typeof state.activity !== "object") state.activity = defaultState().activity;
     if (!Array.isArray(state.activity.log)) state.activity.log = [];
@@ -2210,7 +2281,10 @@
       state = loadState(activeStorageKey);
       trimActivityLogInPlace();
       bumpActivityLogRevision();
-      i18nLang = normalizeLang(state.activity && state.activity.prefs && state.activity.prefs.lang);
+      i18nLang = readPreferredLang(state.activity && state.activity.prefs && state.activity.prefs.lang);
+      state.activity = state.activity && typeof state.activity === "object" ? state.activity : defaultState().activity;
+      state.activity.prefs = state.activity.prefs && typeof state.activity.prefs === "object" ? state.activity.prefs : defaultState().activity.prefs;
+      state.activity.prefs.lang = persistPreferredLang(i18nLang);
       try {
         lastSerializedState = localStorage.getItem(activeStorageKey);
       } catch {
@@ -2224,11 +2298,16 @@
   };
 
   let mapApi = null;
-  let i18nLang = normalizeLang(state.activity && state.activity.prefs && state.activity.prefs.lang);
+  let i18nLang = readPreferredLang(state.activity && state.activity.prefs && state.activity.prefs.lang);
   let firebaseAuthConfig = null;
   let firebaseAuth = null;
   let firebaseAuthReady = false;
   let firebaseAuthBootstrapped = false;
+
+  if (state.activity && state.activity.prefs) {
+    state.activity.prefs.lang = i18nLang;
+  }
+  persistPreferredLang(i18nLang);
 
   const sameAuthUser = (a, b) => {
     const left = normalizeAuthUser(a);
@@ -2241,6 +2320,11 @@
       left.email === right.email &&
       left.picture === right.picture
     );
+  };
+
+  const isLocalDemoAuthUser = (value) => {
+    const user = normalizeAuthUser(value);
+    return Boolean(user && user.sub === LOCAL_DEMO_AUTH_SUB);
   };
 
   const readFirebaseAuthConfig = () => {
@@ -2287,24 +2371,33 @@
 
   const renderAuthUi = () => {
     const user = normalizeAuthUser(state && state.auth && state.auth.user);
+    const isLocalUser = isLocalDemoAuthUser(user);
+    const hasFirebaseConfig = Boolean(firebaseAuthConfig);
     state.auth = state.auth && typeof state.auth === "object" ? state.auth : defaultState().auth;
     state.auth.user = user;
 
     if (els.authPill) {
-      if (!firebaseAuthConfig) {
-        els.authPill.textContent = t("auth_not_configured");
+      if (user && isLocalUser) {
+        const display = t("auth_local_user");
+        els.authPill.textContent = t("auth_signed_in_local_as", { name: display });
       } else if (user) {
         const display = normalizeActivityText(user.name || user.email || "").slice(0, 24) || "Google";
         els.authPill.textContent = t("auth_signed_in_as", { name: display });
+      } else if (!hasFirebaseConfig) {
+        els.authPill.textContent = t("auth_local_ready");
       } else {
         els.authPill.textContent = t("auth_signed_out");
       }
     }
 
-    if (els.authLogout) els.authLogout.hidden = !firebaseAuthConfig || !Boolean(user);
+    if (els.authLogout) els.authLogout.hidden = !Boolean(user);
     if (els.authLogin) {
-      els.authLogin.hidden = !firebaseAuthConfig || Boolean(user);
-      els.authLogin.disabled = !firebaseAuthReady;
+      const label = hasFirebaseConfig ? "auth_login_google" : "auth_login_local";
+      const labelEl = els.authLogin.querySelector("[data-i18n]") || els.authLogin;
+      if (labelEl && typeof labelEl.setAttribute === "function") labelEl.setAttribute("data-i18n", label);
+      if (labelEl) labelEl.textContent = t(label);
+      els.authLogin.hidden = Boolean(user);
+      els.authLogin.disabled = hasFirebaseConfig ? !firebaseAuthReady : false;
     }
   };
 
@@ -2323,6 +2416,7 @@
     const changed = !sameAuthUser(prevUser, nextUser);
     const nextProfileId = profileIdForAuthUser(nextUser);
     const profileChanged = switchProfileState(nextProfileId, nextUser);
+    persistLocalDemoSession(nextUser);
 
     if (profileChanged) {
       saveState({ immediate: true });
@@ -2336,12 +2430,32 @@
     renderAuthUi();
 
     if (showToast && changed) {
-      toast(nextUser ? t("toast_auth_signed_in") : t("toast_auth_signed_out"));
+      if (nextUser) {
+        toast(isLocalDemoAuthUser(nextUser) ? t("toast_auth_signed_in_local") : t("toast_auth_signed_in"));
+      } else {
+        toast(t("toast_auth_signed_out"));
+      }
     }
   };
 
+  const signInLocally = () => {
+    syncSignedInUser(
+      {
+        uid: LOCAL_DEMO_AUTH_SUB,
+        displayName: t("auth_local_user"),
+        email: "",
+        photoURL: ""
+      },
+      { showToast: true }
+    );
+  };
+
   const signInWithFirebase = async () => {
-    if (!firebaseAuthConfig || !firebaseAuth || !firebaseAuthReady) {
+    if (!firebaseAuthConfig) {
+      signInLocally();
+      return;
+    }
+    if (!firebaseAuth || !firebaseAuthReady) {
       toast(t("toast_auth_unavailable"));
       return;
     }
@@ -4233,6 +4347,16 @@
     return null;
   };
 
+  const getMapViewLatLngSafe = () => {
+    if (!mapApi || typeof mapApi.getViewCenter !== "function") return null;
+    const ll = mapApi.getViewCenter();
+    if (!ll || typeof ll !== "object") return null;
+    const lat = Number(ll.lat);
+    const lng = Number(ll.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    return { lat, lng };
+  };
+
   const ensureUserLatLngSafe = async () => {
     let ll = getActorLatLngSafe(USER_ACTOR);
     if (ll) return ll;
@@ -4244,7 +4368,7 @@
       }
     }
     ll = getActorLatLngSafe(USER_ACTOR);
-    return ll || null;
+    return ll || getMapViewLatLngSafe() || null;
   };
 
   const syncTasksOnMap = () => {
@@ -4607,34 +4731,24 @@
     });
   };
 
-  const sendRoomLocation = () => {
+  const sendRoomLocation = async () => {
     if (!openRoomTaskId) return;
-    if (!navigator.geolocation) {
-      toast(t("gps_unsupported"));
+    const ll = await ensureUserLatLngSafe();
+    if (!ll) {
+      toast(t("gps_error"));
       return;
     }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        const accuracy = Number(pos.coords.accuracy) || 0;
-        pushRoomMessage(openRoomTaskId, {
-          id: uid(),
-          type: "location",
-          text: "",
-          photo: "",
-          lat,
-          lng,
-          accuracyM: accuracy,
-          from: USER_ACTOR,
-          sentAt: nowMs()
-        });
-      },
-      () => {
-        toast(t("gps_error"));
-      },
-      { enableHighAccuracy: true, timeout: 10_000, maximumAge: 20_000 }
-    );
+    pushRoomMessage(openRoomTaskId, {
+      id: uid(),
+      type: "location",
+      text: "",
+      photo: "",
+      lat: ll.lat,
+      lng: ll.lng,
+      accuracyM: navigator.geolocation ? 120 : 1200,
+      from: USER_ACTOR,
+      sentAt: nowMs()
+    });
   };
 
   const renderTaskForm = () => {
@@ -5642,20 +5756,23 @@
 
   let taskEngineTimer = null;
 
+  const runTaskEngineTick = () => {
+    sweepExpiredTasks();
+    sweepExpiredMarket();
+    seedOffersForUserTasks();
+    seedOffersForSimTasks();
+    simPosterDecide();
+    seedEventBookings();
+    spawnSimMarketPost();
+    spawnSimEvent();
+    const openSim = state.tasks.list.filter((x) => x && normalizeTaskStatus(x.status) === "open" && actorKeyLocal(x.poster) !== userKey);
+    if (openSim.length < 3) spawnSimTask();
+  };
+
   const startTaskEngine = () => {
     if (taskEngineTimer) return;
-    taskEngineTimer = window.setInterval(() => {
-      sweepExpiredTasks();
-      sweepExpiredMarket();
-      seedOffersForUserTasks();
-      seedOffersForSimTasks();
-      simPosterDecide();
-      seedEventBookings();
-      spawnSimMarketPost();
-      spawnSimEvent();
-      const openSim = state.tasks.list.filter((x) => x && normalizeTaskStatus(x.status) === "open" && actorKeyLocal(x.poster) !== userKey);
-      if (openSim.length < 3) spawnSimTask();
-    }, 2_500);
+    runTaskEngineTick();
+    taskEngineTimer = window.setInterval(runTaskEngineTick, 2_500);
   };
 
   // --- Market (Product / Service Posts) ---
@@ -5777,15 +5894,22 @@
     renderMarket();
   };
 
-  const postMarketFromForm = () => {
+  const postMarketFromForm = async () => {
     ensureMarketPrefs();
     if (!els.marketText || !els.marketPrice || !els.marketTimeLimit || !els.marketDistanceLimit) return;
     const title = normalizeTaskTitle(els.marketText.value);
     if (!title) return;
-    const loc = state.market.prefs.draftLoc;
+    let loc = state.market.prefs.draftLoc;
     if (!loc) {
-      toast(t("toast_market_need_location"));
-      return;
+      const ll = await ensureUserLatLngSafe();
+      if (ll) {
+        setMarketDraftLoc(ll);
+        loc = state.market.prefs.draftLoc;
+      }
+      if (!loc) {
+        toast(t("toast_market_need_location"));
+        return;
+      }
     }
 
     const kind = normalizeMarketKind(state.market.prefs.kind);
@@ -6085,15 +6209,22 @@
     return "scheduled";
   };
 
-  const postEventFromForm = () => {
+  const postEventFromForm = async () => {
     ensureEventsPrefs();
     if (!els.eventsText || !els.eventsStartsIn || !els.eventsDuration) return;
     const title = normalizeActivityText(els.eventsText.value).slice(0, 60);
     if (!title) return;
-    const loc = state.events.prefs.draftLoc;
+    let loc = state.events.prefs.draftLoc;
     if (!loc) {
-      toast(t("toast_events_need_location"));
-      return;
+      const ll = await ensureUserLatLngSafe();
+      if (ll) {
+        setEventsDraftLoc(ll);
+        loc = state.events.prefs.draftLoc;
+      }
+      if (!loc) {
+        toast(t("toast_events_need_location"));
+        return;
+      }
     }
 
     const startsInMin = clampIntSafe(els.eventsStartsIn.value, 0, 360, 30);
@@ -7002,7 +7133,10 @@
       state.auth.user = currentAuthUser;
       trimActivityLogInPlace();
       bumpActivityLogRevision();
-      i18nLang = normalizeLang(state.activity && state.activity.prefs && state.activity.prefs.lang);
+      i18nLang = readPreferredLang(state.activity && state.activity.prefs && state.activity.prefs.lang);
+      state.activity = state.activity && typeof state.activity === "object" ? state.activity : defaultState().activity;
+      state.activity.prefs = state.activity.prefs && typeof state.activity.prefs === "object" ? state.activity.prefs : defaultState().activity.prefs;
+      state.activity.prefs.lang = persistPreferredLang(i18nLang);
       saveState({ immediate: true });
       applyI18n();
       render();
@@ -9947,6 +10081,11 @@
         if (!Number.isFinite(la) || !Number.isFinite(ln)) return;
         map.flyTo([clamp(la, -85, 85), wrapLng(ln)], clamp(zoom, 2, 18), { duration: 0.8 });
       },
+      getViewCenter: () => {
+        const c = map.getCenter();
+        if (!c) return null;
+        return { lat: Number(c.lat) || 0, lng: Number(c.lng) || 0 };
+      },
       refreshReputation: () => {
         applyUserAuraStyle();
         for (const a of sim.agents) {
@@ -10742,7 +10881,7 @@
 
   if (els.langSelect) {
     els.langSelect.addEventListener("change", () => {
-      i18nLang = normalizeLang(els.langSelect.value);
+      i18nLang = persistPreferredLang(els.langSelect.value);
       state.activity.prefs.lang = i18nLang;
       saveState();
       applyI18n();
