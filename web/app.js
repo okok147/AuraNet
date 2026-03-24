@@ -219,6 +219,111 @@
   };
 
   const nowMs = () => Date.now();
+  const rootEl = document.documentElement;
+
+  const mediaQueryMatches = (query) => {
+    try {
+      return Boolean(window.matchMedia && window.matchMedia(query).matches);
+    } catch {
+      return false;
+    }
+  };
+
+  const isStandaloneDisplayMode = () =>
+    mediaQueryMatches("(display-mode: standalone)") || window.navigator.standalone === true;
+
+  const getViewportWidth = () => {
+    const vv = window.visualViewport;
+    const width =
+      vv && Number.isFinite(Number(vv.width))
+        ? Number(vv.width)
+        : window.innerWidth || document.documentElement.clientWidth || 0;
+    return Math.max(0, Math.round(width));
+  };
+
+  const getViewportHeight = () => {
+    const vv = window.visualViewport;
+    const height =
+      vv && Number.isFinite(Number(vv.height))
+        ? Number(vv.height)
+        : window.innerHeight || document.documentElement.clientHeight || 0;
+    return Math.max(0, Math.round(height));
+  };
+
+  const computeDeviceProfile = () => {
+    const width = getViewportWidth();
+    const height = getViewportHeight();
+    const shortest = Math.min(width, height);
+    const longest = Math.max(width, height);
+    const touch = Number(window.navigator.maxTouchPoints || 0) > 0 || mediaQueryMatches("(pointer: coarse)");
+    const compact = width <= 1024;
+    const phone = touch && shortest <= 640 && longest <= 1200;
+    const connection = navigator.connection || null;
+    const saveData = Boolean(connection && connection.saveData);
+    const slowNetwork = Boolean(connection && /(?:slow-2g|2g)/i.test(String(connection.effectiveType || "")));
+    const deviceMemory = Number(window.navigator.deviceMemory || 0);
+    const hardwareConcurrency = Number(window.navigator.hardwareConcurrency || 0);
+    const lowPower =
+      saveData ||
+      slowNetwork ||
+      (deviceMemory > 0 && deviceMemory <= 4) ||
+      (hardwareConcurrency > 0 && hardwareConcurrency <= 4);
+    return {
+      width,
+      height,
+      touch,
+      compact,
+      phone,
+      lowPower,
+      standalone: isStandaloneDisplayMode()
+    };
+  };
+
+  let deviceProfileSyncFrame = 0;
+  const applyDeviceProfile = () => {
+    if (!rootEl) return computeDeviceProfile();
+    const profile = computeDeviceProfile();
+    const headerEl = document.querySelector("body > header.shell");
+    const headerHeight = headerEl ? headerEl.getBoundingClientRect().height : 0;
+    rootEl.style.setProperty("--app-vh", `${profile.height * 0.01}px`);
+    rootEl.style.setProperty("--app-vw", `${profile.width * 0.01}px`);
+    rootEl.style.setProperty("--app-header-height", `${Math.max(0, Math.round(headerHeight))}px`);
+    rootEl.dataset.device = profile.phone ? "phone" : profile.compact ? "compact" : "desktop";
+    rootEl.classList.toggle("device--touch", profile.touch);
+    rootEl.classList.toggle("device--phone", profile.phone);
+    rootEl.classList.toggle("device--compact", profile.compact);
+    rootEl.classList.toggle("device--standalone", profile.standalone);
+    rootEl.classList.toggle("perf--lite", profile.lowPower);
+    return profile;
+  };
+
+  const scheduleDeviceProfileSync = () => {
+    if (deviceProfileSyncFrame !== 0) return;
+    deviceProfileSyncFrame = window.requestAnimationFrame(() => {
+      deviceProfileSyncFrame = 0;
+      applyDeviceProfile();
+    });
+  };
+
+  const bindDeviceProfile = () => {
+    const sync = () => scheduleDeviceProfileSync();
+    const profile = applyDeviceProfile();
+    window.addEventListener("resize", sync, { passive: true });
+    window.addEventListener("orientationchange", sync, { passive: true });
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", sync, { passive: true });
+      window.visualViewport.addEventListener("scroll", sync, { passive: true });
+    }
+    if (window.matchMedia) {
+      const standaloneQuery = window.matchMedia("(display-mode: standalone)");
+      if (typeof standaloneQuery.addEventListener === "function") standaloneQuery.addEventListener("change", sync);
+      else if (typeof standaloneQuery.addListener === "function") standaloneQuery.addListener(sync);
+    }
+    if (navigator.connection && typeof navigator.connection.addEventListener === "function") {
+      navigator.connection.addEventListener("change", sync);
+    }
+    return profile;
+  };
 
   const setStoragePill = (ok) => {
     if (!els.storagePill) return;
@@ -2198,6 +2303,72 @@
     state.auth = state.auth && typeof state.auth === "object" ? state.auth : defaultState().auth;
     state.auth.user = bootLocalDemoUser;
   }
+  let launchDirectMap = false;
+  const applyLaunchContext = () => {
+    let params = null;
+    try {
+      params = new URLSearchParams(window.location.search || "");
+    } catch {
+      return;
+    }
+    if (!params) return;
+    const rawSection = String(params.get("section") || "").trim().toLowerCase();
+    const rawMarketTab = String(params.get("marketTab") || "").trim().toLowerCase();
+    const normalizeLaunchSection = (value) => {
+      if (!value) return "";
+      if (value === "activitysection" || value === "activity" || value === "aura") return "activitySection";
+      if (value === "mapsection" || value === "map") return "mapSection";
+      if (
+        value === "marketplacesection" ||
+        value === "marketplace" ||
+        value === "market" ||
+        value === "listing" ||
+        value === "listings" ||
+        value === "mission" ||
+        value === "missions" ||
+        value === "event" ||
+        value === "events" ||
+        value === "schedule"
+      ) {
+        return "marketplaceSection";
+      }
+      return "";
+    };
+    const normalizeLaunchMarketTab = (value) => {
+      if (!value) return "";
+      if (value === "tasks" || value === "task" || value === "mission" || value === "missions") return "tasks";
+      if (value === "market" || value === "marketplace" || value === "listing" || value === "listings") return "market";
+      if (value === "events" || value === "event" || value === "schedule") return "events";
+      return "";
+    };
+    const sectionId = normalizeLaunchSection(rawSection);
+    const marketTab =
+      normalizeLaunchMarketTab(rawMarketTab) ||
+      (rawSection === "event" || rawSection === "events" || rawSection === "schedule"
+        ? "events"
+        : rawSection === "market" || rawSection === "marketplace" || rawSection === "listing" || rawSection === "listings"
+          ? "market"
+          : rawSection === "mission" || rawSection === "missions"
+            ? "tasks"
+            : "");
+    if (sectionId) {
+      state.ui.section = sectionId;
+      launchDirectMap = sectionId === "mapSection";
+    }
+    if (marketTab) {
+      state.ui.section = "marketplaceSection";
+      state.ui.marketTab = marketTab;
+      state.ui.drops = {
+        ...state.ui.drops,
+        tasksList: false,
+        marketList: false,
+        eventsList: false
+      };
+      const defaultDrop = marketTab === "events" ? "eventsList" : marketTab === "market" ? "marketList" : "tasksList";
+      state.ui.drops[defaultDrop] = true;
+    }
+  };
+  applyLaunchContext();
   const trimActivityLogInPlace = () => {
     if (!state.activity || typeof state.activity !== "object") state.activity = defaultState().activity;
     if (!Array.isArray(state.activity.log)) state.activity.log = [];
@@ -7462,7 +7633,7 @@
 
   const syncInstallButton = () => {
     if (!els.appInstallBtn) return;
-    const canPrompt = Boolean(deferredInstallPrompt);
+    const canPrompt = Boolean(deferredInstallPrompt) && !isStandaloneDisplayMode();
     els.appInstallBtn.hidden = !canPrompt;
     els.appInstallBtn.disabled = !canPrompt;
   };
@@ -11375,11 +11546,14 @@
     mapBootStartTimer = window.setTimeout(start, MAP_BOOT_IDLE_DELAY_MS);
   };
 
+  const initialDeviceProfile = bindDeviceProfile();
   applyI18n();
   renderClock();
   window.setInterval(renderClock, 10_000);
   render();
-  requestMapBoot();
+  if (launchDirectMap || !(initialDeviceProfile.phone || initialDeviceProfile.lowPower)) {
+    requestMapBoot();
+  }
 
   if (els.mapSection && typeof window.IntersectionObserver === "function") {
     const observer = new window.IntersectionObserver(
