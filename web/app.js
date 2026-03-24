@@ -4102,10 +4102,20 @@
   // --- Marketplace Tabs (Tasks / Market / Scheduled) ---
 
   const MARKET_TABS = ["tasks", "market", "events"];
+  const MARKET_TAB_DEFAULT_DROPS = {
+    tasks: "tasksList",
+    market: "marketList",
+    events: "eventsList"
+  };
 
   const normalizeMarketTab = (value) => {
     const v = String(value || "").trim().toLowerCase();
     return MARKET_TABS.includes(v) ? v : "tasks";
+  };
+
+  const defaultDropForMarketTab = (tab) => {
+    const next = normalizeMarketTab(tab);
+    return MARKET_TAB_DEFAULT_DROPS[next] || "";
   };
 
   const ensureUiPrefs = () => {
@@ -10327,7 +10337,7 @@
     ensureUiPrefs();
     if (typeof beforeOpen === "function") beforeOpen();
     setMarketplaceActiveTab(nextTab, { persist: false });
-    closeMarketplaceDrops(nextTab);
+    closeMarketplaceDrops("all");
     if (dropKey) setMarketplaceDropOpen(dropKey, true);
     saveState();
     applyDropStates();
@@ -10344,8 +10354,9 @@
     ensureUiPrefs();
     if (typeof beforeOpen === "function") beforeOpen();
     setMarketplaceActiveTab(nextTab, { persist: false });
-    closeMarketplaceDrops(nextTab);
-    if (dropKey) setMarketplaceDropOpen(dropKey, true);
+    closeMarketplaceDrops("all");
+    const nextDropKey = String(dropKey || "").trim() || defaultDropForMarketTab(nextTab);
+    if (nextDropKey) setMarketplaceDropOpen(nextDropKey, true);
     saveState();
     applyDropStates();
     scrollToSection("marketplaceSection");
@@ -10414,7 +10425,7 @@
       const btn = e && e.target ? e.target.closest("button[data-tab]") : null;
       if (!btn) return;
       const tab = normalizeMarketTab(btn.getAttribute("data-tab"));
-      setMarketplaceActiveTab(tab);
+      openMarketplaceWorkspace(tab);
     });
 
     els.marketTabs.addEventListener("keydown", (e) => {
@@ -10438,7 +10449,7 @@
       const nextBtn = buttons[nextIdx];
       if (!nextBtn) return;
       const tab = normalizeMarketTab(nextBtn.getAttribute("data-tab"));
-      setMarketplaceActiveTab(tab);
+      openMarketplaceWorkspace(tab);
       nextBtn.focus();
       e.preventDefault();
     });
