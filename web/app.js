@@ -39,6 +39,7 @@
     overviewInboxValue: $("overviewInboxValue"),
     overviewInboxMeta: $("overviewInboxMeta"),
     mapSection: $("mapSection"),
+    marketplaceSection: $("marketplaceSection"),
     appInstallBtn: $("appInstallBtn"),
     dataExportBtn: $("dataExportBtn"),
     dataImportBtn: $("dataImportBtn"),
@@ -4107,6 +4108,14 @@
     market: "marketList",
     events: "eventsList"
   };
+  const MARKET_DROPS_BY_TAB = {
+    tasks: ["tasksPost", "tasksList"],
+    market: ["marketPost", "marketList"],
+    events: ["eventsPost", "eventsList"]
+  };
+  const MARKET_DROP_TO_TAB = Object.fromEntries(
+    Object.entries(MARKET_DROPS_BY_TAB).flatMap(([tab, keys]) => keys.map((key) => [key, tab]))
+  );
 
   const normalizeMarketTab = (value) => {
     const v = String(value || "").trim().toLowerCase();
@@ -4116,6 +4125,35 @@
   const defaultDropForMarketTab = (tab) => {
     const next = normalizeMarketTab(tab);
     return MARKET_TAB_DEFAULT_DROPS[next] || "";
+  };
+
+  const normalizeMarketplaceDropKey = (value) => {
+    const key = String(value || "").trim();
+    return Object.prototype.hasOwnProperty.call(MARKET_DROP_TO_TAB, key) ? key : "";
+  };
+
+  const marketTabForDropKey = (dropKey) => {
+    const key = normalizeMarketplaceDropKey(dropKey);
+    return key ? MARKET_DROP_TO_TAB[key] : "tasks";
+  };
+
+  const marketplacePanelForTab = (tab) => {
+    const next = normalizeMarketTab(tab);
+    if (next === "market") return els.tabMarket;
+    if (next === "events") return els.tabEvents;
+    return els.tabTasks;
+  };
+
+  const marketplaceDropElement = (dropKey) => {
+    const key = normalizeMarketplaceDropKey(dropKey);
+    if (!key) return null;
+    if (key === "tasksPost") return els.dropTasksPost;
+    if (key === "tasksList") return els.dropTasksList;
+    if (key === "marketPost") return els.dropMarketPost;
+    if (key === "marketList") return els.dropMarketList;
+    if (key === "eventsPost") return els.dropEventsPost;
+    if (key === "eventsList") return els.dropEventsList;
+    return null;
   };
 
   const ensureUiPrefs = () => {
@@ -4146,8 +4184,23 @@
     el.open = want;
   };
 
+  let suppressMarketplaceDropToggle = false;
+  let suppressMarketplaceDropToggleTimer = null;
+
+  const holdMarketplaceDropToggle = () => {
+    suppressMarketplaceDropToggle = true;
+    if (suppressMarketplaceDropToggleTimer !== null) {
+      window.clearTimeout(suppressMarketplaceDropToggleTimer);
+    }
+    suppressMarketplaceDropToggleTimer = window.setTimeout(() => {
+      suppressMarketplaceDropToggle = false;
+      suppressMarketplaceDropToggleTimer = null;
+    }, 0);
+  };
+
   const applyDropStates = () => {
     ensureUiPrefs();
+    holdMarketplaceDropToggle();
     setDetailsOpen(els.dropTasksPost, state.ui.drops.tasksPost);
     setDetailsOpen(els.dropTasksList, state.ui.drops.tasksList);
     setDetailsOpen(els.dropMarketPost, state.ui.drops.marketPost);
@@ -4253,6 +4306,39 @@
     if (!state.ui || !state.ui.drops || typeof state.ui.drops !== "object") return;
     if (!Object.prototype.hasOwnProperty.call(state.ui.drops, dropKey)) return;
     state.ui.drops[dropKey] = Boolean(open);
+  };
+
+  const scrollMarketplaceView = (tab, dropKey = "", focusEl = null) => {
+    const nextTab = normalizeMarketTab(tab);
+    const dropEl = marketplaceDropElement(dropKey);
+    const panelEl = marketplacePanelForTab(nextTab);
+    const target = dropEl || panelEl || els.marketplaceSection;
+    const focusTarget =
+      focusEl ||
+      (dropEl && typeof dropEl.querySelector === "function" ? dropEl.querySelector("summary") : null) ||
+      panelEl ||
+      els.marketplaceSection;
+    if (!target) return;
+
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        try {
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+        } catch {
+          target.scrollIntoView(true);
+        }
+        if (!focusTarget || typeof focusTarget.focus !== "function") return;
+        try {
+          focusTarget.focus({ preventScroll: true });
+        } catch {
+          try {
+            focusTarget.focus();
+          } catch {
+            // ignore focus failures
+          }
+        }
+      });
+    });
   };
 
   const closeMarketplaceDrops = (scope = "all") => {
@@ -10334,15 +10420,17 @@
 
   const openMarketplaceComposer = (tab, dropKey, focusEl, beforeOpen) => {
     const nextTab = normalizeMarketTab(tab);
+    const nextDropKey = normalizeMarketplaceDropKey(dropKey) || defaultDropForMarketTab(nextTab);
     ensureUiPrefs();
     if (typeof beforeOpen === "function") beforeOpen();
     setMarketplaceActiveTab(nextTab, { persist: false });
     closeMarketplaceDrops("all");
-    if (dropKey) setMarketplaceDropOpen(dropKey, true);
+    if (nextDropKey) setMarketplaceDropOpen(nextDropKey, true);
     saveState();
+    setSectionTabSelected("marketplaceSection", { persist: true });
+    renderMarketplaceTabs();
     applyDropStates();
-    scrollToSection("marketplaceSection");
-    focusElementSoon(focusEl);
+    scrollMarketplaceView(nextTab, nextDropKey, focusEl);
   };
 
   const openMarketplaceWorkspace = (tab, {
@@ -10355,12 +10443,13 @@
     if (typeof beforeOpen === "function") beforeOpen();
     setMarketplaceActiveTab(nextTab, { persist: false });
     closeMarketplaceDrops("all");
-    const nextDropKey = String(dropKey || "").trim() || defaultDropForMarketTab(nextTab);
+    const nextDropKey = normalizeMarketplaceDropKey(dropKey) || defaultDropForMarketTab(nextTab);
     if (nextDropKey) setMarketplaceDropOpen(nextDropKey, true);
     saveState();
+    setSectionTabSelected("marketplaceSection", { persist: true });
+    renderMarketplaceTabs();
     applyDropStates();
-    scrollToSection("marketplaceSection");
-    if (focusEl) focusElementSoon(focusEl);
+    scrollMarketplaceView(nextTab, nextDropKey, focusEl);
   };
 
   if (els.activityForm) {
@@ -10483,13 +10572,27 @@
   const bindDropToggle = (el, key) => {
     if (!el) return;
     el.addEventListener("toggle", () => {
+      if (suppressMarketplaceDropToggle) return;
       ensureUiPrefs();
-      const k = String(key || "");
+      const k = normalizeMarketplaceDropKey(key);
       if (!k) return;
       const next = Boolean(el.open);
-      if (Boolean(state.ui.drops[k]) === next) return;
-      state.ui.drops[k] = next;
+      if (!next) {
+        if (Boolean(state.ui.drops[k]) === next) return;
+        state.ui.drops[k] = false;
+        saveState();
+        return;
+      }
+
+      const nextTab = marketTabForDropKey(k);
+      setMarketplaceActiveTab(nextTab, { persist: false });
+      closeMarketplaceDrops("all");
+      setMarketplaceDropOpen(k, true);
       saveState();
+      renderMarketplaceTabs();
+      applyDropStates();
+      setSectionTabSelected("marketplaceSection", { persist: true });
+      scrollMarketplaceView(nextTab, k);
     });
   };
 
