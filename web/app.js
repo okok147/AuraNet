@@ -457,7 +457,7 @@
       hero_tag_services: "Local services",
       hero_feature_label: "Live field sheet",
       hero_feature_title: "Map, aura, inbox, and market on one monochrome paper surface.",
-      hero_feature_sub: "",
+
       section_activity: "Activity Logger",
       section_map: "Live Map",
       section_marketplace: "Tasks & Market",
