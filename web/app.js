@@ -457,7 +457,7 @@
       hero_tag_services: "Local services",
       hero_feature_label: "Live field sheet",
       hero_feature_title: "Map, aura, inbox, and market on one monochrome paper surface.",
-      hero_feature_sub: "Every demo flow stays local, privacy-first, and ready to use.",
+      hero_feature_sub: "Designed for local coordination with privacy-first defaults.",
       section_activity: "Activity Logger",
       section_map: "Live Map",
       section_marketplace: "Tasks & Market",
@@ -830,7 +830,7 @@
       hero_tag_services: "在地服務",
       hero_feature_label: "即時場域紙頁",
       hero_feature_title: "把地圖、氣場、收件匣與市集收進同一張黑白紙面。",
-      hero_feature_sub: "所有 demo 流程都可直接運作，保留在地與隱私。",
+      hero_feature_sub: "為在地協作而設計，預設即為隱私優先。",
       section_activity: "活動記錄",
       section_map: "即時地圖",
       section_marketplace: "任務與市集",
@@ -1203,7 +1203,7 @@
       hero_tag_services: "ローカルサービス",
       hero_feature_label: "ライブ・フィールドシート",
       hero_feature_title: "マップ、オーラ、受信箱、マーケットを一枚のモノクロ紙面へ。",
-      hero_feature_sub: "すべてのデモ機能はそのまま動き、ローカル性とプライバシーを保ちます。",
+      hero_feature_sub: "ローカル連携のために設計され、初期設定からプライバシー優先です。",
       section_activity: "アクティビティ記録",
       section_map: "ライブマップ",
       section_marketplace: "タスクとマーケット",
@@ -1972,13 +1972,15 @@
         .filter((m) => m && typeof m === "object")
         .map((m) => ({
           id: String(m.id || ""),
-          to: normHandle(m.to),
+          peer: normHandle(m.peer || m.to || m.fromHandle || m.handle),
+          dir: String(m.dir || "").toLowerCase() === "in" ? "in" : "out",
           text: String(m.text || "").slice(0, 280),
           from: String(m.from || "").slice(0, 64),
-          sentAt: Number(m.sentAt) || 0
+          sentAt: Number(m.sentAt) || 0,
+          readAt: Number(m.readAt) || 0
         }))
-        .filter((m) => m.id && m.to && m.text)
-        .slice(0, 400);
+        .filter((m) => m.id && m.peer && m.text)
+        .slice(0, 800);
       merged.social.blocked = merged.social.blocked
         .map((h) => normHandle(h))
         .filter(Boolean)
@@ -3729,15 +3731,72 @@
     if (!Array.isArray(state.social.sent)) state.social.sent = [];
     state.social.sent.unshift({
       id: uid(),
-      to,
+      peer: to,
+      dir: "out",
       text,
       from: userKey,
       sentAt: nowMs()
     });
-    state.social.sent = state.social.sent.slice(0, 400);
+    state.social.sent = state.social.sent.slice(0, 800);
     saveState();
     if (typeof renderInbox === "function") renderInbox();
     return { ok: true, handle: to };
+  };
+
+  const saveIncomingMessage = (fromHandleRaw, messageRaw, { markRead = false } = {}) => {
+    const fromHandle = normalizeContactHandle(fromHandleRaw);
+    if (!fromHandle) return { ok: false, reason: "invalid_handle", handle: "" };
+    const text = normalizeActivityText(messageRaw).slice(0, 280);
+    if (!text) return { ok: false, reason: "empty", handle: fromHandle };
+    if (!state.social || typeof state.social !== "object") state.social = { sent: [] };
+    if (!Array.isArray(state.social.sent)) state.social.sent = [];
+    state.social.sent.unshift({
+      id: uid(),
+      peer: fromHandle,
+      dir: "in",
+      text,
+      from: fromHandle,
+      sentAt: nowMs(),
+      readAt: markRead ? nowMs() : 0
+    });
+    state.social.sent = state.social.sent.slice(0, 800);
+    saveState();
+    if (typeof renderInbox === "function") renderInbox();
+    return { ok: true, handle: fromHandle };
+  };
+
+  const pendingInboxReplies = new Map();
+  const DM_AUTO_REPLIES = [
+    "On my way — I can help in a few minutes.",
+    "Got it. Please share a quick landmark if possible.",
+    "Thanks, checking this now.",
+    "I can take this if timing still works for you.",
+    "Received. I’ll confirm shortly."
+  ];
+
+  const scheduleAutoInboxReply = (handleRaw, sourceText = "") => {
+    const handle = normalizeContactHandle(handleRaw);
+    if (!handle) return;
+    if (isBlockedContact(handle)) return;
+    if (pendingInboxReplies.has(handle)) return;
+
+    const isSimHandle = /^@sim\d{2,}$/i.test(handle);
+    const shouldReply = isSimHandle || Math.random() < 0.55;
+    if (!shouldReply) return;
+
+    const delayMs = Math.round(randBetween(900, 2600));
+    const timer = window.setTimeout(() => {
+      pendingInboxReplies.delete(handle);
+      if (isBlockedContact(handle)) return;
+      const msgIn = String(sourceText || "").toLowerCase();
+      let reply = DM_AUTO_REPLIES[Math.floor(Math.random() * DM_AUTO_REPLIES.length)];
+      if (msgIn.includes("task")) reply = "Yes, I saw the task. I can coordinate details here.";
+      else if (msgIn.includes("where") || msgIn.includes("location")) reply = "Approx area works — I don't need your exact location.";
+      else if (msgIn.includes("price") || msgIn.includes("$")) reply = "Price looks fine to me.";
+      const active = inboxOpen && normalizeContactHandle(inboxSelectedHandle) === handle;
+      saveIncomingMessage(handle, reply, { markRead: active });
+    }, delayMs);
+    pendingInboxReplies.set(handle, timer);
   };
 
   let inboxOpen = false;
@@ -3759,31 +3818,39 @@
 
     for (const raw of source) {
       if (!raw || typeof raw !== "object") continue;
-      const to = normalizeContactHandle(raw.to);
+      const peer = normalizeContactHandle(raw.peer || raw.to || raw.fromHandle || raw.handle);
       const text = normalizeActivityText(raw.text).slice(0, 280);
       const sentAt = Number(raw.sentAt) || 0;
-      if (!to || !text) continue;
+      const dir = String(raw.dir || "").toLowerCase() === "in" ? "in" : "out";
+      const readAt = Number(raw.readAt) || 0;
+      if (!peer || !text) continue;
       const msg = {
         id: String(raw.id || uid()),
-        to,
+        peer,
+        dir,
         text,
-        sentAt
+        sentAt,
+        readAt
       };
       messages.push(msg);
-      suggested.add(to);
+      suggested.add(peer);
 
-      const rec = byHandle.get(to) || {
-        handle: to,
+      const rec = byHandle.get(peer) || {
+        handle: peer,
         count: 0,
+        unread: 0,
         lastAt: 0,
-        lastText: ""
+        lastText: "",
+        lastDir: "out"
       };
       rec.count += 1;
+      if (dir === "in" && !readAt) rec.unread += 1;
       if (sentAt >= rec.lastAt) {
         rec.lastAt = sentAt;
         rec.lastText = text;
+        rec.lastDir = dir;
       }
-      byHandle.set(to, rec);
+      byHandle.set(peer, rec);
     }
 
     const allowlist = Array.isArray(state && state.activity && state.activity.prefs && state.activity.prefs.allowlist)
@@ -3848,6 +3915,7 @@
 
     const data = deriveInboxData();
     const { messages, threads, handles } = data;
+    const source = state && state.social && Array.isArray(state.social.sent) ? state.social.sent : [];
 
     if (!threads.some((x) => x.handle === inboxSelectedHandle)) {
       inboxSelectedHandle = threads.length ? threads[0].handle : "";
@@ -3859,7 +3927,7 @@
     els.inboxToggle.setAttribute("aria-expanded", inboxOpen ? "true" : "false");
 
     if (els.inboxCount) {
-      const n = messages.length;
+      const n = threads.reduce((sum, th) => sum + Math.max(0, Number(th.unread) || 0), 0);
       els.inboxCount.hidden = n <= 0;
       els.inboxCount.textContent = n > 99 ? "99+" : String(n);
     }
@@ -3899,7 +3967,8 @@
 
         const count = document.createElement("span");
         count.className = "inboxThread__count";
-        count.textContent = String(Math.max(1, Number(th.count) || 1));
+        const unread = Math.max(0, Number(th.unread) || 0);
+        count.textContent = unread > 0 ? String(unread) : String(Math.max(1, Number(th.count) || 1));
 
         const when = document.createElement("span");
         when.className = "inboxThread__time";
@@ -3912,7 +3981,7 @@
 
         const preview = document.createElement("div");
         preview.className = "inboxThread__preview";
-        preview.textContent = th.lastText || "—";
+        preview.textContent = `${th.lastDir === "in" ? th.handle : "You"}: ${th.lastText || "—"}`;
 
         btn.appendChild(top);
         btn.appendChild(preview);
@@ -3926,8 +3995,23 @@
       inboxSelectedHandle
     );
     const threadMessages = activeHandle
-      ? messages.filter((m) => m.to === activeHandle)
+      ? messages.filter((m) => m.peer === activeHandle)
       : [];
+
+    if (activeHandle) {
+      let changed = false;
+      const now = nowMs();
+      for (const m of source) {
+        if (!m || typeof m !== "object") continue;
+        const peer = normalizeContactHandle(m.peer || m.to || m.fromHandle || m.handle);
+        const dir = String(m.dir || "").toLowerCase() === "in" ? "in" : "out";
+        if (peer !== activeHandle || dir !== "in") continue;
+        if (Number(m.readAt) > 0) continue;
+        m.readAt = now;
+        changed = true;
+      }
+      if (changed) saveState();
+    }
 
     els.inboxMessages.replaceChildren();
     if (!threadMessages.length) {
@@ -3938,7 +4022,8 @@
     } else {
       for (const m of threadMessages) {
         const row = document.createElement("div");
-        row.className = "inboxMsg inboxMsg--me";
+        const isMe = m.dir !== "in";
+        row.className = `inboxMsg ${isMe ? "inboxMsg--me" : ""}`.trim();
 
         const bubble = document.createElement("div");
         bubble.className = "inboxMsg__bubble";
@@ -3946,7 +4031,8 @@
 
         const meta = document.createElement("div");
         meta.className = "inboxMsg__meta";
-        meta.textContent = `${m.to} • ${fmtHm(m.sentAt || nowMs())}`;
+        const who = isMe ? "You" : activeHandle;
+        meta.textContent = `${who} • ${fmtHm(m.sentAt || nowMs())}`;
 
         row.appendChild(bubble);
         row.appendChild(meta);
@@ -3989,6 +4075,7 @@
     if (els.inboxText) els.inboxText.value = "";
     renderInbox();
     toast(t("toast_dm_saved", { handle: res.handle }));
+    scheduleAutoInboxReply(res.handle, text);
     if (els.inboxText) els.inboxText.focus();
   };
 
@@ -4970,6 +5057,8 @@
       const isWorkerMe = workerKey === userKey;
       const applicants = Array.isArray(task.applicants) ? task.applicants : [];
       const hasApplied = applicants.some((a) => actorKeyLocal(a && a.actor) === userKey);
+      const posterHandle = normalizeContactHandle(task.posterLabel || (posterInfo && posterInfo.label) || "");
+      const workerHandle = normalizeContactHandle(task.workerLabel || (workerInfo && workerInfo.label) || "");
 
       const addBtn = (label, kind, onClick) => {
         const b = document.createElement("button");
@@ -4989,6 +5078,9 @@
             if (hasApplied) return;
             applyToTask(task.id, USER_ACTOR);
           });
+          if (posterHandle && posterHandle !== "@you") {
+            addBtn(t("inbox_open"), "ghost", () => openInboxForHandle(posterHandle));
+          }
           if (hasApplied) {
             const last = actions.lastChild;
             if (last && "disabled" in last) last.disabled = true;
@@ -4997,6 +5089,10 @@
       } else if (status === "accepted") {
         if (canCurrentUserOpenRoomForTask(task)) {
           addBtn(t("task_room"), "ghost", () => openTaskRoom(task.id));
+        }
+        const counterpartHandle = isPosterMe ? workerHandle : posterHandle;
+        if (counterpartHandle && counterpartHandle !== "@you") {
+          addBtn(t("inbox_open"), "ghost", () => openInboxForHandle(counterpartHandle));
         }
         if (isPosterMe || isWorkerMe) {
           addBtn(t("task_finish"), "primary", () => finishTask(task.id));

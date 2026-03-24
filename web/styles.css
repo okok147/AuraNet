@@ -5156,7 +5156,7 @@ body > main.shell {
   border-top: 1px solid rgba(31, 26, 21, 0.14);
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
+  align-items: center;
   gap: 18px 22px;
 }
 
@@ -5227,8 +5227,8 @@ body > main.shell {
   background: transparent;
   box-shadow: none;
   display: grid;
-  grid-template-columns: 152px 1fr;
-  align-items: center;
+  grid-template-columns: minmax(120px, 152px) minmax(0, 1fr);
+  align-items: start;
   gap: 16px;
 }
 
@@ -5260,7 +5260,7 @@ body > main.shell > .quickActions {
 .quickActions__list {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
 }
 
@@ -5281,6 +5281,9 @@ body > main.shell > .quickActions {
 }
 
 .quickActionBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 42px;
   padding: 0 14px;
   font-family: var(--font-ui);
@@ -5693,6 +5696,7 @@ body > main.shell > .quickActions {
   }
 
   .topbar {
+    display: grid;
     grid-template-columns: 1fr;
     gap: 18px;
   }
