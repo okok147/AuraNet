@@ -457,6 +457,7 @@
       hero_tag_services: "Local services",
       hero_feature_label: "Live field sheet",
       hero_feature_title: "Map, aura, inbox, and market on one monochrome paper surface.",
+
       section_activity: "Activity Logger",
       section_map: "Live Map",
       section_marketplace: "Tasks & Market",
@@ -829,6 +830,7 @@
       hero_tag_services: "在地服務",
       hero_feature_label: "即時場域紙頁",
       hero_feature_title: "把地圖、氣場、收件匣與市集收進同一張黑白紙面。",
+      hero_feature_sub: "",
       section_activity: "活動記錄",
       section_map: "即時地圖",
       section_marketplace: "任務與市集",
@@ -1201,6 +1203,7 @@
       hero_tag_services: "ローカルサービス",
       hero_feature_label: "ライブ・フィールドシート",
       hero_feature_title: "マップ、オーラ、受信箱、マーケットを一枚のモノクロ紙面へ。",
+      hero_feature_sub: "",
       section_activity: "アクティビティ記録",
       section_map: "ライブマップ",
       section_marketplace: "タスクとマーケット",
