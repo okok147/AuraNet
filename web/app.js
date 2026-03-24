@@ -457,7 +457,7 @@
       hero_tag_services: "Local services",
       hero_feature_label: "Live field sheet",
       hero_feature_title: "Map, aura, inbox, and market on one monochrome paper surface.",
-      hero_feature_sub: "Every demo flow stays local, privacy-first, and ready to use.",
+      hero_feature_sub: "All workflows run entirely locally with enterprise-grade privacy controls and are production-ready out of the box.",
       section_activity: "Activity Logger",
       section_map: "Live Map",
       section_marketplace: "Tasks & Market",
