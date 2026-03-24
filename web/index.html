@@ -13,8 +13,12 @@
     />
 
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="dns-prefetch" href="https://unpkg.com" />
+    <link rel="dns-prefetch" href="https://tile.openstreetmap.org" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://unpkg.com" crossorigin />
+    <link rel="preconnect" href="https://tile.openstreetmap.org" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@500;600;700;800&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600;6..72,700&display=swap"
       rel="stylesheet"
@@ -193,7 +197,6 @@
           <div class="heroFeature__body">
             <div class="heroFeature__label" data-i18n="hero_feature_label">Latest field note</div>
             <div class="heroFeature__title" data-i18n="hero_feature_title">A privacy-first aura map rendered with watercolor NPR.</div>
-            <div class="heroFeature__sub" data-i18n="hero_feature_sub"></div>
           </div>
         </aside>
       </section>
@@ -563,6 +566,47 @@
             <div class="stats" data-i18n="marketplace_sub">
               Post tasks, listings, and scheduled activities.
             </div>
+          </div>
+
+          <div class="marketRail" id="marketRail" role="group" aria-label="Marketplace workspaces">
+            <button
+              class="marketRailCard"
+              type="button"
+              id="marketRailTasks"
+              data-market-tab-target="tasks"
+              data-market-drop-target="tasksList"
+            >
+              <span class="marketRailCard__eyebrow" data-i18n="market_workspace_tasks_eyebrow">Mission board</span>
+              <span class="marketRailCard__title" data-i18n="market_workspace_tasks_title">Missions</span>
+              <span class="marketRailCard__meta" id="marketRailTasksMeta">0 open missions ready for pickup.</span>
+              <span class="marketRailCard__cta" data-i18n="market_workspace_tasks_cta">Open missions</span>
+            </button>
+
+            <button
+              class="marketRailCard"
+              type="button"
+              id="marketRailMarket"
+              data-market-tab-target="market"
+              data-market-drop-target="marketList"
+            >
+              <span class="marketRailCard__eyebrow" data-i18n="market_workspace_market_eyebrow">Marketplace</span>
+              <span class="marketRailCard__title" data-i18n="market_workspace_market_title">Listings</span>
+              <span class="marketRailCard__meta" id="marketRailMarketMeta">0 active product or service listings.</span>
+              <span class="marketRailCard__cta" data-i18n="market_workspace_market_cta">Open listings</span>
+            </button>
+
+            <button
+              class="marketRailCard"
+              type="button"
+              id="marketRailEvents"
+              data-market-tab-target="events"
+              data-market-drop-target="eventsList"
+            >
+              <span class="marketRailCard__eyebrow" data-i18n="market_workspace_events_eyebrow">Schedule</span>
+              <span class="marketRailCard__title" data-i18n="market_workspace_events_title">Events</span>
+              <span class="marketRailCard__meta" id="marketRailEventsMeta">0 upcoming or live gatherings.</span>
+              <span class="marketRailCard__cta" data-i18n="market_workspace_events_cta">Open schedule</span>
+            </button>
           </div>
 
           <div class="marketTabs" id="marketTabs" role="tablist" aria-label="Marketplace tabs">

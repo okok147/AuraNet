@@ -110,6 +110,13 @@
     visAreaNote: $("visAreaNote"),
 
     taskFeePill: $("taskFeePill"),
+    marketRail: $("marketRail"),
+    marketRailTasks: $("marketRailTasks"),
+    marketRailTasksMeta: $("marketRailTasksMeta"),
+    marketRailMarket: $("marketRailMarket"),
+    marketRailMarketMeta: $("marketRailMarketMeta"),
+    marketRailEvents: $("marketRailEvents"),
+    marketRailEventsMeta: $("marketRailEventsMeta"),
     marketTabs: $("marketTabs"),
     tabTasks: $("tabTasks"),
     tabMarket: $("tabMarket"),
@@ -637,6 +644,18 @@
 
       marketplace_title: "Marketplace",
       marketplace_sub: "Post tasks, listings, and scheduled activities.",
+      market_workspace_tasks_eyebrow: "Mission board",
+      market_workspace_tasks_title: "Missions",
+      market_workspace_tasks_meta: "{count} open missions ready for pickup.",
+      market_workspace_tasks_cta: "Open missions",
+      market_workspace_market_eyebrow: "Marketplace",
+      market_workspace_market_title: "Listings",
+      market_workspace_market_meta: "{count} active product or service listings.",
+      market_workspace_market_cta: "Open listings",
+      market_workspace_events_eyebrow: "Schedule",
+      market_workspace_events_title: "Events",
+      market_workspace_events_meta: "{count} upcoming or live gatherings.",
+      market_workspace_events_cta: "Open schedule",
       tab_tasks: "Tasks",
       tab_market: "Market",
       tab_events: "Scheduled",
@@ -1010,6 +1029,18 @@
 
       marketplace_title: "市集",
       marketplace_sub: "發布任務、商品服務、以及排程活動。",
+      market_workspace_tasks_eyebrow: "任務板",
+      market_workspace_tasks_title: "任務",
+      market_workspace_tasks_meta: "{count} 個開放任務可直接接手。",
+      market_workspace_tasks_cta: "查看任務",
+      market_workspace_market_eyebrow: "市集",
+      market_workspace_market_title: "刊登",
+      market_workspace_market_meta: "{count} 個商品或服務刊登進行中。",
+      market_workspace_market_cta: "查看刊登",
+      market_workspace_events_eyebrow: "排程",
+      market_workspace_events_title: "活動",
+      market_workspace_events_meta: "{count} 個即將開始或進行中的活動。",
+      market_workspace_events_cta: "查看排程",
       tab_tasks: "任務",
       tab_market: "市集",
       tab_events: "排程",
@@ -1383,6 +1414,18 @@
 
       marketplace_title: "マーケット",
       marketplace_sub: "タスク、商品/サービス、予定アクティビティ。",
+      market_workspace_tasks_eyebrow: "ミッションボード",
+      market_workspace_tasks_title: "ミッション",
+      market_workspace_tasks_meta: "{count} 件の募集中ミッションがあります。",
+      market_workspace_tasks_cta: "ミッションを見る",
+      market_workspace_market_eyebrow: "マーケット",
+      market_workspace_market_title: "掲載",
+      market_workspace_market_meta: "{count} 件の掲載が進行中です。",
+      market_workspace_market_cta: "掲載を見る",
+      market_workspace_events_eyebrow: "予定",
+      market_workspace_events_title: "イベント",
+      market_workspace_events_meta: "{count} 件の予定または開催中イベントがあります。",
+      market_workspace_events_cta: "予定を見る",
       tab_tasks: "タスク",
       tab_market: "マーケット",
       tab_events: "予定",
@@ -4157,6 +4200,75 @@
     ensureUiPrefs();
     state.ui.marketTab = normalizeMarketTab(state.ui.marketTab);
     setMarketTabSelected(state.ui.marketTab);
+    renderMarketplaceRail();
+  };
+
+  const marketRailEntries = () =>
+    [
+      { tab: "tasks", el: els.marketRailTasks, metaEl: els.marketRailTasksMeta, metaKey: "market_workspace_tasks_meta" },
+      { tab: "market", el: els.marketRailMarket, metaEl: els.marketRailMarketMeta, metaKey: "market_workspace_market_meta" },
+      { tab: "events", el: els.marketRailEvents, metaEl: els.marketRailEventsMeta, metaKey: "market_workspace_events_meta" }
+    ].filter((entry) => entry.el);
+
+  const renderMarketplaceRail = () => {
+    const activeTab = normalizeMarketTab(state && state.ui && state.ui.marketTab);
+    const taskCount = state && state.tasks && Array.isArray(state.tasks.list)
+      ? state.tasks.list.filter((task) => task && normalizeTaskStatus(task.status) === "open").length
+      : 0;
+    const marketCount = state && state.market && Array.isArray(state.market.list)
+      ? state.market.list.filter((item) => item && normalizeMarketStatus(item.status) === "open").length
+      : 0;
+    const now = nowMs();
+    const eventCount = state && state.events && Array.isArray(state.events.list)
+      ? state.events.list.filter((ev) => {
+          if (!ev || !ev.id) return false;
+          const st = computeEventState(ev, now);
+          return st === "scheduled" || st === "live";
+        }).length
+      : 0;
+    const counts = { tasks: taskCount, market: marketCount, events: eventCount };
+
+    for (const entry of marketRailEntries()) {
+      const current = entry.tab === activeTab;
+      entry.el.classList.toggle("marketRailCard--current", current);
+      entry.el.setAttribute("aria-pressed", current ? "true" : "false");
+      if (entry.metaEl) {
+        entry.metaEl.textContent = t(entry.metaKey, { count: counts[entry.tab] || 0 });
+      }
+    }
+  };
+
+  const setMarketplaceDropOpen = (dropKey, open) => {
+    ensureUiPrefs();
+    if (!state.ui || !state.ui.drops || typeof state.ui.drops !== "object") return;
+    if (!Object.prototype.hasOwnProperty.call(state.ui.drops, dropKey)) return;
+    state.ui.drops[dropKey] = Boolean(open);
+  };
+
+  const closeMarketplaceDrops = (scope = "all") => {
+    const kind = String(scope || "all");
+    if (kind === "tasks" || kind === "all") {
+      setMarketplaceDropOpen("tasksPost", false);
+      setMarketplaceDropOpen("tasksList", false);
+    }
+    if (kind === "market" || kind === "all") {
+      setMarketplaceDropOpen("marketPost", false);
+      setMarketplaceDropOpen("marketList", false);
+    }
+    if (kind === "events" || kind === "all") {
+      setMarketplaceDropOpen("eventsPost", false);
+      setMarketplaceDropOpen("eventsList", false);
+    }
+  };
+
+  const setMarketplaceActiveTab = (tab, { persist = true } = {}) => {
+    ensureUiPrefs();
+    const next = normalizeMarketTab(tab);
+    if (state.ui.marketTab !== next) {
+      state.ui.marketTab = next;
+      if (persist) saveState();
+    }
+    renderMarketplaceTabs();
   };
 
   const mapFilterEntries = () => [
@@ -4502,9 +4614,7 @@
         viewBtn.className = "btn btn--ghost";
         viewBtn.textContent = t("room_view_on_map");
         viewBtn.addEventListener("click", () => {
-          if (mapApi && typeof mapApi.focusLatLng === "function") {
-            mapApi.focusLatLng({ lat, lng, zoom: 16 });
-          }
+          focusLocationOnMap({ lat, lng, zoom: 16 });
         });
         loc.appendChild(viewBtn);
         bubble.appendChild(loc);
@@ -4819,16 +4929,18 @@
   };
 
   const beginPickOnMap = (onPick, { hudKey = "" } = {}) => {
-    if (!mapApi || typeof mapApi.beginPick !== "function") {
-      toast(t("toast_task_pick_on_map"));
-      return;
-    }
     const hudText = hudKey ? t(hudKey) : t("toast_task_pick_on_map");
-    mapApi.beginPick(onPick, { hudText });
-    scrollToSection("mapSection");
-    if (typeof mapApi.focusForPick === "function") {
-      mapApi.focusForPick({ durationMs: 2300 });
-    }
+    requestMapBoot({
+      immediate: true,
+      onReady: (api) => {
+        if (!api || typeof api.beginPick !== "function") return;
+        api.beginPick(onPick, { hudText });
+        scrollToSection("mapSection");
+        if (typeof api.focusForPick === "function") {
+          api.focusForPick({ durationMs: 2300 });
+        }
+      }
+    });
     toast(t("toast_task_pick_on_map"));
   };
 
@@ -5130,6 +5242,7 @@
     }
     syncTasksOnMap();
     renderTaskRoom();
+    renderMarketplaceRail();
     renderShell();
   };
   const renderTasks = makeRafRenderer(renderTasksNow);
@@ -6098,10 +6211,9 @@
       viewBtn.className = "btn btn--ghost";
       viewBtn.textContent = t("room_view_on_map");
       viewBtn.addEventListener("click", () => {
-        if (!mapApi || typeof mapApi.focusLatLng !== "function") return;
         const ll = it.loc;
         if (!ll) return;
-        mapApi.focusLatLng({ lat: ll.lat, lng: ll.lng, zoom: 16 });
+        focusLocationOnMap({ lat: ll.lat, lng: ll.lng, zoom: 16 });
       });
       actions.appendChild(viewBtn);
 
@@ -6151,6 +6263,7 @@
       els.marketTabMarketCount.hidden = n <= 0;
     }
     syncMarketOnMap();
+    renderMarketplaceRail();
     renderShell();
   };
   const renderMarket = makeRafRenderer(renderMarketNow);
@@ -6444,10 +6557,9 @@
       viewBtn.className = "btn btn--ghost";
       viewBtn.textContent = t("room_view_on_map");
       viewBtn.addEventListener("click", () => {
-        if (!mapApi || typeof mapApi.focusLatLng !== "function") return;
         const ll = ev.loc;
         if (!ll) return;
-        mapApi.focusLatLng({ lat: ll.lat, lng: ll.lng, zoom: 16 });
+        focusLocationOnMap({ lat: ll.lat, lng: ll.lng, zoom: 16 });
       });
       actions.appendChild(viewBtn);
 
@@ -6492,6 +6604,7 @@
       els.marketTabEventsCount.hidden = n <= 0;
     }
     syncEventsOnMap();
+    renderMarketplaceRail();
     renderShell();
   };
   const renderEvents = makeRafRenderer(renderEventsNow);
@@ -6762,6 +6875,9 @@
     const target = document.getElementById(id);
     if (!target) return;
     setSectionTabSelected(id, { persist: true });
+    if (id === "mapSection") {
+      requestMapBoot({ immediate: true });
+    }
     try {
       target.scrollIntoView({ behavior: "smooth", block: "start" });
       target.focus({ preventScroll: true });
@@ -6872,12 +6988,17 @@
       group: t("cmd_group_actions"),
       keywords: "map locate gps center",
       run: () => {
-        scrollToSection("mapSection");
-        if (mapApi && typeof mapApi.locateSelf === "function") {
-          mapApi.locateSelf();
-          return;
-        }
-        if (els.mapLocate) els.mapLocate.click();
+        requestMapBoot({
+          immediate: true,
+          onReady: (api) => {
+            scrollToSection("mapSection");
+            if (api && typeof api.locateSelf === "function") {
+              api.locateSelf();
+              return;
+            }
+            if (els.mapLocate) els.mapLocate.click();
+          }
+        });
       }
     },
     {
@@ -6886,8 +7007,13 @@
       group: t("cmd_group_actions"),
       keywords: "map reset home view",
       run: () => {
-        scrollToSection("mapSection");
-        if (els.mapReset) els.mapReset.click();
+        requestMapBoot({
+          immediate: true,
+          onReady: () => {
+            scrollToSection("mapSection");
+            if (els.mapReset) els.mapReset.click();
+          }
+        });
       }
     },
     {
@@ -10197,17 +10323,33 @@
   };
 
   const openMarketplaceComposer = (tab, dropKey, focusEl, beforeOpen) => {
+    const nextTab = normalizeMarketTab(tab);
     ensureUiPrefs();
     if (typeof beforeOpen === "function") beforeOpen();
-    state.ui.marketTab = normalizeMarketTab(tab);
-    if (dropKey && state.ui.drops && Object.prototype.hasOwnProperty.call(state.ui.drops, dropKey)) {
-      state.ui.drops[dropKey] = true;
-    }
+    setMarketplaceActiveTab(nextTab, { persist: false });
+    closeMarketplaceDrops(nextTab);
+    if (dropKey) setMarketplaceDropOpen(dropKey, true);
     saveState();
-    renderMarketplaceTabs();
     applyDropStates();
     scrollToSection("marketplaceSection");
     focusElementSoon(focusEl);
+  };
+
+  const openMarketplaceWorkspace = (tab, {
+    dropKey = "",
+    focusEl = null,
+    beforeOpen = null
+  } = {}) => {
+    const nextTab = normalizeMarketTab(tab);
+    ensureUiPrefs();
+    if (typeof beforeOpen === "function") beforeOpen();
+    setMarketplaceActiveTab(nextTab, { persist: false });
+    closeMarketplaceDrops(nextTab);
+    if (dropKey) setMarketplaceDropOpen(dropKey, true);
+    saveState();
+    applyDropStates();
+    scrollToSection("marketplaceSection");
+    if (focusEl) focusElementSoon(focusEl);
   };
 
   if (els.activityForm) {
@@ -10272,9 +10414,7 @@
       const btn = e && e.target ? e.target.closest("button[data-tab]") : null;
       if (!btn) return;
       const tab = normalizeMarketTab(btn.getAttribute("data-tab"));
-      state.ui.marketTab = tab;
-      saveState();
-      renderMarketplaceTabs();
+      setMarketplaceActiveTab(tab);
     });
 
     els.marketTabs.addEventListener("keydown", (e) => {
@@ -10298,11 +10438,23 @@
       const nextBtn = buttons[nextIdx];
       if (!nextBtn) return;
       const tab = normalizeMarketTab(nextBtn.getAttribute("data-tab"));
-      state.ui.marketTab = tab;
-      saveState();
-      renderMarketplaceTabs();
+      setMarketplaceActiveTab(tab);
       nextBtn.focus();
       e.preventDefault();
+    });
+  }
+
+  if (els.marketRail) {
+    els.marketRail.addEventListener("click", (e) => {
+      const btn = e && e.target ? e.target.closest("button[data-market-tab-target]") : null;
+      if (!btn) return;
+      const tab = normalizeMarketTab(btn.getAttribute("data-market-tab-target"));
+      const dropKey = String(btn.getAttribute("data-market-drop-target") || "").trim();
+      const focusEl =
+        tab === "tasks" ? els.taskSearchInput :
+        tab === "market" ? els.marketSearchInput :
+        els.eventsSearchInput;
+      openMarketplaceWorkspace(tab, { dropKey, focusEl });
     });
   }
 
@@ -10364,12 +10516,17 @@
 
   if (els.qaLocateMap) {
     els.qaLocateMap.addEventListener("click", () => {
-      scrollToSection("mapSection");
-      if (mapApi && typeof mapApi.locateSelf === "function") {
-        mapApi.locateSelf();
-        return;
-      }
-      if (els.mapLocate) els.mapLocate.click();
+      requestMapBoot({
+        immediate: true,
+        onReady: (api) => {
+          scrollToSection("mapSection");
+          if (api && typeof api.locateSelf === "function") {
+            api.locateSelf();
+            return;
+          }
+          if (els.mapLocate) els.mapLocate.click();
+        }
+      });
     });
   }
 
@@ -10956,26 +11113,152 @@
   bindPwaFeatures();
   initFirebaseAuth();
 
+  if (els.mapLocate) {
+    els.mapLocate.addEventListener("click", (e) => {
+      if (mapApi) return;
+      if (e && typeof e.preventDefault === "function") e.preventDefault();
+      requestMapBoot({
+        immediate: true,
+        onReady: (api) => {
+          if (api && typeof api.locateSelf === "function") api.locateSelf();
+        }
+      });
+    });
+  }
+
+  if (els.mapReset) {
+    els.mapReset.addEventListener("click", (e) => {
+      if (mapApi) return;
+      if (e && typeof e.preventDefault === "function") e.preventDefault();
+      requestMapBoot({
+        immediate: true,
+        onReady: () => {
+          if (els.mapReset) els.mapReset.click();
+        }
+      });
+    });
+  }
+
+  const focusLocationOnMap = ({ lat, lng, zoom = 16 } = {}) => {
+    const la = Number(lat);
+    const ln = Number(lng);
+    if (!Number.isFinite(la) || !Number.isFinite(ln)) return;
+    requestMapBoot({
+      immediate: true,
+      onReady: (api) => {
+        scrollToSection("mapSection");
+        if (!api || typeof api.focusLatLng !== "function") return;
+        api.focusLatLng({ lat: la, lng: ln, zoom });
+      }
+    });
+  };
+
   const MAP_BOOT_MAX_ATTEMPTS = 8;
   const MAP_BOOT_BASE_DELAY_MS = 160;
+  const MAP_BOOT_IDLE_DELAY_MS = 320;
   let mapBootAttempt = 0;
+  let mapBootRetryTimer = null;
+  let mapBootStartTimer = null;
+  let mapBootStartIdleId = null;
+  const mapReadyCallbacks = [];
+
+  const flushMapReadyCallbacks = () => {
+    if (!mapApi) return;
+    const callbacks = mapReadyCallbacks.splice(0);
+    for (const cb of callbacks) {
+      if (typeof cb !== "function") continue;
+      try {
+        cb(mapApi);
+      } catch {
+        // Ignore callback failures so map boot state stays healthy.
+      }
+    }
+  };
+
+  const cancelScheduledMapBoot = () => {
+    if (mapBootRetryTimer !== null) {
+      window.clearTimeout(mapBootRetryTimer);
+      mapBootRetryTimer = null;
+    }
+    if (mapBootStartTimer !== null) {
+      window.clearTimeout(mapBootStartTimer);
+      mapBootStartTimer = null;
+    }
+    if (mapBootStartIdleId !== null && typeof window.cancelIdleCallback === "function") {
+      window.cancelIdleCallback(mapBootStartIdleId);
+      mapBootStartIdleId = null;
+    }
+  };
+
+  const syncMapAfterBoot = () => {
+    if (!mapApi) return;
+    renderMapLayerFilters();
+    renderActivity(true);
+    renderTasks({ immediate: true });
+    renderMarket({ immediate: true });
+    renderEvents({ immediate: true });
+    if (typeof mapApi.refreshI18n === "function") mapApi.refreshI18n();
+    flushMapReadyCallbacks();
+  };
+
   const bootMapWithRetry = () => {
     if (mapApi) return;
+    mapBootRetryTimer = null;
     mapBootAttempt += 1;
     const api = initPaperMap();
     if (api) {
       mapApi = api;
+      syncMapAfterBoot();
       return;
     }
     if (mapBootAttempt >= MAP_BOOT_MAX_ATTEMPTS) return;
     const delayMs = Math.min(2400, MAP_BOOT_BASE_DELAY_MS * (2 ** (mapBootAttempt - 1)));
     setMapStatus(t("map_loading"));
-    window.setTimeout(bootMapWithRetry, delayMs);
+    mapBootRetryTimer = window.setTimeout(bootMapWithRetry, delayMs);
   };
-  bootMapWithRetry();
+
+  const requestMapBoot = ({ immediate = false, onReady = null } = {}) => {
+    if (typeof onReady === "function") {
+      if (mapApi) {
+        onReady(mapApi);
+      } else {
+        mapReadyCallbacks.push(onReady);
+      }
+    }
+    if (mapApi) return;
+    const start = () => {
+      cancelScheduledMapBoot();
+      setMapStatus(t("map_loading"));
+      bootMapWithRetry();
+    };
+    if (immediate) {
+      start();
+      return;
+    }
+    if (mapBootRetryTimer !== null || mapBootStartTimer !== null || mapBootStartIdleId !== null) return;
+    if (typeof window.requestIdleCallback === "function") {
+      mapBootStartIdleId = window.requestIdleCallback(start, { timeout: 1200 });
+      return;
+    }
+    mapBootStartTimer = window.setTimeout(start, MAP_BOOT_IDLE_DELAY_MS);
+  };
 
   applyI18n();
   renderClock();
   window.setInterval(renderClock, 10_000);
   render();
+  requestMapBoot();
+
+  if (els.mapSection && typeof window.IntersectionObserver === "function") {
+    const observer = new window.IntersectionObserver(
+      (entries) => {
+        const hit = entries.some((entry) => entry && entry.isIntersecting);
+        if (!hit) return;
+        requestMapBoot({ immediate: true });
+        observer.disconnect();
+      },
+      { rootMargin: "180px 0px 240px 0px", threshold: 0.08 }
+    );
+    observer.observe(els.mapSection);
+  }
 })();

@@ -7929,3 +7929,215 @@ body > main.shell {
   background: rgba(255, 255, 255, 0.08);
   color: #f8f6f1;
 }
+
+.marketRail {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0 0 18px;
+}
+
+.marketRailCard {
+  appearance: none;
+  width: 100%;
+  padding: 17px 18px 18px;
+  border: 1px solid rgba(17, 17, 17, 0.12);
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 252, 0.92), rgba(244, 243, 237, 0.9)),
+    repeating-linear-gradient(
+      0deg,
+      rgba(17, 17, 17, 0.014) 0,
+      rgba(17, 17, 17, 0.014) 1px,
+      rgba(255, 255, 255, 0) 1px,
+      rgba(255, 255, 255, 0) 11px
+    );
+  color: rgba(17, 17, 17, 0.92);
+  text-align: left;
+  display: grid;
+  gap: 8px;
+  cursor: pointer;
+  transition:
+    transform var(--motion-fast) ease,
+    border-color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease,
+    box-shadow var(--motion-base) var(--ease-soft);
+}
+
+.marketRailCard:hover,
+.marketRailCard:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(17, 17, 17, 0.22);
+  box-shadow: 0 14px 32px rgba(17, 17, 17, 0.08);
+}
+
+.marketRailCard:focus-visible {
+  outline: none;
+}
+
+.marketRailCard--current {
+  border-color: rgba(17, 17, 17, 0.92);
+  background:
+    linear-gradient(180deg, rgba(18, 18, 18, 0.98), rgba(6, 6, 6, 0.98)),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.045) 0,
+      rgba(255, 255, 255, 0.045) 1px,
+      rgba(255, 255, 255, 0) 1px,
+      rgba(255, 255, 255, 0) 12px
+    );
+  color: #f8f6f1;
+  box-shadow: 0 18px 36px rgba(17, 17, 17, 0.14);
+}
+
+.marketRailCard__eyebrow {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(17, 17, 17, 0.5);
+}
+
+.marketRailCard--current .marketRailCard__eyebrow {
+  color: rgba(248, 246, 241, 0.66);
+}
+
+.marketRailCard__title {
+  font-family: var(--font-display);
+  font-size: clamp(25px, 2.2vw, 34px);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+}
+
+.marketRailCard__meta {
+  min-height: 2.8em;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.45;
+  color: rgba(17, 17, 17, 0.72);
+}
+
+.marketRailCard--current .marketRailCard__meta {
+  color: rgba(248, 246, 241, 0.78);
+}
+
+.marketRailCard__cta {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.workspaceOverview {
+  padding-left: clamp(24px, 4vw, 48px);
+  padding-right: clamp(24px, 4vw, 48px);
+}
+
+.overviewCard,
+.overviewCard:first-child {
+  padding-left: 22px;
+  padding-right: 22px;
+}
+
+#activitySection,
+#mapSection,
+#marketplaceSection {
+  padding-left: clamp(20px, 2.2vw, 30px);
+  padding-right: clamp(20px, 2.2vw, 30px);
+}
+
+.card--map .mapWrap {
+  background:
+    linear-gradient(180deg, rgba(249, 249, 246, 0.98) 0%, rgba(231, 231, 227, 0.98) 100%),
+    radial-gradient(circle at 10% 14%, rgba(255, 255, 255, 0.9), transparent 36%);
+}
+
+.mapPaper {
+  opacity: 0.96;
+  mix-blend-mode: multiply;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(231, 231, 227, 0.8) 100%),
+    radial-gradient(circle at 14% 16%, rgba(255, 255, 255, 0.92), transparent 26%),
+    radial-gradient(circle at 84% 84%, rgba(17, 17, 17, 0.08), transparent 16%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(17, 17, 17, 0.015) 0,
+      rgba(17, 17, 17, 0.015) 1px,
+      rgba(255, 255, 255, 0) 1px,
+      rgba(255, 255, 255, 0) 10px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(17, 17, 17, 0.014) 0,
+      rgba(17, 17, 17, 0.014) 1px,
+      rgba(255, 255, 255, 0) 1px,
+      rgba(255, 255, 255, 0) 8px
+    );
+}
+
+.mapPaper::before,
+.mapPaper::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.mapPaper::before {
+  opacity: 0.58;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320' viewBox='0 0 320 320'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.84' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23grain)' opacity='0.2'/%3E%3C/svg%3E")
+      center/320px 320px repeat,
+    repeating-linear-gradient(
+      35deg,
+      rgba(17, 17, 17, 0.028) 0,
+      rgba(17, 17, 17, 0.028) 1px,
+      rgba(255, 255, 255, 0) 1px,
+      rgba(255, 255, 255, 0) 14px
+    );
+  mix-blend-mode: multiply;
+}
+
+.mapPaper::after {
+  opacity: 0.54;
+  background:
+    radial-gradient(circle at 12% 12%, rgba(255, 255, 255, 0.6), transparent 18%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420' viewBox='0 0 420 420'%3E%3Cg fill='none' stroke='%23111111' stroke-opacity='.14' stroke-width='1.2' stroke-linecap='round'%3E%3Cpath d='M18 62c44 0 82 30 128 30 43 0 74-24 114-24 48 0 78 18 146 18'/%3E%3Cpath d='M-12 162c62 0 86 22 136 22 58 0 84-28 144-28 42 0 74 16 128 16'/%3E%3Cpath d='M24 278c52 0 82 18 126 18 52 0 96-24 146-24 44 0 74 20 124 20'/%3E%3Cpath d='M34 360c54 0 86-18 136-18 42 0 88 24 148 24 44 0 62-8 102-8'/%3E%3C/g%3E%3C/svg%3E")
+      center/420px 420px repeat;
+  mix-blend-mode: soft-light;
+}
+
+.card--map .leaflet-tile {
+  filter: grayscale(1) contrast(1.18) brightness(1.04) sepia(0.04);
+}
+
+.inboxDock__head,
+.inboxDock__body,
+.inboxDock__composer {
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+@media (max-width: 1024px) {
+  .marketRail {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .overviewCard,
+  .overviewCard:first-child,
+  .overviewCard:nth-child(odd) {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  #activitySection,
+  #mapSection,
+  #marketplaceSection {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+}

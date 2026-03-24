@@ -1,8 +1,10 @@
-const CACHE_VERSION = "v13";
+const CACHE_VERSION = "v14";
 const STATIC_CACHE = `auranet-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `auranet-runtime-${CACHE_VERSION}`;
+const TILE_CACHE = `auranet-tiles-${CACHE_VERSION}`;
 const OFFLINE_URL = "./offline.html";
 const BUILD_ASSET_VERSION = "20260324a";
+const TILE_CACHE_MAX_ENTRIES = 180;
 
 const PRECACHE_URLS = [
   "./",
@@ -28,6 +30,18 @@ const isSameOrigin = (request) => {
     return false;
   }
 };
+
+const FONT_HOSTS = new Set(["fonts.googleapis.com", "fonts.gstatic.com"]);
+const CDN_HOSTS = new Set(["unpkg.com", "www.gstatic.com"]);
+const TILE_HOSTS = new Set([
+  "a.tile.openstreetmap.org",
+  "b.tile.openstreetmap.org",
+  "c.tile.openstreetmap.org",
+  "tile.openstreetmap.org"
+]);
+
+const isCacheableResponse = (response) =>
+  Boolean(response) && (response.ok || response.type === "opaque" || response.status === 0);
 
 const withTimeout = (promise, timeoutMs = 4500) => {
   let timeoutId = null;
@@ -56,10 +70,19 @@ self.addEventListener("activate", (event) => {
       .then((keys) =>
         Promise.all(
           keys
-            .filter((key) => key !== STATIC_CACHE && key !== RUNTIME_CACHE)
+            .filter((key) => key !== STATIC_CACHE && key !== RUNTIME_CACHE && key !== TILE_CACHE)
             .map((key) => caches.delete(key))
         )
       )
+      .then(async () => {
+        if (self.registration && self.registration.navigationPreload) {
+          try {
+            await self.registration.navigationPreload.enable();
+          } catch {
+            // ignore unsupported preload enable failures
+          }
+        }
+      })
       .then(() => self.clients.claim())
   );
 });
@@ -69,12 +92,24 @@ self.addEventListener("message", (event) => {
   if (event.data === "SKIP_WAITING") self.skipWaiting();
 });
 
-const cacheFirstThenRevalidate = async (request) => {
-  const cache = await caches.open(RUNTIME_CACHE);
+const trimCache = async (cacheName, maxEntries) => {
+  const limit = Number(maxEntries) || 0;
+  if (limit <= 0) return;
+  const cache = await caches.open(cacheName);
+  const keys = await cache.keys();
+  if (keys.length <= limit) return;
+  await Promise.all(keys.slice(0, keys.length - limit).map((key) => cache.delete(key)));
+};
+
+const cacheFirstThenRevalidate = async (request, cacheName = RUNTIME_CACHE) => {
+  const cache = await caches.open(cacheName);
   const cached = await cache.match(request);
   const freshPromise = fetch(request)
     .then((response) => {
-      if (response && response.status < 400) cache.put(request, response.clone()).catch(() => null);
+      if (isCacheableResponse(response)) {
+        cache.put(request, response.clone()).catch(() => null);
+        if (cacheName === TILE_CACHE) trimCache(TILE_CACHE, TILE_CACHE_MAX_ENTRIES).catch(() => null);
+      }
       return response;
     })
     .catch(() => null);
@@ -89,11 +124,18 @@ const cacheFirstThenRevalidate = async (request) => {
   return caches.match(OFFLINE_URL);
 };
 
-const networkFirst = async (request, { timeoutMs = 4500 } = {}) => {
+const networkFirst = async (request, event, { timeoutMs = 4500 } = {}) => {
   const cache = await caches.open(RUNTIME_CACHE);
   try {
+    if (event && "preloadResponse" in event) {
+      const preload = await event.preloadResponse;
+      if (isCacheableResponse(preload)) {
+        cache.put(request, preload.clone()).catch(() => null);
+        return preload;
+      }
+    }
     const response = await withTimeout(fetch(request), timeoutMs);
-    if (response && response.status < 400) cache.put(request, response.clone()).catch(() => null);
+    if (isCacheableResponse(response)) cache.put(request, response.clone()).catch(() => null);
     return response;
   } catch {
     const cached = await cache.match(request);
@@ -107,19 +149,30 @@ self.addEventListener("fetch", (event) => {
   if (!request || request.method !== "GET") return;
 
   if (request.mode === "navigate") {
-    event.respondWith(networkFirst(request, { timeoutMs: 5000 }));
+    event.respondWith(networkFirst(request, event, { timeoutMs: 5000 }));
+    return;
+  }
+
+  const url = new URL(request.url);
+  const hostname = String(url.hostname || "").toLowerCase();
+  if (TILE_HOSTS.has(hostname)) {
+    event.respondWith(cacheFirstThenRevalidate(request, TILE_CACHE));
+    return;
+  }
+
+  if (FONT_HOSTS.has(hostname) || CDN_HOSTS.has(hostname)) {
+    event.respondWith(cacheFirstThenRevalidate(request, RUNTIME_CACHE));
     return;
   }
 
   if (!isSameOrigin(request)) return;
 
-  const url = new URL(request.url);
   const pathname = url.pathname || "";
   const isStaticAsset = /\.(?:css|js|json|svg|png|jpg|jpeg|webp|ico|woff2?)$/i.test(pathname);
   if (isStaticAsset) {
-    event.respondWith(cacheFirstThenRevalidate(request));
+    event.respondWith(cacheFirstThenRevalidate(request, RUNTIME_CACHE));
     return;
   }
 
-  event.respondWith(networkFirst(request, { timeoutMs: 4500 }));
+  event.respondWith(networkFirst(request, event, { timeoutMs: 4500 }));
 });

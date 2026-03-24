@@ -68,9 +68,7 @@ function renderLocations(locations) {
 }
 
 async function loadLocations() {
-  const response = await fetch("./data/locations.json", {
-    cache: "no-store"
-  });
+  const response = await fetch("./data/locations.json");
 
   if (!response.ok) {
     throw new Error(`Unable to fetch locations (${response.status})`);
