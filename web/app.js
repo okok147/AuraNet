@@ -4312,7 +4312,10 @@
     const nextTab = normalizeMarketTab(tab);
     const dropEl = marketplaceDropElement(dropKey);
     const panelEl = marketplacePanelForTab(nextTab);
-    const target = dropEl || panelEl || els.marketplaceSection;
+    const target =
+      focusEl ||
+      (nextTab === "events" ? panelEl || dropEl : dropEl || panelEl) ||
+      els.marketplaceSection;
     const focusTarget =
       focusEl ||
       (dropEl && typeof dropEl.querySelector === "function" ? dropEl.querySelector("summary") : null) ||
@@ -4322,10 +4325,25 @@
 
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
+        const headerEl = document.querySelector("body > header.shell");
+        const headerHeight = headerEl ? headerEl.getBoundingClientRect().height : 0;
+        const viewportHeight =
+          window.visualViewport && Number.isFinite(Number(window.visualViewport.height))
+            ? Number(window.visualViewport.height)
+            : window.innerHeight;
+        const targetRect = target.getBoundingClientRect();
+        const baseOffset =
+          nextTab === "events" ? Math.max(148, viewportHeight * 0.18) :
+          nextTab === "market" ? Math.max(112, viewportHeight * 0.12) :
+          Math.max(104, viewportHeight * 0.1);
+        const top = Math.max(
+          0,
+          window.scrollY + targetRect.top - headerHeight - baseOffset
+        );
         try {
-          target.scrollIntoView({ behavior: "smooth", block: "start" });
+          window.scrollTo({ top, behavior: "smooth" });
         } catch {
-          target.scrollIntoView(true);
+          window.scrollTo(0, top);
         }
         if (!focusTarget || typeof focusTarget.focus !== "function") return;
         try {
